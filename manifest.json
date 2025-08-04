@@ -1,0 +1,16 @@
+
+{
+  "name": "Naveo FSM Technician",
+  "short_name": "FSM",
+  "start_url": "login.html",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#003366",
+  "icons": [
+    {
+      "src": "https://naveo.mu/assets/images/logo/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
