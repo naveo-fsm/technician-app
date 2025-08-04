@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Technician App - Jobs</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 0; }
+    .header { background: #007bff; color: white; padding: 1rem; text-align: center; font-size: 1.5rem; }
+    .container { padding: 1rem; max-width: 500px; margin: auto; }
+    .job-card { background: white; padding: 1rem; margin: 1rem 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .job-card h3 { margin: 0 0 0.5rem 0; color: #333; }
+    .btn { display: inline-block; padding: 0.5rem 1rem; background: #28a745; color: white; text-decoration: none; border-radius: 5px; margin-top: 1rem; cursor: pointer; }
+    select, input[type="text"] { width: 100%; padding: 0.5rem; margin: 0.5rem 0; border-radius: 5px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div class="header">Naveo - Technician Jobs</div>
+  <div class="container">
+    <label for="technicianSelect">Select Technician:</label>
+    <select id="technicianSelect">
+      <option value="">-- Select --</option>
+    </select>
+    <div id="jobList"></div>
+  </div>
+
+  <script>
+    const sheetDBEndpoint = "https://sheetdb.io/api/v1/nsahb3zt5qgyp";
+
+    async function fetchTechnicians() {
+      try {
+        const res = await fetch(`${sheetDBEndpoint}/sheet/Technicians`);
+        const data = await res.json();
+        const select = document.getElementById("technicianSelect");
+        data.forEach(tech => {
+          const option = document.createElement("option");
+          option.value = tech.TechnicianID;
+          option.text = tech.FullName;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        alert("Error loading technicians: " + err.message);
+      }
+    }
+
+    async function fetchJobs(techID) {
+      try {
+        const res = await fetch(`${sheetDBEndpoint}/search?TechnicianID=${techID}`);
+        const jobs = await res.json();
+        const jobList = document.getElementById("jobList");
+        jobList.innerHTML = "";
+        if (jobs.length === 0) {
+          jobList.innerHTML = "<p>No jobs assigned to this technician.</p>";
+          return;
+        }
+        jobs.forEach(job => {
+          const card = document.createElement("div");
+          card.className = "job-card";
+          card.innerHTML = `
+            <h3>Vehicle: ${job.VehicleNo}</h3>
+            <p>Status: ${job.Status}</p>
+            <p>Intervention: ${job.InterventionID}</p>
+            <button class="btn" onclick="startJob('${job.VehicleID}')">Start Job</button>
+          `;
+          jobList.appendChild(card);
+        });
+      } catch (err) {
+        alert("Error loading jobs: " + err.message);
+      }
+    }
+
+    function startJob(vehicleID) {
+      alert(`Job for vehicle ${vehicleID} started. Checklist loading...`);
+      // Next screen will be rendered here
+    }
+
+    document.getElementById("technicianSelect").addEventListener("change", (e) => {
+      const techID = e.target.value;
+      if (techID) fetchJobs(techID);
+    });
+
+    fetchTechnicians();
+  </script>
+</body>
+</html>
