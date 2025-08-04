@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Technician App - Jobs</title>
+  <title>Technician App - Jobs (Debug Mode)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 0; }
     .header { background: #007bff; color: white; padding: 1rem; text-align: center; font-size: 1.5rem; }
@@ -15,22 +15,30 @@
   </style>
 </head>
 <body>
-  <div class="header">Naveo - Technician Jobs</div>
+  <div class="header">Naveo - Technician Jobs (Debug)</div>
   <div class="container">
     <label for="technicianSelect">Select Technician:</label>
     <select id="technicianSelect">
       <option value="">-- Select --</option>
     </select>
     <div id="jobList"></div>
+    <pre id="debugLog" style="font-size:0.8rem;color:#555;background:#eee;padding:1rem;border-radius:8px;overflow:auto;"></pre>
   </div>
 
   <script>
-    const sheetDBEndpoint = "https://sheetdb.io/api/v1/nsahb3zt5qgyp";
+    const sheetDBEndpoint = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
+
+    function logDebug(message) {
+      const debugEl = document.getElementById("debugLog");
+      debugEl.textContent += message + "\n";
+    }
 
     async function fetchTechnicians() {
       try {
         const res = await fetch(`${sheetDBEndpoint}/sheet/Technicians`);
-        const data = await res.json();
+        const text = await res.text();
+        logDebug("Raw Technician Response:\n" + text);
+        const data = JSON.parse(text);
         const select = document.getElementById("technicianSelect");
         data.forEach(tech => {
           const option = document.createElement("option");
@@ -40,13 +48,16 @@
         });
       } catch (err) {
         alert("Error loading technicians: " + err.message);
+        logDebug("Error: " + err.message);
       }
     }
 
     async function fetchJobs(techID) {
       try {
         const res = await fetch(`${sheetDBEndpoint}/search?TechnicianID=${techID}`);
-        const jobs = await res.json();
+        const text = await res.text();
+        logDebug("Raw Job Response:\n" + text);
+        const jobs = JSON.parse(text);
         const jobList = document.getElementById("jobList");
         jobList.innerHTML = "";
         if (jobs.length === 0) {
@@ -66,12 +77,12 @@
         });
       } catch (err) {
         alert("Error loading jobs: " + err.message);
+        logDebug("Error: " + err.message);
       }
     }
 
     function startJob(vehicleID) {
       alert(`Job for vehicle ${vehicleID} started. Checklist loading...`);
-      // Next screen will be rendered here
     }
 
     document.getElementById("technicianSelect").addEventListener("change", (e) => {
