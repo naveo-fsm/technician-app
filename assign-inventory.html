@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>Assign Inventory</title>
+  <style>
+    body { font-family: Arial; padding: 2rem; }
+    label { display: block; margin: 1rem 0 0.3rem; }
+    input, button { padding: 0.5rem; width: 100%; max-width: 400px; }
+  </style>
+</head><body>
+<h2>📦 Assign Inventory to Vehicle</h2>
+<form onsubmit="submitInv(); return false;">
+  <label>Vehicle No</label><input id="veh" required>
+  <label>Item</label><input id="item" required>
+  <label>Quantity Assigned</label><input id="qty" type="number" required>
+  <button type="submit">Submit</button>
+</form>
+<p id="msg"></p>
+<script>
+async function submitInv() {
+  const payload = {
+    VehicleNo: veh.value,
+    Item: item.value,
+    Assigned: qty.value,
+    Consumed: 0
+  };
+  const res = await fetch("https://sheetdb.io/api/v1/xg2dgvssxzvag", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: [payload] })
+  });
+  msg.textContent = "✅ Inventory assigned!";
+}
+</script>
+</body></html>
