@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SO Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; }
+    th { background: #003366; color: white; }
+    input[type="file"] { width: 100%; }
+    select, input { padding: 0.5rem; }
+  </style>
+</head>
+<body>
+<h2>📊 Service Order Dashboard</h2>
+<table id="soTable">
+  <thead><tr>
+    <th>SO No</th><th>Vehicle</th><th>Item</th><th>Qty</th><th>Checklist</th><th>Status</th><th>File</th><th>Action</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const SHEETDB_URL = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
+
+async function loadSOData() {
+  const res = await fetch(SHEETDB_URL);
+  const data = await res.json();
+  const grouped = {};
+
+  data.forEach(entry => {
+    const key = entry.ServiceOrder + "_" + entry.VehicleNo + "_" + entry.InventoryItem;
+    grouped[key] = entry;
+  });
+
+  const tbody = document.querySelector("#soTable tbody");
+  tbody.innerHTML = "";
+  Object.values(grouped).forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.ServiceOrder}</td>
+      <td>${row.VehicleNo}</td>
+      <td>${row.InventoryItem}</td>
+      <td><input value="${row.Quantity || ''}" /></td>
+      <td><input value="${row.Checklist || ''}" /></td>
+      <td>
+        <select>
+          <option ${row.Status === "Assigned" ? "selected" : ""}>Assigned</option>
+          <option ${row.Status === "In Progress" ? "selected" : ""}>In Progress</option>
+          <option ${row.Status === "Completed" ? "selected" : ""}>Completed</option>
+        </select>
+      </td>
+      <td><input type="file" onchange="alert('📎 File selected, upload logic to be implemented')" /></td>
+      <td><button onclick="saveEdit(this)">💾 Save</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function saveEdit(btn) {
+  const tr = btn.closest("tr");
+  const so = tr.children[0].innerText;
+  const vehicle = tr.children[1].innerText;
+  const item = tr.children[2].innerText;
+  const qty = tr.children[3].querySelector("input").value;
+  const checklist = tr.children[4].querySelector("input").value;
+  const status = tr.children[5].querySelector("select").value;
+
+  const patchUrl = `${SHEETDB_URL}/search?ServiceOrder=${so}&VehicleNo=${vehicle}&InventoryItem=${item}`;
+  const body = {
+    data: {
+      Quantity: qty,
+      Checklist: checklist,
+      Status: status
+    }
+  };
+
+  const res = await fetch(patchUrl, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  alert("✅ Changes saved");
+}
+
+loadSOData();
+</script>
+</body>
+</html>
