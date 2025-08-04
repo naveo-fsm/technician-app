@@ -1,38 +1,30 @@
 
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Real-Time Technician Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <style>
-    body { margin: 0; font-family: 'Segoe UI', sans-serif; }
-    #map { height: 100vh; width: 100%; }
-  </style>
+<html><head>
+  <meta charset="UTF-8">
+  <title>Live GPS Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style> body { margin: 0; } #map { height: 95vh; }</style>
 </head>
 <body>
-  <div id="map"></div>
-  <script>
-    const map = L.map('map').setView([-20.17, 57.51], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+<h2 style="padding:1rem;">🗺 Live Technician GPS Tracker</h2>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map').setView([-20.17, 57.52], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    let polyline = L.polyline([], { color: 'blue' }).addTo(map);
+  async function loadTrackers() {
+    const res = await fetch('https://sheetdb.io/api/v1/xg2dgvssxzvag'); // replace with GPS SheetDB endpoint
+    const data = await res.json();
+    data.forEach(d => {
+      if (d.Lat && d.Lng) {
+        L.marker([+d.Lat, +d.Lng]).addTo(map).bindPopup(`${d.FullName || 'Technician'}<br>${d.VehicleNo || ''}`);
+      }
+    });
+  }
 
-    async function fetchCoordinates() {
-      // Simulated API call
-      const res = await fetch("https://api.npoint.io/6ce8160fc69acda7e2b4"); // static demo
-      const points = await res.json(); // e.g., [{lat:..., lng:...}]
-      polyline.setLatLngs(points);
-      map.fitBounds(polyline.getBounds());
-    }
-
-    fetchCoordinates();
-    setInterval(fetchCoordinates, 30000);
-  </script>
-</body>
-</html>
+  loadTrackers();
+  setInterval(loadTrackers, 15000); // refresh every 15 seconds
+</script>
+</body></html>
