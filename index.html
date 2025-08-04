@@ -10,9 +10,13 @@
 </head>
 <body>
   <script>
-    if ('serviceWorker' in navigator) {
+    const role = localStorage.getItem("fsm_user_role");
+    if (role === "planner") {
+      window.location.href = "planner.html";
+    } else if (role === "technician") {
+      window.location.href = "technician.html";
+    } else if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(() => {
-        console.log("✅ Service Worker registered");
         window.location.href = "login.html";
       });
     } else {

@@ -11,14 +11,24 @@
     h1 { color: #003366; }
     button { padding: 1rem 2rem; margin: 1rem; font-size: 1rem; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
     button:hover { background: #0056b3; }
+    label { display: block; margin-top: 1rem; }
   </style>
 </head>
 <body>
   <div class="box">
     <h1>Naveo FSM</h1>
     <p>Select your role:</p>
-    <button onclick="window.location.href='technician.html'">👨‍🔧 Technician</button>
-    <button onclick="window.location.href='planner.html'">🧑‍💼 Planner</button>
+    <button onclick="login('technician')">👨‍🔧 Technician</button>
+    <button onclick="login('planner')">🧑‍💼 Planner</button>
+    <label><input type="checkbox" id="remember"> Remember Me</label>
   </div>
+  <script>
+    function login(role) {
+      if (document.getElementById("remember").checked) {
+        localStorage.setItem("fsm_user_role", role);
+      }
+      window.location.href = role === "planner" ? "planner.html" : "technician.html";
+    }
+  </script>
 </body>
 </html>
