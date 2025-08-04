@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Planner - Auto SO + Dynamic Checklists</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    input, select, textarea { padding: 0.5rem; margin-bottom: 1rem; width: 100%; max-width: 500px; }
+    label { font-weight: bold; margin-top: 1rem; display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; }
+    th { background: #003366; color: white; }
+    button { padding: 0.6rem 1rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+<h2>📋 Assign Multi-Vehicle Service Order</h2>
+
+<label>Service Order No:</label><input id="soNumber" readonly />
+<label>Intervention Type:</label>
+<select id="interventionType" onchange="updateChecklist()">
+  <option value="">-- Select --</option>
+  <option value="New Install">New Install</option>
+  <option value="Maintenance">Maintenance</option>
+  <option value="Repair">Repair</option>
+</select>
+<label>Lead Technician:</label>
+<select id="leadTech"><option value="">-- Select --</option></select>
+<label>Additional Workers:</label><input id="workers" placeholder="Comma-separated names" />
+<label>Start Date:</label><input type="date" id="startDate" />
+<label>Special Notes:</label><textarea id="notes"></textarea>
+
+<h3>🚗 Vehicles Involved</h3>
+<table id="vehicleTable">
+  <thead><tr><th>Vehicle No</th><th>Checklist</th><th>Inventory</th><th>Remarks</th><th>Action</th></tr></thead>
+  <tbody></tbody>
+</table>
+<button onclick="addVehicle()">+ Add Vehicle</button>
+<button onclick="submitOrder()">✅ Submit Service Order</button>
+<button onclick="window.print()">🖨 Print</button>
+
+<script>
+const techList = ["John", "Sarah", "Ali", "Fatima"];
+const checklistTemplates = {
+  "New Install": "Power On Test, Device Mounting, Signal Verification",
+  "Maintenance": "Clean Unit, Test Functionality, Replace Battery",
+  "Repair": "Diagnose Issue, Replace Parts, Final Test"
+};
+
+function generateSO() {
+  const today = new Date();
+  const str = `SO-${today.getFullYear()}${today.getMonth()+1}${today.getDate()}-${Math.floor(Math.random()*1000)}`;
+  document.getElementById("soNumber").value = str;
+}
+
+function populateTechs() {
+  const sel = document.getElementById("leadTech");
+  techList.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t; opt.text = t;
+    sel.appendChild(opt);
+  });
+}
+
+function updateChecklist() {
+  const type = document.getElementById("interventionType").value;
+  const checklistHint = checklistTemplates[type] || "";
+  document.querySelectorAll("#vehicleTable tbody tr").forEach(row => {
+    const checklistInput = row.querySelectorAll("input")[1];
+    if (checklistHint && checklistInput && !checklistInput.value)
+      checklistInput.value = checklistHint;
+  });
+}
+
+function addVehicle() {
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td><input placeholder='e.g. MZ-4521' /></td>
+    <td><input placeholder='Checklist' /></td>
+    <td><input placeholder='Cable:2,Box:1' /></td>
+    <td><input /></td>
+    <td><button onclick="this.parentNode.parentNode.remove()">❌</button></td>
+  `;
+  document.querySelector("#vehicleTable tbody").appendChild(row);
+  updateChecklist();
+}
+
+async function submitOrder() {
+  const so = document.getElementById("soNumber").value;
+  const intervention = document.getElementById("interventionType").value;
+  const lead = document.getElementById("leadTech").value;
+  const workers = document.getElementById("workers").value;
+  const start = document.getElementById("startDate").value;
+  const notes = document.getElementById("notes").value;
+  const rows = Array.from(document.querySelectorAll("#vehicleTable tbody tr"));
+  const allData = [];
+
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll("input");
+    const veh = inputs[0].value;
+    const checklist = inputs[1].value;
+    const inventory = inputs[2].value;
+    const remark = inputs[3].value;
+
+    if (inventory.includes(":")) {
+      inventory.split(",").forEach(itemQty => {
+        const [item, qty] = itemQty.split(":");
+        allData.push({
+          ServiceOrder: so,
+          VehicleNo: veh,
+          Checklist: checklist,
+          InventoryItem: item.trim(),
+          Quantity: qty.trim(),
+          Remarks: remark,
+          InterventionType: intervention,
+          LeadTech: lead,
+          AdditionalWorkers: workers,
+          StartDate: start,
+          Notes: notes
+        });
+      });
+    } else {
+      allData.push({
+        ServiceOrder: so,
+        VehicleNo: veh,
+        Checklist: checklist,
+        InventoryItem: inventory,
+        Quantity: 1,
+        Remarks: remark,
+        InterventionType: intervention,
+        LeadTech: lead,
+        AdditionalWorkers: workers,
+        StartDate: start,
+        Notes: notes
+      });
+    }
+  });
+
+  const res = await fetch("https://sheetdb.io/api/v1/xg2dgvssxzvag", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: allData })
+  });
+  alert("✅ Service Order submitted!");
+  window.location.reload();
+}
+
+generateSO();
+populateTechs();
+addVehicle();
+</script>
+</body>
+</html>
