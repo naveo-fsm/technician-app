@@ -1,5 +1,195 @@
-<!DOCTYPE html><html><head>
-  <script src="../assets/js/auth.js"></script><title>assign-inventory-selector.html</title></head><body>
-<h2>assign-inventory-selector.html</h2>
-<!-- Inventory selector with serial/SIM + POST -->
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Assign Inventory | Naveo FSM Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body { font-family: Arial, sans-serif; margin:2rem; background:#f5f7fa; }
+    h2   { color:#003366; }
+    .form-group {
+      margin-bottom:1rem;
+    }
+    label {
+      display:block; margin-bottom:.3rem; font-weight:bold;
+    }
+    input, select {
+      width:100%; padding:.5rem; border:1px solid #ccc; border-radius:4px;
+      box-sizing:border-box;
+    }
+    table {
+      width:100%; border-collapse:collapse; margin-top:1rem; background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding:.6rem; border:1px solid #e0e0e0; text-align:left;
+    }
+    th { background:#003366; color:#fff; }
+    .btn {
+      padding:.5rem 1rem; background:#28a745; color:#fff; border:none;
+      border-radius:4px; cursor:pointer; margin-top:1rem;
+    }
+    .btn:hover { background:#218838; }
+    .btn-secondary {
+      background:#6c757d; margin-left:.5rem;
+    }
+    .btn-secondary:hover { background:#5a6268; }
+    .btn-danger {
+      background:#dc3545;
+    }
+    .btn-danger:hover { background:#c82333; }
+    .debug { margin-top:1rem; font-family:monospace; background:#eee; padding:.5rem; border-radius:4px; max-height:150px; overflow:auto; }
+  </style>
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    // ◾ Replace with your real endpoints:
+    const INVENTORY_MASTER_URL = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/Stock_Master';
+    const SERVICE_INV_URL      = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/ServiceOrderInventory';
+
+    // In-memory list
+    let inventoryMaster = [];
+
+    // Debug logger
+    function log(msg) {
+      const dbg = document.getElementById('debug');
+      dbg.textContent += msg + '\n';
+    }
+
+    // Planner-only guard
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (localStorage.getItem('userRole')!=='planner') {
+        alert('Access denied');
+        location.href='../login.html';
+        return;
+      }
+      await loadInventoryMaster();
+      addRow(); // start with one row
+    });
+
+    // Fetch inventory master
+    async function loadInventoryMaster() {
+      try {
+        const res = await fetch(INVENTORY_MASTER_URL);
+        inventoryMaster = await res.json();
+        log(`Loaded ${inventoryMaster.length} master items`);
+      } catch (e) {
+        alert('Error loading inventory master: '+e);
+        log('ERR loadInv: '+e);
+      }
+    }
+
+    // Add a new row to the table
+    function addRow() {
+      const tbody = document.querySelector('#invTable tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <select class="masterSelect">
+            <option value="">-- select item --</option>
+            ${inventoryMaster.map(item=>
+              `<option value="${item.id}"
+                data-make="${item.Make}"
+                data-model="${item.Model}"
+                data-serial="${item.SerialNumber}"
+                data-sim="${item.SIMNumber}"
+              >${item.Make} ${item.Model}</option>`).join('')}
+          </select>
+        </td>
+        <td><input class="inp-make"     type="text" readonly /></td>
+        <td><input class="inp-model"    type="text" readonly /></td>
+        <td><input class="inp-serial"   type="text" readonly /></td>
+        <td><input class="inp-sim"      type="text" readonly /></td>
+        <td><button class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>`;
+      tbody.appendChild(tr);
+
+      // wire change event
+      tr.querySelector('.masterSelect').addEventListener('change', e=>{
+        const opt = e.target.selectedOptions[0];
+        tr.querySelector('.inp-make').value   = opt.dataset.make   || '';
+        tr.querySelector('.inp-model').value  = opt.dataset.model  || '';
+        tr.querySelector('.inp-serial').value = opt.dataset.serial || '';
+        tr.querySelector('.inp-sim').value    = opt.dataset.sim    || '';
+      });
+    }
+
+    // Remove row
+    function removeRow(btn) {
+      btn.closest('tr').remove();
+    }
+
+    // Submit handler
+    async function submitInventory(e) {
+      e.preventDefault();
+      const soIdInput = document.getElementById('soId');
+      const so_id = soIdInput.value.trim() || localStorage.getItem('currentSO') || '';
+      if (!so_id) { alert('Service Order ID is required'); return; }
+
+      const rows = Array.from(document.querySelectorAll('#invTable tbody tr'));
+      const payload = rows.map(tr=>{
+        const sel = tr.querySelector('.masterSelect');
+        return {
+          so_id,
+          master_id: sel.value,
+          Make:   tr.querySelector('.inp-make').value,
+          Model:  tr.querySelector('.inp-model').value,
+          Serial: tr.querySelector('.inp-serial').value,
+          SIM:    tr.querySelector('.inp-sim').value
+        };
+      }).filter(r=>r.master_id);
+
+      if (!payload.length) {
+        alert('Please select at least one inventory item.');
+        return;
+      }
+
+      log('Posting '+payload.length+' items...');
+      try {
+        const res = await fetch(SERVICE_INV_URL, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ data: payload })
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        alert('Inventory assigned successfully!');
+        // optionally clear table
+        document.querySelector('#invTable tbody').innerHTML = '';
+        addRow();
+      } catch (err) {
+        alert('Error submitting: '+err);
+        log('ERR submit: '+err);
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <h2>Assign Inventory to Service Order</h2>
+
+  <form onsubmit="submitInventory(event)">
+    <div class="form-group">
+      <label for="soId">Service Order ID</label>
+      <input id="soId" placeholder="Enter or use existing SO ID" />
+    </div>
+
+    <table id="invTable">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Make</th>
+          <th>Model</th>
+          <th>Serial#</th>
+          <th>SIM#</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button type="button" class="btn" onclick="addRow()">＋ Add Another</button>
+    <button type="submit"      class="btn">✅ Submit Inventory</button>
+  </form>
+
+  <pre id="debug" class="debug"></pre>
+
+</body>
+</html>
