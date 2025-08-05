@@ -1,39 +1,29 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Naveo FSM App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#003366" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="favicon.ico" />
+  <title>Naveo FSM - Loading</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
-      margin: 0; padding: 0;
+      background: #003366;
+      color: #fff;
+      font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      font-family: Arial, sans-serif;
-      background: #f4f7fa;
-      color: #003366;
-    }
-    .loading {
-      text-align: center;
-    }
-    .loading h1 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+      margin: 0;
+      flex-direction: column;
     }
     .spinner {
-      border: 5px solid #ccc;
-      border-top: 5px solid #003366;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #00c9a7;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 60px;
+      height: 60px;
       animation: spin 1s linear infinite;
-      margin: 0 auto;
+      margin-bottom: 20px;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
@@ -42,37 +32,14 @@
   </style>
 </head>
 <body>
-  <div class="loading">
-    <h1>Loading Naveo FSM App...</h1>
-    <div class="spinner"></div>
-  </div>
+  <div class="spinner"></div>
+  <div>Launching FSM Planner...</div>
 
   <script>
-    const redirectUser = () => {
-      const role = localStorage.getItem("userRole");
-      if (role === "technician") {
-        window.location.href = "technician/technician.html";
-      } else if (role === "planner") {
-        window.location.href = "planner/planner.html";
-      } else {
-        window.location.href = "login.html";
-      }
-    };
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('sw.js')
-        .then(() => {
-          console.log("Service Worker registered");
-          setTimeout(redirectUser, 1000);
-        })
-        .catch(err => {
-          console.warn("SW registration failed", err);
-          redirectUser();
-        });
-    } else {
-      redirectUser();
-    }
+    // Redirect after short delay
+    setTimeout(() => {
+      window.location.href = "planner/planner.html";
+    }, 1000);
   </script>
 </body>
 </html>
