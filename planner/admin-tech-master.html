@@ -1,11 +1,223 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <script src="../assets/js/auth.js"></script><title>Technician Master</title></head>
+  <meta charset="UTF-8" />
+  <title>Technician Master | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background: #f5f7fa;
+    }
+    h2 {
+      color: #003366;
+    }
+    .form-inline {
+      margin-bottom: 1rem;
+    }
+    .form-inline input {
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 250px;
+    }
+    .form-inline button {
+      padding: 0.5rem 1rem;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .form-inline button:hover {
+      background: #218838;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: left;
+    }
+    th {
+      background: #003366;
+      color: white;
+    }
+    td input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .actions button {
+      margin-right: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+    .btn-edit   { background: #007bff; }
+    .btn-save   { background: #28a745; }
+    .btn-cancel { background: #6c757d; }
+    .btn-delete { background: #dc3545; }
+    .btn-edit:hover   { background: #0056b3; }
+    .btn-save:hover   { background: #218838; }
+    .btn-cancel:hover { background: #5a6268; }
+    .btn-delete:hover { background: #c82333; }
+  </style>
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Planner-only access
+      const role = localStorage.getItem('userRole');
+      if (role !== 'planner') {
+        alert('Access denied: Planner role required.');
+        window.location.href = '../login.html';
+      }
+    });
+  </script>
+</head>
 <body>
-<h2>Technician Master</h2>
-<!-- 🚧 Add/Edit/Delete Technician with SheetDB POST/DELETE -->
-<p>Placeholder: List of technicians with edit/delete and a form to add new ones.</p>
+  <h2>Technician Master</h2>
+
+  <!-- Add New Technician -->
+  <div class="form-inline">
+    <input type="text" id="newName" placeholder="Technician Full Name" />
+    <button onclick="addTech()">Add Technician</button>
+  </div>
+
+  <!-- Technicians Table -->
+  <table id="techTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // ▶️ Swap in your real SheetDB endpoint:
+    const sheetDBEndpoint = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/collections/Technicians';
+
+    // Fetch JSON helper
+    async function fetchJSON(url, opts) {
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      return res.json();
+    }
+
+    // Load & render technicians
+    async function loadTechs() {
+      try {
+        const data = await fetchJSON(sheetDBEndpoint);
+        const tbody = document.querySelector('#techTable tbody');
+        tbody.innerHTML = '';
+        data.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.dataset.id = item.id;
+          tr.innerHTML = `
+            <td>${item.id}</td>
+            <td>
+              <span class="label-name">${item.name}</span>
+              <input class="edit-name" type="text" value="${item.name}" style="display:none;" />
+            </td>
+            <td class="actions">
+              <button class="btn-edit"   onclick="startEdit(this)">Edit</button>
+              <button class="btn-save"   onclick="saveEdit(this)" style="display:none;">Save</button>
+              <button class="btn-cancel" onclick="cancelEdit(this)" style="display:none;">Cancel</button>
+              <button class="btn-delete" onclick="deleteTech(this)">Delete</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        alert('Error loading technicians: ' + err.message);
+      }
+    }
+
+    // Add new technician
+    async function addTech() {
+      const name = document.getElementById('newName').value.trim();
+      if (!name) return alert('Enter a name.');
+      try {
+        await fetchJSON(sheetDBEndpoint, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ data: { name } })
+        });
+        document.getElementById('newName').value = '';
+        loadTechs();
+      } catch (err) {
+        alert('Error adding: ' + err.message);
+      }
+    }
+
+    // Begin inline edit
+    function startEdit(btn) {
+      const tr = btn.closest('tr');
+      tr.querySelector('.label-name').style.display = 'none';
+      tr.querySelector('.edit-name').style.display = '';
+      tr.querySelector('.btn-edit').style.display = 'none';
+      tr.querySelector('.btn-delete').style.display = 'none';
+      tr.querySelector('.btn-save').style.display = '';
+      tr.querySelector('.btn-cancel').style.display = '';
+    }
+    // Cancel edit
+    function cancelEdit(btn) {
+      const tr = btn.closest('tr');
+      tr.querySelector('.label-name').style.display = '';
+      tr.querySelector('.edit-name').style.display = 'none';
+      tr.querySelector('.btn-edit').style.display = '';
+      tr.querySelector('.btn-delete').style.display = '';
+      tr.querySelector('.btn-save').style.display = 'none';
+      tr.querySelector('.btn-cancel').style.display = 'none';
+    }
+
+    // Save inline edit
+    async function saveEdit(btn) {
+      const tr = btn.closest('tr');
+      const id   = tr.dataset.id;
+      const name = tr.querySelector('.edit-name').value.trim();
+      if (!name) return alert('Name cannot be empty.');
+      try {
+        await fetchJSON(`${sheetDBEndpoint}/${id}`, {
+          method: 'PUT',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ data: { name } })
+        });
+        cancelEdit(btn);
+        loadTechs();
+      } catch (err) {
+        alert('Error saving: ' + err.message);
+      }
+    }
+
+    // Delete a technician
+    async function deleteTech(btn) {
+      if (!confirm('Delete this technician?')) return;
+      const tr = btn.closest('tr');
+      const id = tr.dataset.id;
+      try {
+        await fetchJSON(`${sheetDBEndpoint}/${id}`, { method: 'DELETE' });
+        loadTechs();
+      } catch (err) {
+        alert('Error deleting: ' + err.message);
+      }
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', loadTechs);
+  </script>
 </body>
 </html>
