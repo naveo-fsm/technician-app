@@ -1,28 +1,25 @@
+// assets/js/auth.js
 
-// auth.js - Planner Access + Timeout
-(function () {
-  const allowedRoles = ["planner"];
-  const userRole = localStorage.getItem("role");
-  if (!allowedRoles.includes(userRole)) {
-    alert("Access denied. Please log in as a planner.");
-    window.location.href = "../login.html";
-  }
+// ——————————————————————————————————————————————————————————————————————
+// Simple in-memory credentials store.
+// In a real app you’d point this at a server or use OAuth/OIDC.
+// ——————————————————————————————————————————————————————————————————————
+const CREDENTIALS = {
+  planner:   { user: "planner",   pass: "plan1234" },
+  technician:{ user: "tech",      pass: "tech1234" },
+  admin:     { user: "administrator", pass: "admin1234" }
+};
 
-  // Timeout after 15 minutes (900,000 ms)
-  let timeout;
-  const timeoutDuration = 15 * 60 * 1000;
-
-  function resetTimer() {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      alert("Session expired due to inactivity. Please log in again.");
-      localStorage.clear();
-      window.location.href = "../login.html";
-    }, timeoutDuration);
-  }
-
-  // Reset on activity
-  window.onload = resetTimer;
-  document.onmousemove = resetTimer;
-  document.onkeypress = resetTimer;
-})();
+/**
+ * Validate a login attempt.
+ * @param {string} role    – one of "planner"|"technician"|"admin"
+ * @param {string} username
+ * @param {string} password
+ * @returns {boolean}
+ */
+export function validateLogin(role, username, password) {
+  const cred = CREDENTIALS[role];
+  return cred
+    && cred.user   === username
+    && cred.pass   === password;
+}
