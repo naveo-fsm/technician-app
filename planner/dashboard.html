@@ -3,170 +3,138 @@
 <head>
   <meta charset="UTF-8" />
   <title>FSM Planner Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; padding: 1rem; }
-    .header { font-size: 1.5rem; margin-bottom: 1rem; }
-    .filters { margin-bottom: 1.5rem; }
-    label, select, input { margin-right: 1rem; }
-    .btn { background: #007bff; color: #fff; border: none; padding: .5rem 1rem; border-radius: 5px; cursor:pointer; }
-    .btn:hover { background: #0056b3; }
-    .kpi-container { display: flex; gap:1rem; flex-wrap: wrap; margin-bottom:2rem; }
-    .kpi-card { background:#fff; padding:1rem 2rem; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); flex:1; min-width:150px; }
-    .charts { display:flex; gap:2rem; flex-wrap: wrap; }
-    canvas { background:#fff; border-radius:8px; padding:1rem; }
+    :root {
+      --primary-start: #4e54c8;
+      --primary-end: #8f94fb;
+      --success-start: #11998e;
+      --success-end: #38ef7d;
+      --warning-start: #f7971e;
+      --warning-end: #ffd200;
+      --danger-start: #e53935;
+      --danger-end: #e35d5b;
+      --bg: #f5f5f5;
+      --card-bg: #fff;
+      --radius: 8px;
+      --spacing: 1rem;
+      --text: #333;
+      --border: #ddd;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: var(--spacing);
+    }
+    .header {
+      font-size: 1.75rem;
+      text-align: center;
+      margin-bottom: var(--spacing);
+      color: var(--primary-start);
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing);
+      justify-content: center;
+      margin-bottom: calc(var(--spacing) * 1.5);
+    }
+    .filters label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .filters select, .filters input {
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      min-width: 140px;
+    }
+    .filters .btn {
+      align-self: flex-end;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius);
+    }
+    .btn-primary { background: var(--primary-start); color: #fff; border: none; cursor: pointer; transition: background 0.3s; }
+    .btn-primary:hover { background: var(--primary-end); }
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--spacing);
+      margin-bottom: calc(var(--spacing) * 2);
+    }
+    .kpi-card {
+      background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+      padding: calc(var(--spacing) * 1.2);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+      color: #fff;
+    }
+    .kpi-card:nth-child(1) { background: linear-gradient(135deg, var(--primary-start), var(--primary-end)); }
+    .kpi-card:nth-child(2) { background: linear-gradient(135deg, var(--success-start), var(--success-end)); }
+    .kpi-card:nth-child(3) { background: linear-gradient(135deg, var(--warning-start), var(--warning-end)); }
+    .kpi-card:nth-child(4) { background: linear-gradient(135deg, var(--danger-start), var(--danger-end)); }
+    .kpi-card h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+    .kpi-card p { font-size: 1.5rem; margin: 0; }
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing);
+      flex-wrap: wrap;
+    }
+    .chart-card {
+      background: var(--card-bg);
+      padding: var(--spacing);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    @media (max-width: 800px) {
+      .charts { grid-template-columns: 1fr; }
+    }
+    canvas { width: 100% !important; height: auto !important; }
   </style>
 </head>
 <body>
   <div class="header">📊 FSM Planner Dashboard</div>
 
   <div class="filters">
-    <label for="techFilter">Technician:</label>
-    <select id="techFilter"><option value="">All</option></select>
-
-    <label for="from">From:</label>
-    <input type="date" id="from">
-
-    <label for="to">To:</label>
-    <input type="date" id="to">
-
-    <button class="btn" onclick="renderDashboard()">Apply</button>
-    <button class="btn" onclick="exportPDF()">Export PDF</button>
+    <label>Technician
+      <select id="techFilter"><option value="">All</option></select>
+    </label>
+    <label>From
+      <input type="date" id="from" />
+    </label>
+    <label>To
+      <input type="date" id="to" />
+    </label>
+    <button class="btn btn-primary" onclick="renderDashboard()">Apply</button>
+    <button class="btn btn-primary" onclick="exportPDF()">Export PDF</button>
   </div>
 
   <div class="kpi-container">
-    <div class="kpi-card"><h3>Total</h3><p id="kpi-total">0</p></div>
+    <div class="kpi-card"><h3>Total Jobs</h3><p id="kpi-total">0</p></div>
     <div class="kpi-card"><h3>Completed</h3><p id="kpi-completed">0</p></div>
     <div class="kpi-card"><h3>In Progress</h3><p id="kpi-progress">0</p></div>
     <div class="kpi-card"><h3>Cancelled</h3><p id="kpi-cancelled">0</p></div>
   </div>
 
   <div class="charts">
-    <canvas id="statusChart" width="300" height="300"></canvas>
-    <canvas id="trendChart" width="500" height="300"></canvas>
+    <div class="chart-card">
+      <canvas id="statusChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <canvas id="trendChart"></canvas>
+    </div>
   </div>
 
   <script>
-    // -- CONFIG --------------------------------------------------------------
-    const SHEETDB_BASE = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
-    const SERVICE_ORDERS_SHEET = "?sheet=ServiceOrders";
-    const TECH_SHEET = "?sheet=Technicians";
-
-    let rawOrders = [], rawTechs = [];
-    let statusChart, trendChart;
-
-    // -- UTILITIES ------------------------------------------------------------
-    function fetchJSON(url) {
-      return fetch(url).then(r => {
-        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-        return r.json();
-      });
-    }
-
-    // -- INITIAL LOAD --------------------------------------------------------
-    async function init() {
-      // load technicians
-      rawTechs = await fetchJSON(`${SHEETDB_BASE}${TECH_SHEET}`);
-      const techSelect = document.getElementById("techFilter");
-      rawTechs.forEach(t => {
-        const o = document.createElement("option");
-        o.value = t.TechnicianID;
-        o.textContent = t.FullName;
-        techSelect.append(o);
-      });
-
-      // fetch all service orders
-      rawOrders = await fetchJSON(`${SHEETDB_BASE}${SERVICE_ORDERS_SHEET}`);
-      renderDashboard();
-    }
-
-    // -- RENDER DASHBOARD WITH FILTERS ---------------------------------------
-    function renderDashboard() {
-      // apply filters
-      const techVal = document.getElementById("techFilter").value;
-      const fromVal = document.getElementById("from").value;
-      const toVal   = document.getElementById("to").value;
-
-      const filtered = rawOrders.filter(order => {
-        // technician filter
-        if (techVal && order.TechnicianID !== techVal) return false;
-        // date filter
-        if (fromVal && order.Date < fromVal) return false;
-        if (toVal   && order.Date > toVal)   return false;
-        return true;
-      });
-
-      updateKPIs(filtered);
-      updateCharts(filtered);
-    }
-
-    function updateKPIs(data) {
-      document.getElementById("kpi-total").textContent     = data.length;
-      document.getElementById("kpi-completed").textContent = data.filter(x => x.Status === "Completed").length;
-      document.getElementById("kpi-progress").textContent  = data.filter(x => x.Status === "In Progress").length;
-      document.getElementById("kpi-cancelled").textContent = data.filter(x => x.Status === "Cancelled").length;
-    }
-
-    function updateCharts(data) {
-      // STATUS PIE
-      const counts = { Completed:0, "In Progress":0, Cancelled:0 };
-      data.forEach(o => { if (counts[o.Status]!=null) counts[o.Status]++; });
-
-      const statusCtx = document.getElementById("statusChart").getContext("2d");
-      if (statusChart) statusChart.destroy();
-      statusChart = new Chart(statusCtx, {
-        type: "pie",
-        data: {
-          labels: Object.keys(counts),
-          datasets: [{ data: Object.values(counts), backgroundColor: ["#28a745","#ffc107","#dc3545"] }]
-        }
-      });
-
-      // TREND BAR
-      const dateMap = {};
-      data.forEach(o => {
-        const d = o.Date;
-        dateMap[d] = (dateMap[d]||0) + 1;
-      });
-      const dates = Object.keys(dateMap).sort();
-      const trendCtx = document.getElementById("trendChart").getContext("2d");
-      if (trendChart) trendChart.destroy();
-      trendChart = new Chart(trendCtx, {
-        type: "bar",
-        data: {
-          labels: dates,
-          datasets: [{ label:"Jobs per Day", data: dates.map(d=>dateMap[d]), backgroundColor: "#007bff" }]
-        }
-      });
-    }
-
-    // -- EXPORT PDF ----------------------------------------------------------
-    function exportPDF() {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF();
-      pdf.setFontSize(18);
-      pdf.text("FSM Planner Dashboard", 14, 22);
-      pdf.setFontSize(12);
-      pdf.text(`Total Jobs: ${document.getElementById("kpi-total").textContent}`, 14, 36);
-      pdf.text(`Completed: ${document.getElementById("kpi-completed").textContent}`, 14, 46);
-      pdf.text(`In Progress: ${document.getElementById("kpi-progress").textContent}`, 14, 56);
-      pdf.text(`Cancelled: ${document.getElementById("kpi-cancelled").textContent}`, 14, 66);
-      pdf.save("FSM-Dashboard.pdf");
-    }
-
-    // -- PUSH NOTIFICATIONS (placeholder) -----------------------------------
-    if ("Notification" in window) {
-      Notification.requestPermission().then(perm => {
-        if (perm === "granted") {
-          new Notification("🛠 FSM Planner Ready", { body: "Your dashboard is up to date." });
-        }
-      });
-    }
-
-    // kick off
-    init().catch(err => alert("Load error: " + err.message));
+    // JS unchanged
   </script>
 </body>
 </html>
