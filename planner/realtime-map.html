@@ -1,5 +1,124 @@
-<!DOCTYPE html><html><head>
-  <script src="../assets/js/auth.js"></script><title>realtime-map.html</title></head><body>
-<h2>realtime-map.html</h2>
-<!-- Live Leaflet map with tech locations and routes -->
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="../assets/js/auth.js"></script>
+  <meta charset="UTF-8" />
+  <title>Planner – Live Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --primary: #007bff;
+      --bg: #f5f5f5;
+      --radius: 8px;
+      --shadow: rgba(0,0,0,0.1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+    #map { flex: 1; }
+    .controls {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #fff;
+      padding: 0.5rem;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 1000;
+    }
+    .controls label {
+      font-size: 0.9rem;
+      color: #333;
+    }
+    .controls select {
+      padding: 0.4rem;
+      border-radius: var(--radius);
+      border: 1px solid #ccc;
+    }
+    .btn-refresh {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.4rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">🗺️ Live Technician Map</div>
+  <div id="map"></div>
+
+  <div class="controls">
+    <label>Technician:
+      <select id="techSelect"><option value="all">All</option></select>
+    </label>
+    <button class="btn-refresh" onclick="refreshLocations()">🔄 Refresh</button>
+  </div>
+
+  <script>
+    let map = L.map('map').setView([0,0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let markers = [];
+    let technicians = [];
+
+    async function loadTechs() {
+      const res = await fetch('https://sheetdb.io/api/v1/xg2dgvssxzvag/Technicians');
+      technicians = await res.json();
+      const sel = document.getElementById('techSelect');
+      technicians.forEach(t => sel.add(new Option(t.FullName, t.TechnicianID)));
+    }
+
+    async function refreshLocations() {
+      // Clear existing markers
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      // Fetch latest coords
+      const res = await fetch('https://sheetdb.io/api/v1/xg2dgvssxzvag/TechLocations');
+      const locations = await res.json();
+      const filter = document.getElementById('techSelect').value;
+
+      locations.forEach(loc => {
+        if (filter !== 'all' && loc.TechnicianID !== filter) return;
+        const tech = technicians.find(t => t.TechnicianID === loc.TechnicianID);
+        const marker = L.marker([loc.Latitude, loc.Longitude]).addTo(map)
+          .bindPopup(`<strong>${tech?.FullName||loc.TechnicianID}</strong><br/>${loc.Timestamp}`);
+        markers.push(marker);
+      });
+
+      if (markers.length) {
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.2));
+      }
+    }
+
+    // Init
+    loadTechs().then(refreshLocations);
+    // Auto-refresh every minute
+    setInterval(refreshLocations, 60000);
+  </script>
+</body>
+</html>
