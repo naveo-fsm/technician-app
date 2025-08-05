@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="../assets/js/auth.js"></script>
+  <meta charset="UTF-8" />
+  <title>FSM Planner Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; padding: 1rem; }
+    .header { font-size: 1.5rem; margin-bottom: 1rem; }
+    .kpi-container { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .kpi-card {
+      background: white; padding: 1rem 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      flex: 1; min-width: 150px;
+    }
+    .charts { display: flex; gap: 2rem; flex-wrap: wrap; }
+    canvas { background: #fff; border-radius: 8px; padding: 1rem; }
+    .filters { margin-bottom: 1.5rem; }
+    label, select, input[type="date"] { margin-right: 1rem; }
+    .btn { background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+    .btn:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <div class="header">📊 Planner Dashboard</div>
+
+  <div class="filters">
+    <label for="techFilter">Technician:</label>
+    <select id="techFilter"><option value="">All</option></select>
+    <label for="from">From:</label><input type="date" id="from">
+    <label for="to">To:</label><input type="date" id="to">
+    <button class="btn" onclick="loadDashboard()">Apply</button>
+    <button class="btn" onclick="exportPDF()">Export PDF</button>
+  </div>
+
+  <div class="kpi-container">
+    <div class="kpi-card"><h3>Total</h3><p id="kpi-total">0</p></div>
+    <div class="kpi-card"><h3>Completed</h3><p id="kpi-completed">0</p></div>
+    <div class="kpi-card"><h3>In Progress</h3><p id="kpi-progress">0</p></div>
+    <div class="kpi-card"><h3>Cancelled</h3><p id="kpi-cancelled">0</p></div>
+  </div>
+
+  <div class="charts">
+    <canvas id="statusChart" width="300" height="300"></canvas>
+    <canvas id="trendChart" width="500" height="300"></canvas>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const sheetdbUrl = "https://sheetdb.io/api/v1/xg2dgvssxzvag/search?sheet=Service_Orders";
+    let rawData = [];
+
+    async function loadDashboard() {
+      const res = await fetch(sheetdbUrl);
+      const data = await res.json();
+      rawData = data;
+      updateKPIs(data);
+      updateCharts(data);
+      populateTechnicianDropdown(data);
+    }
+
+    function updateKPIs(data) {
+      document.getElementById("kpi-total").textContent = data.length;
+      document.getElementById("kpi-completed").textContent = data.filter(x => x.Status === "Completed").length;
+      document.getElementById("kpi-progress").textContent = data.filter(x => x.Status === "In Progress").length;
+      document.getElementById("kpi-cancelled").textContent = data.filter(x => x.Status === "Cancelled").length;
+    }
+
+    function updateCharts(data) {
+      const ctx1 = document.getElementById("statusChart").getContext("2d");
+      const ctx2 = document.getElementById("trendChart").getContext("2d");
+
+      const statusCounts = { Completed: 0, "In Progress": 0, Cancelled: 0 };
+      const dateMap = {};
+
+      data.forEach(job => {
+        statusCounts[job.Status] = (statusCounts[job.Status] || 0) + 1;
+        const date = job.Date?.slice(0,10);
+        if (date) dateMap[date] = (dateMap[date] || 0) + 1;
+      });
+
+      new Chart(ctx1, {
+        type: "pie",
+        data: {
+          labels: Object.keys(statusCounts),
+          datasets: [{ data: Object.values(statusCounts), backgroundColor: ["#28a745", "#ffc107", "#dc3545"] }]
+        }
+      });
+
+      new Chart(ctx2, {
+        type: "bar",
+        data: {
+          labels: Object.keys(dateMap),
+          datasets: [{ label: "Daily Jobs", data: Object.values(dateMap), backgroundColor: "#007bff" }]
+        }
+      });
+    }
+
+    function populateTechnicianDropdown(data) {
+      const uniqueTechs = [...new Set(data.map(x => x.TechnicianID))];
+      const select = document.getElementById("techFilter");
+      select.innerHTML = '<option value="">All</option>';
+      uniqueTechs.forEach(tech => {
+        const opt = document.createElement("option");
+        opt.value = tech;
+        opt.text = tech;
+        select.appendChild(opt);
+      });
+    }
+
+    async function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF();
+      pdf.text("FSM Dashboard", 10, 10);
+      pdf.text(`Total Jobs: ${document.getElementById("kpi-total").textContent}`, 10, 20);
+      pdf.text(`Completed: ${document.getElementById("kpi-completed").textContent}`, 10, 30);
+      pdf.text(`In Progress: ${document.getElementById("kpi-progress").textContent}`, 10, 40);
+      pdf.text(`Cancelled: ${document.getElementById("kpi-cancelled").textContent}`, 10, 50);
+      pdf.save("fsm-dashboard.pdf");
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
+
+<!-- 🚧 Placeholder for push notifications -->
+<script>
+  // If browser supports Notification API
+  if ("Notification" in window && Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        new Notification("🔔 New Job Assigned!");
+      }
+    });
+  }
+</script>

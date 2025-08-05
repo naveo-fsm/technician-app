@@ -1,27 +1,20 @@
 
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Naveo FSM App</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#003366"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-</head>
+<head><title>Naveo FSM App</title></head>
 <body>
-  <script>
-    const role = localStorage.getItem("fsm_user_role");
-    if (role === "planner") {
-      window.location.href = "planner.html";
-    } else if (role === "technician") {
-      window.location.href = "technician.html";
-    } else if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(() => {
-        window.location.href = "login.html";
-      });
-    } else {
-      window.location.href = "login.html";
-    }
-  </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(() => {
+      // 🚧 ENHANCEMENT: Add role-based redirection logic
+      const role = localStorage.getItem("userRole");
+      if (role === "technician") window.location.href = "technician.html";
+      else if (role === "planner") window.location.href = "planner.html";
+      else window.location.href = "login.html";
+    });
+  } else {
+    window.location.href = "login.html";
+  }
+</script>
 </body>
 </html>

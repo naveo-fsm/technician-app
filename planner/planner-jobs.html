@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Planner - Service Orders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="../assets/js/auth.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; background: #f9f9f9; }
+    h2 { color: #003366; }
+    table { width: 100%; border-collapse: collapse; background: white; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .btn { padding: 5px 10px; margin: 2px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    .btn:hover { background: #0056b3; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content { background: white; padding: 1rem; margin: 10% auto; width: 90%; max-width: 500px; border-radius: 8px; }
+    label { display: block; margin-top: 1rem; }
+    input, select, textarea { width: 100%; padding: 0.5rem; margin-top: 0.3rem; border-radius: 5px; border: 1px solid #ccc; }
+    #pagination { margin-top: 1rem; }
+    .page-btn { padding: 5px 8px; margin: 2px; background: #ddd; border: none; cursor: pointer; }
+    .page-btn.active { background: #007bff; color: white; }
+  </style>
+</head>
+<body>
+  <h2>📋 Planner - Service Orders</h2>
+  <table id="soTable">
+    <thead>
+      <tr><th>ID</th><th>Technician</th><th>Vehicle</th><th>Status</th><th>Action</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div id="pagination"></div>
+
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h3>📝 Update Service Order</h3>
+      <input type="hidden" id="editSOID" />
+      <label>Technician</label>
+      <input type="text" id="editTech" />
+      <label>Vehicle No</label>
+      <input type="text" id="editVehicle" />
+      <label>Status</label>
+      <select id="editStatus">
+        <option>Assigned</option>
+        <option>In Progress</option>
+        <option>Completed</option>
+        <option>Cancelled</option>
+      </select>
+      <label>Remarks (optional)</label>
+      <textarea id="editRemarks"></textarea>
+      <button class="btn" onclick="submitEdit()">💾 Save</button>
+    </div>
+  </div>
+
+  <script>
+    const endpoint = "https://sheetdb.io/api/v1/xg2dgvssxzvag/search?sheet=Service_Orders";
+    const updateEndpoint = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
+
+    let allData = [];
+    let currentPage = 1;
+    const rowsPerPage = 10;
+
+    async function fetchData() {
+      const res = await fetch(endpoint);
+      allData = await res.json();
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector("#soTable tbody");
+      tbody.innerHTML = "";
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const pageData = allData.slice(start, end);
+      pageData.forEach(d => {
+        const row = `<tr>
+          <td>${d.ID}</td>
+          <td>${d.TechnicianID}</td>
+          <td>${d.VehicleNo}</td>
+          <td>${d.Status}</td>
+          <td><button class="btn" onclick='openEdit(${JSON.stringify(d)})'>Edit</button></td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(allData.length / rowsPerPage);
+      const container = document.getElementById("pagination");
+      container.innerHTML = "";
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.className = "page-btn" + (i === currentPage ? " active" : "");
+        btn.textContent = i;
+        btn.onclick = () => { currentPage = i; renderTable(); };
+        container.appendChild(btn);
+      }
+    }
+
+    function openEdit(data) {
+      document.getElementById("editSOID").value = data.ID;
+      document.getElementById("editTech").value = data.TechnicianID;
+      document.getElementById("editVehicle").value = data.VehicleNo;
+      document.getElementById("editStatus").value = data.Status;
+      document.getElementById("editRemarks").value = data.Remarks || "";
+      document.getElementById("editModal").style.display = "block";
+    }
+
+    async function submitEdit() {
+      const id = document.getElementById("editSOID").value;
+      const tech = document.getElementById("editTech").value;
+      const vehicle = document.getElementById("editVehicle").value;
+      const status = document.getElementById("editStatus").value;
+      const remarks = document.getElementById("editRemarks").value;
+
+      const body = {
+        data: {
+          TechnicianID: tech,
+          VehicleNo: vehicle,
+          Status: status,
+          Remarks: remarks
+        }
+      };
+
+      await fetch(`${updateEndpoint}/ID/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      alert("Service Order updated.");
+      document.getElementById("editModal").style.display = "none";
+      fetchData();
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
