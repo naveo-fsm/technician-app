@@ -2,111 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Intervention Type Master</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
+    :root {
+      --primary: #007bff;
+      --primary-dark: #0056b3;
+      --bg: #f5f7fa;
+      --card-bg: #fff;
+      --radius: 8px;
+      --spacing: 1rem;
+      --text: #333;
+      --text-muted: #666;
+      --border: #e0e0e0;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: Arial, sans-serif;
-      margin: 2rem;
-      background: #f5f7fa;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: var(--spacing);
     }
     h2 {
-      color: #003366;
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: var(--spacing);
+      text-align: center;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: var(--spacing);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: var(--spacing);
     }
     .form-inline {
-      margin-bottom: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
     .form-inline input {
-      padding: 0.5rem;
-      margin-right: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
     }
     .form-inline button {
-      padding: 0.5rem 1rem;
-      background: #28a745;
-      color: white;
+      padding: 0.75rem 1.5rem;
+      background: var(--primary);
+      color: #fff;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius);
       cursor: pointer;
+      transition: background 0.3s;
     }
-    .form-inline button:hover {
-      background: #218838;
+    .form-inline button:hover { background: var(--primary-dark); }
+
+    .table-container {
+      overflow-x: auto;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-top: 1rem;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
     }
     th, td {
       padding: 0.75rem;
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid var(--border);
       text-align: left;
+      font-size: 0. ninerem;
     }
     th {
-      background: #003366;
-      color: white;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
     }
-    td input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.4rem;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-    }
+    tr:nth-child(even) td { background: #f9f9f9; }
+
     .actions button {
-      margin-right: 0.5rem;
+      margin-right: 0.25rem;
       padding: 0.4rem 0.8rem;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius);
       cursor: pointer;
-      color: white;
+      color: #fff;
+      font-size: 0.85rem;
+      transition: opacity 0.3s;
     }
-    .btn-edit   { background: #007bff; }
+    .btn-edit   { background: #17a2b8; }
     .btn-save   { background: #28a745; }
     .btn-cancel { background: #6c757d; }
     .btn-delete { background: #dc3545; }
-    .btn-edit:hover   { background: #0056b3; }
-    .btn-save:hover   { background: #218838; }
-    .btn-cancel:hover { background: #5a6268; }
-    .btn-delete:hover { background: #c82333; }
+    .actions button:hover { opacity: 0.8; }
+
+    @media (max-width: 600px) {
+      .form-inline { flex-direction: column; }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    }
   </style>
 </head>
 <body>
   <h2>Intervention Type Master</h2>
 
-  <div class="form-inline" id="addForm">
-    <input type="text" id="newType" placeholder="New Intervention Type" />
-    <input type="text" id="newChecklist" placeholder="Default Checklist Template" />
-    <button onclick="addType()">Add</button>
+  <div class="card">
+    <div class="form-inline" id="addForm">
+      <input type="text" id="newType" placeholder="New Intervention Type" />
+      <input type="text" id="newChecklist" placeholder="Default Checklist Template" />
+      <button onclick="addType()">Add</button>
+    </div>
   </div>
 
-  <table id="typesTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Type</th>
-        <th>Default Checklist</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-container">
+    <table id="typesTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Type</th>
+          <th>Default Checklist</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <script>
-    // ▶️ REPLACE this with your real SheetDB endpoint:
     const sheetDBEndpoint = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/collections/InterventionTypes';
-
-    // Utility: fetch JSON or throw
     async function fetchJSON(url, opts) {
       const res = await fetch(url, opts);
-      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      if (!res.ok) throw new Error(res.statusText);
       return res.json();
     }
-
-    // Load & render all types
     async function loadTypes() {
       try {
         const data = await fetchJSON(sheetDBEndpoint);
@@ -117,14 +146,8 @@
           tr.dataset.id = item.id;
           tr.innerHTML = `
             <td>${item.id}</td>
-            <td>
-              <span class="label-type">${item.type}</span>
-              <input class="edit-type" type="text" value="${item.type}" style="display:none;" />
-            </td>
-            <td>
-              <span class="label-check">${item.defaultChecklist||''}</span>
-              <input class="edit-check" type="text" value="${item.defaultChecklist||''}" style="display:none;" />
-            </td>
+            <td><span class="label-type">${item.type}</span><input class="edit-type" type="text" value="${item.type}" style="display:none;"/></td>
+            <td><span class="label-check">${item.defaultChecklist||''}</span><input class="edit-check" type="text" value="${item.defaultChecklist||''}" style="display:none;"/></td>
             <td class="actions">
               <button class="btn-edit"   onclick="startEdit(this)">Edit</button>
               <button class="btn-save"   onclick="saveEdit(this)" style="display:none;">Save</button>
@@ -133,89 +156,64 @@
             </td>`;
           tbody.appendChild(tr);
         });
-      } catch (err) {
-        alert('Error loading types: ' + err.message);
-      }
+      } catch(err) { alert('Error loading: '+err.message); }
     }
-
-    // Add new type
     async function addType() {
       const type = document.getElementById('newType').value.trim();
       const checklist = document.getElementById('newChecklist').value.trim();
-      if (!type) return alert('Enter an intervention type');
+      if(!type) return alert('Enter a type');
       try {
         await fetchJSON(sheetDBEndpoint, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ data: { type, defaultChecklist: checklist } })
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ data:{ type, defaultChecklist:checklist } })
         });
-        document.getElementById('newType').value = '';
-        document.getElementById('newChecklist').value = '';
+        document.getElementById('newType').value='';
+        document.getElementById('newChecklist').value='';
         loadTypes();
-      } catch (err) {
-        alert('Error adding type: ' + err.message);
-      }
+      } catch(err){ alert('Error adding: '+err.message); }
     }
-
-    // Begin inline edit
     function startEdit(btn) {
-      const tr = btn.closest('tr');
-      tr.querySelector('.label-type').style.display = 'none';
-      tr.querySelector('.label-check').style.display = 'none';
-      tr.querySelector('.edit-type').style.display = '';
-      tr.querySelector('.edit-check').style.display = '';
-      tr.querySelector('.btn-edit').style.display = 'none';
-      tr.querySelector('.btn-delete').style.display = 'none';
-      tr.querySelector('.btn-save').style.display = '';
-      tr.querySelector('.btn-cancel').style.display = '';
+      const tr=btn.closest('tr');
+      tr.querySelector('.label-type').hidden=true;
+      tr.querySelector('.label-check').hidden=true;
+      tr.querySelector('.edit-type').style.display='block';
+      tr.querySelector('.edit-check').style.display='block';
+      tr.querySelector('.btn-edit, .btn-delete').forEach(e=>e.hidden=true);
+      tr.querySelector('.btn-save, .btn-cancel').forEach(e=>e.style.display='inline-block');
     }
-    // Cancel inline edit
     function cancelEdit(btn) {
-      const tr = btn.closest('tr');
-      tr.querySelector('.label-type').style.display = '';
-      tr.querySelector('.label-check').style.display = '';
-      tr.querySelector('.edit-type').style.display = 'none';
-      tr.querySelector('.edit-check').style.display = 'none';
-      tr.querySelector('.btn-edit').style.display = '';
-      tr.querySelector('.btn-delete').style.display = '';
-      tr.querySelector('.btn-save').style.display = 'none';
-      tr.querySelector('.btn-cancel').style.display = 'none';
+      const tr=btn.closest('tr');
+      tr.querySelector('.label-type').hidden=false;
+      tr.querySelector('.label-check').hidden=false;
+      tr.querySelector('.edit-type').style.display='none';
+      tr.querySelector('.edit-check').style.display='none';
+      tr.querySelector('.btn-edit, .btn-delete').forEach(e=>e.hidden=false);
+      tr.querySelector('.btn-save, .btn-cancel').forEach(e=>e.style.display='none');
     }
-
-    // Save inline edit
     async function saveEdit(btn) {
-      const tr = btn.closest('tr');
-      const id = tr.dataset.id;
-      const newType      = tr.querySelector('.edit-type').value.trim();
-      const newChecklist = tr.querySelector('.edit-check').value.trim();
-      if (!newType) return alert('Type cannot be empty');
-      try {
-        await fetchJSON(`${sheetDBEndpoint}/${id}`, {
-          method: 'PUT',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ data: { type: newType, defaultChecklist: newChecklist } })
+      const tr=btn.closest('tr');
+      const id=tr.dataset.id;
+      const newType=tr.querySelector('.edit-type').value.trim();
+      const newChecklist=tr.querySelector('.edit-check').value.trim();
+      if(!newType) return alert('Type cannot be empty');
+      try{
+        await fetchJSON(`${sheetDBEndpoint}/${id}`,{
+          method:'PUT',headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ data:{ type:newType, defaultChecklist:newChecklist } })
         });
         cancelEdit(btn);
         loadTypes();
-      } catch (err) {
-        alert('Error saving: ' + err.message);
-      }
+      } catch(err){ alert('Error saving: '+err.message); }
     }
-
-    // Delete a type
     async function deleteType(btn) {
-      if (!confirm('Remove this intervention type?')) return;
-      const tr = btn.closest('tr');
-      const id = tr.dataset.id;
-      try {
-        await fetchJSON(`${sheetDBEndpoint}/${id}`, { method:'DELETE' });
+      if(!confirm('Remove this type?')) return;
+      const tr=btn.closest('tr');
+      const id=tr.dataset.id;
+      try{
+        await fetchJSON(`${sheetDBEndpoint}/${id}`,{ method:'DELETE' });
         loadTypes();
-      } catch (err) {
-        alert('Error deleting: ' + err.message);
-      }
+      } catch(err){ alert('Error deleting: '+err.message); }
     }
-
-    // Initialize on page load
     document.addEventListener('DOMContentLoaded', loadTypes);
   </script>
 </body>
