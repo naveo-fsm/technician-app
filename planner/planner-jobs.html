@@ -1,46 +1,84 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Planner - Service Orders</title>
+  <title>Planner – Service Orders</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="../assets/js/auth.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; padding: 1rem; background: #f9f9f9; }
     h2 { color: #003366; }
-    table { width: 100%; border-collapse: collapse; background: white; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
-    .btn { padding: 5px 10px; margin: 2px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    .filters { margin-bottom: 1rem; }
+    .filters label, .filters select, .filters input, .filters button {
+      margin-right: .5rem; margin-bottom: .5rem;
+    }
+    .btn { padding: 5px 10px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
     .btn:hover { background: #0056b3; }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-    .modal-content { background: white; padding: 1rem; margin: 10% auto; width: 90%; max-width: 500px; border-radius: 8px; }
-    label { display: block; margin-top: 1rem; }
-    input, select, textarea { width: 100%; padding: 0.5rem; margin-top: 0.3rem; border-radius: 5px; border: 1px solid #ccc; }
-    #pagination { margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; cursor: pointer; }
+    .pagination { margin-top: 1rem; }
     .page-btn { padding: 5px 8px; margin: 2px; background: #ddd; border: none; cursor: pointer; }
     .page-btn.active { background: #007bff; color: white; }
+    .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+    .modal-content { background:white; padding:1rem; margin:5% auto; width:90%; max-width:500px; border-radius:8px; }
+    label { display:block; margin-top:1rem; }
+    input, select, textarea { width:100%; padding:0.5rem; margin-top:0.3rem; border:1px solid #ccc; border-radius:4px; }
   </style>
 </head>
 <body>
-  <h2>📋 Planner - Service Orders</h2>
+  <h2>📋 Planner – Service Orders</h2>
+
+  <div class="filters">
+    <label for="techFilter">Technician:</label>
+    <select id="techFilter"><option value="">All</option></select>
+
+    <label for="statusFilter">Status:</label>
+    <select id="statusFilter">
+      <option value="">All</option>
+      <option value="Assigned">Assigned</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+      <option value="Cancelled">Cancelled</option>
+    </select>
+
+    <label for="fromDate">From:</label>
+    <input type="date" id="fromDate">
+
+    <label for="toDate">To:</label>
+    <input type="date" id="toDate">
+
+    <button class="btn" onclick="applyFilters()">Apply</button>
+    <button class="btn" onclick="exportCSV()">Export CSV</button>
+    <button class="btn" onclick="exportPDF()">Export PDF</button>
+  </div>
+
   <table id="soTable">
     <thead>
-      <tr><th>ID</th><th>Technician</th><th>Vehicle</th><th>Status</th><th>Action</th></tr>
+      <tr>
+        <th onclick="sortTable(0)">ID</th>
+        <th onclick="sortTable(1)">Technician</th>
+        <th onclick="sortTable(2)">Vehicle</th>
+        <th onclick="sortTable(3)">Date</th>
+        <th onclick="sortTable(4)">Status</th>
+        <th>Action</th>
+      </tr>
     </thead>
     <tbody></tbody>
   </table>
-  <div id="pagination"></div>
 
+  <div class="pagination" id="pagination"></div>
+
+  <!-- Edit Modal -->
   <div class="modal" id="editModal">
     <div class="modal-content">
       <h3>📝 Update Service Order</h3>
-      <input type="hidden" id="editSOID" />
+      <input type="hidden" id="editSOID">
       <label>Technician</label>
-      <input type="text" id="editTech" />
+      <input type="text" id="editTech">
       <label>Vehicle No</label>
-      <input type="text" id="editVehicle" />
+      <input type="text" id="editVehicle">
       <label>Status</label>
       <select id="editStatus">
         <option>Assigned</option>
@@ -48,95 +86,161 @@
         <option>Completed</option>
         <option>Cancelled</option>
       </select>
-      <label>Remarks (optional)</label>
+      <label>Remarks</label>
       <textarea id="editRemarks"></textarea>
       <button class="btn" onclick="submitEdit()">💾 Save</button>
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
   <script>
-    const endpoint = "https://sheetdb.io/api/v1/xg2dgvssxzvag/search?sheet=Service_Orders";
-    const updateEndpoint = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
+    const BASE = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
+    const SO_URL = BASE + "/search?sheet=Service_Orders";
+    const TECH_URL = BASE + "/search?sheet=Technicians";
 
-    let allData = [];
-    let currentPage = 1;
-    const rowsPerPage = 10;
+    let allData = [], filtered = [], techs = [];
+    let currentPage = 1, rowsPerPage = 10;
+    let sortIdx = -1, sortAsc = true;
 
-    async function fetchData() {
-      const res = await fetch(endpoint);
-      allData = await res.json();
-      renderTable();
+    // Init
+    Promise.all([
+      fetchJSON(SO_URL),
+      fetchJSON(TECH_URL)
+    ]).then(([sos, ts])=>{
+      allData = sos; filtered = [...sos]; techs = ts;
+      populateTechFilter(); renderTable();
+    }).catch(e=>alert(e));
+
+    function fetchJSON(url) {
+      return fetch(url).then(r=>{
+        if(!r.ok) throw new Error(r.statusText);
+        return r.json();
+      });
     }
 
-    function renderTable() {
+    function populateTechFilter(){
+      const sel = document.getElementById("techFilter");
+      techs.forEach(t=>{
+        const o=document.createElement("option");
+        o.value=t.TechnicianID; o.textContent=t.FullName;
+        sel.append(o);
+      });
+    }
+
+    function applyFilters(){
+      const tech = document.getElementById("techFilter").value;
+      const status = document.getElementById("statusFilter").value;
+      const from = document.getElementById("fromDate").value;
+      const to   = document.getElementById("toDate").value;
+      filtered = allData.filter(d=>{
+        if(tech && d.TechnicianID!==tech) return false;
+        if(status && d.Status!==status) return false;
+        if(from && d.Date<from) return false;
+        if(to   && d.Date>to)   return false;
+        return true;
+      });
+      currentPage=1; renderTable();
+    }
+
+    function renderTable(){
       const tbody = document.querySelector("#soTable tbody");
-      tbody.innerHTML = "";
-      const start = (currentPage - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      const pageData = allData.slice(start, end);
-      pageData.forEach(d => {
-        const row = `<tr>
+      tbody.innerHTML="";
+      const start=(currentPage-1)*rowsPerPage, end=start+rowsPerPage;
+      filtered.slice(start,end).forEach(d=>{
+        tbody.innerHTML+=`
+        <tr>
           <td>${d.ID}</td>
           <td>${d.TechnicianID}</td>
           <td>${d.VehicleNo}</td>
+          <td>${d.Date}</td>
           <td>${d.Status}</td>
           <td><button class="btn" onclick='openEdit(${JSON.stringify(d)})'>Edit</button></td>
         </tr>`;
-        tbody.innerHTML += row;
       });
       renderPagination();
     }
 
-    function renderPagination() {
-      const totalPages = Math.ceil(allData.length / rowsPerPage);
-      const container = document.getElementById("pagination");
-      container.innerHTML = "";
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.className = "page-btn" + (i === currentPage ? " active" : "");
-        btn.textContent = i;
-        btn.onclick = () => { currentPage = i; renderTable(); };
-        container.appendChild(btn);
+    function renderPagination(){
+      const pages=Math.ceil(filtered.length/rowsPerPage);
+      const c=document.getElementById("pagination");
+      c.innerHTML="";
+      for(let i=1;i<=pages;i++){
+        const b=document.createElement("button");
+        b.textContent=i;
+        b.className="page-btn"+(i===currentPage?" active":"");
+        b.onclick=()=>{currentPage=i; renderTable();};
+        c.append(b);
       }
     }
 
-    function openEdit(data) {
-      document.getElementById("editSOID").value = data.ID;
-      document.getElementById("editTech").value = data.TechnicianID;
-      document.getElementById("editVehicle").value = data.VehicleNo;
-      document.getElementById("editStatus").value = data.Status;
-      document.getElementById("editRemarks").value = data.Remarks || "";
-      document.getElementById("editModal").style.display = "block";
+    function sortTable(idx){
+      const keys=["ID","TechnicianID","VehicleNo","Date","Status"];
+      const k=keys[idx];
+      if(sortIdx===idx) sortAsc=!sortAsc;
+      else { sortIdx=idx; sortAsc=true; }
+      filtered.sort((a,b)=>
+        sortAsc
+          ? (""+a[k]).localeCompare(b[k])
+          : (""+b[k]).localeCompare(a[k])
+      );
+      currentPage=1; renderTable();
     }
 
-    async function submitEdit() {
+    function openEdit(d){
+      document.getElementById("editSOID").value=d.ID;
+      document.getElementById("editTech").value=d.TechnicianID;
+      document.getElementById("editVehicle").value=d.VehicleNo;
+      document.getElementById("editStatus").value=d.Status;
+      document.getElementById("editRemarks").value=d.Remarks||"";
+      document.getElementById("editModal").style.display="block";
+    }
+
+    async function submitEdit(){
       const id = document.getElementById("editSOID").value;
-      const tech = document.getElementById("editTech").value;
-      const vehicle = document.getElementById("editVehicle").value;
-      const status = document.getElementById("editStatus").value;
-      const remarks = document.getElementById("editRemarks").value;
-
-      const body = {
-        data: {
-          TechnicianID: tech,
-          VehicleNo: vehicle,
-          Status: status,
-          Remarks: remarks
-        }
-      };
-
-      await fetch(`${updateEndpoint}/ID/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const body = { data: {
+        TechnicianID: document.getElementById("editTech").value,
+        VehicleNo:    document.getElementById("editVehicle").value,
+        Status:       document.getElementById("editStatus").value,
+        Remarks:      document.getElementById("editRemarks").value
+      }};
+      await fetch(`${BASE}/ID/${id}`,{
+        method:"PATCH", headers:{"Content-Type":"application/json"},
         body: JSON.stringify(body)
       });
-
+      document.getElementById("editModal").style.display="none";
+      await fetchJSON(SO_URL).then(d=>{ allData=d; applyFilters(); });
       alert("Service Order updated.");
-      document.getElementById("editModal").style.display = "none";
-      fetchData();
     }
 
-    fetchData();
+    // CSV Export
+    function exportCSV(){
+      const rows = [["ID","Technician","Vehicle","Date","Status","Remarks"]];
+      filtered.forEach(d=>{
+        rows.push([d.ID,d.TechnicianID,d.VehicleNo,d.Date,d.Status,d.Remarks||""]);
+      });
+      const csv = rows.map(r=>r.map(c=>`"${c}"`).join(",")).join("\r\n");
+      const blob = new Blob([csv],{type:"text/csv"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="service_orders.csv";
+      a.click();
+    }
+
+    // PDF Export
+    function exportPDF(){
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({orientation:"landscape"});
+      pdf.text("Service Orders",14,16);
+      const cols=["ID","Tech","Vehicle","Date","Status","Remarks"];
+      const data = filtered.map(d=>[d.ID,d.TechnicianID,d.VehicleNo,d.Date,d.Status,d.Remarks||""]);
+      pdf.autoTable({ startY:24, head:[cols], body:data });
+      pdf.save("service_orders.pdf");
+    }
+
+    // close modal on outside click
+    window.onclick = e => {
+      if (e.target.id==="editModal") e.target.style.display="none";
+    };
   </script>
 </body>
 </html>
