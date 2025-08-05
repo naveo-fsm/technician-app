@@ -2,23 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Assign Service Order - Naveo FSM Planner</title>
+  <title>Assign Service Order – Naveo FSM Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="../assets/css/style.css" />
   <style>
-    .form-group { margin-bottom: 1rem; }
-    label { display: block; margin-bottom: .5rem; color: #003366; }
-    input, select, textarea { width: 100%; padding: .5rem; border: 1px solid #ccc; border-radius: 4px; }
-    .vehicles { margin-bottom: 1rem; }
-    .vehicles input { width: calc(100% - 2.5rem); display: inline-block; }
-    .vehicles button { width: 2rem; }
-    .btn { background: #003366; color: #fff; padding: .5rem 1rem; border: none; border-radius: 4px; cursor: pointer; }
-    .btn + .btn { margin-left: .5rem; }
-    /* Modal */
-    .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); justify-content:center; align-items:center; }
-    .modal-content { background:#fff; padding:1rem; border-radius:6px; width:90%; max-width:500px; }
-    .modal-header { font-size:1.2rem; margin-bottom:.5rem; color:#003366; }
-    .modal-body { max-height:60vh; overflow:auto; margin-bottom:1rem; }
+    body { font-family: Arial, sans-serif; margin:2rem; background:#f5f7fa; }
+    h2 { color:#003366; }
+    .form-group { margin-bottom:1rem; }
+    label { display:block; margin-bottom:.5rem; color:#003366; }
+    input, select, textarea { width:100%; padding:.5rem; border:1px solid #ccc; border-radius:4px; }
+    .row { display:flex; gap: .5rem; margin-bottom:.5rem; }
+    .row > * { flex:1; }
+    .row button { flex:0 0 auto; }
+    .btn { background:#003366; color:#fff; padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer; }
+    .btn + .btn { margin-left:.5rem; }
+    table { width:100%; border-collapse:collapse; margin-top:1.5rem; background:#fff; }
+    th, td { padding:.75rem; border:1px solid #e0e0e0; text-align:left; }
+    th { background:#003366; color:#fff; }
   </style>
 </head>
 <body>
@@ -26,21 +26,19 @@
   <form id="soForm">
     <div class="form-group">
       <label for="technician">Technician</label>
-      <select id="technician" required></select>
+      <select id="technician" required>
+        <option value="">-- Loading… --</option>
+      </select>
     </div>
-    <div class="form-group vehicles">
-      <label>Vehicle Number(s)</label>
-      <div id="vehicleList">
-        <div>
-          <input type="text" name="vehicleNo" placeholder="Enter vehicle number" required />
-          <button type="button" onclick="addVehicle()">+</button>
-        </div>
-      </div>
-    </div>
+
     <div class="form-group">
-      <label for="jobType">Job Type</label>
-      <select id="jobType" required></select>
+      <label>Vehicle & Job Type</label>
+      <div id="entries">
+        <!-- rows go here -->
+      </div>
+      <button type="button" class="btn" onclick="addRow()">+ Add Vehicle</button>
     </div>
+
     <div class="form-group">
       <label for="soDate">Date</label>
       <input type="date" id="soDate" required/>
@@ -61,104 +59,153 @@
       <label for="contactPhone">Contact Phone</label>
       <input type="tel" id="contactPhone" required/>
     </div>
-    <button type="button" id="previewBtn" class="btn">Preview Summary</button>
+
+    <button type="button" class="btn" onclick="showSummary()">Preview Summary</button>
   </form>
 
-  <!-- Modal -->
-  <div id="summaryModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">Service Order Summary</div>
-      <div class="modal-body" id="modalBody"></div>
-      <button class="btn" id="editBtn">Edit</button>
-      <button class="btn" id="sendBtn">Send</button>
+  <!-- live summary table -->
+  <table id="summaryTable">
+    <thead>
+      <tr><th>Vehicle No</th><th>Job Type</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+
+  <!-- Modal preview -->
+  <div id="modal" style="
+      display:none;
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.6);
+      justify-content:center;align-items:center;
+  ">
+    <div style="background:#fff;padding:1rem;border-radius:6px;width:90%;max-width:500px;">
+      <h3 style="color:#003366;margin-top:0;">Service Order Summary</h3>
+      <div id="modalBody" style="max-height:60vh;overflow:auto;margin-bottom:1rem;"></div>
+      <button class="btn" onclick="closeModal()">Edit</button>
+      <button class="btn" onclick="sendSO()">Send</button>
     </div>
   </div>
 
   <script>
     const sheetDB = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
+    let jobTypes = [];
 
-    // Fetch technicians & job types
     async function loadDropdowns() {
-      // Technicians
-      const techRes = await fetch(\`\${sheetDB}/Technicians\`);
+      // load technicians
+      const techRes = await fetch(`${sheetDB}/Technicians`);
       const techs = await techRes.json();
-      const techSelect = document.getElementById("technician");
-      techSelect.innerHTML='<option value="">-- Select Technician --</option>';
+      const techSel = document.getElementById("technician");
+      techSel.innerHTML = '<option value="">-- Select --</option>';
       techs.forEach(t => {
-        let opt = document.createElement("option");
-        opt.value = t.TechnicianID; opt.text = t.FullName;
-        techSelect.append(opt);
+        let o=document.createElement("option");
+        o.value=t.TechnicianID; o.text=t.FullName;
+        techSel.add(o);
       });
-      // Job Types
-      const jobRes = await fetch(\`\${sheetDB}/JobTypes\`);
-      const jobs = await jobRes.json();
-      const jobSelect = document.getElementById("jobType");
-      jobSelect.innerHTML='<option value="">-- Select Job Type --</option>';
-      jobs.forEach(j => {
-        let opt = document.createElement("option");
-        opt.value = j.JobTypeID; opt.text = j.JobTypeName;
-        jobSelect.append(opt);
+
+      // load job types
+      const jobRes = await fetch(`${sheetDB}/JobTypes`);
+      jobTypes = await jobRes.json();
+    }
+
+    function addRow() {
+      const container = document.getElementById("entries");
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <input type="text" name="vehicleNo" placeholder="Vehicle No" required />
+        <select name="jobType" required>
+          <option value="">-- Job Type --</option>
+          ${jobTypes.map(j=>`<option value="${j.JobTypeID}">${j.JobTypeName}</option>`).join('')}
+        </select>
+        <button type="button" onclick="this.parentNode.remove(); updateSummary()">–</button>
+      `;
+      // listen to changes to update summary
+      row.querySelectorAll("input,select").forEach(el=>{
+        el.addEventListener("change", updateSummary);
+      });
+      container.append(row);
+      updateSummary();
+    }
+
+    function updateSummary(){
+      const tbody = document.querySelector("#summaryTable tbody");
+      tbody.innerHTML = "";
+      document.querySelectorAll("#entries .row").forEach(r=>{
+        const veh = r.querySelector("[name=vehicleNo]").value.trim();
+        const jt  = r.querySelector("[name=jobType] option:checked").text;
+        if(veh && jt) {
+          let tr = document.createElement("tr");
+          tr.innerHTML = `<td>${veh}</td><td>${jt}</td>`;
+          tbody.append(tr);
+        }
       });
     }
 
-    function addVehicle(){
-      const container = document.getElementById("vehicleList");
-      const div = document.createElement("div");
-      div.innerHTML = '<input type="text" name="vehicleNo" placeholder="Enter vehicle number" required /> <button type="button" onclick="this.parentElement.remove()">-</button>';
-      container.append(div);
-    }
-
-    function gatherFormData(){
-      // auto-generate SO_ID
-      const soId = 'SO'+new Date().toISOString().replace(/[-:.TZ]/g,'');
+    function gatherData(){
+      // SO_ID
+      const soId = "SO" + new Date().toISOString().replace(/[-:.TZ]/g,"");
       const tech = document.getElementById("technician").value;
-      const jobType = document.getElementById("jobType").value;
       const date = document.getElementById("soDate").value;
       const time = document.getElementById("soTime").value;
-      const address = document.getElementById("address").value;
-      const contactPerson = document.getElementById("contactPerson").value;
-      const contactPhone = document.getElementById("contactPhone").value;
-      const vehicles = Array.from(document.getElementsByName("vehicleNo")).map(i=>i.value).join(',');
-      return { SO_ID: soId, TechnicianID: tech, JobType: jobType, Date: date, Time: time, Address: address, ContactPerson: contactPerson, ContactPhone: contactPhone, VehicleNo: vehicles, ChecklistStatus: "Pending", InventoryAssigned:"", FileURL:"" };
+      const addr = document.getElementById("address").value.trim();
+      const cp   = document.getElementById("contactPerson").value.trim();
+      const ph   = document.getElementById("contactPhone").value.trim();
+
+      // vehicles & job types arrays
+      const vehicles = [], jobTypeIds = [];
+      document.querySelectorAll("#entries .row").forEach(r=>{
+        const v = r.querySelector("[name=vehicleNo]").value.trim();
+        const j = r.querySelector("[name=jobType]").value;
+        if(v && j){ vehicles.push(v); jobTypeIds.push(j); }
+      });
+
+      return {
+        SO_ID: soId,
+        TechnicianID: tech,
+        Vehicles: vehicles.join(","),
+        JobTypeIDs: jobTypeIds.join(","),
+        Date: date,
+        Time: time,
+        Address: addr,
+        ContactPerson: cp,
+        ContactPhone: ph,
+        ChecklistStatus: "Pending",
+        InventoryAssigned: "",
+        FileURL: ""
+      };
     }
 
-    document.getElementById("previewBtn").addEventListener("click", () => {
-      const data = gatherFormData();
-      // build summary html
-      let html = '<ul>';
-      for(let k in data){
-        html += '<li><strong>' + k + ':</strong> ' + data[k] + '</li>';
+    function showSummary(){
+      const data = gatherData();
+      let html = "<ul>";
+      for(let key in data){
+        html += `<li><strong>${key}:</strong> ${data[key]}</li>`;
       }
-      html += '</ul>';
+      html += "</ul>";
       document.getElementById("modalBody").innerHTML = html;
-      document.getElementById("summaryModal").style.display = 'flex';
-    });
-
-    document.getElementById("editBtn").addEventListener("click", () => {
-      document.getElementById("summaryModal").style.display = 'none';
-    });
-
-    document.getElementById("sendBtn").addEventListener("click", async () => {
-      const record = gatherFormData();
-      // POST to SheetDB
-      await fetch(sheetDB + "/ServiceOrders", {
+      document.getElementById("modal").style.display = "flex";
+    }
+    function closeModal(){
+      document.getElementById("modal").style.display = "none";
+    }
+    async function sendSO(){
+      const payload = { data: gatherData() };
+      const res = await fetch(`${sheetDB}/ServiceOrders`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: record })
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
       });
-      alert("Service Order Assigned: " + record.SO_ID);
-      window.location.reload();
-    });
-
-    // close modal on outside click
-    window.onclick = (e) => {
-      if(e.target==document.getElementById("summaryModal")){
-        document.getElementById("summaryModal").style.display='none';
+      if(res.ok){
+        alert("Service Order created!");
+        location.reload();
+      } else {
+        alert("Error: " + res.status);
       }
-    };
+    }
 
-    // Initialize
-    loadDropdowns();
+    // init
+    loadDropdowns().then(addRow);
   </script>
 </body>
 </html>
