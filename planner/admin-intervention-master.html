@@ -1,11 +1,155 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <script src="../assets/js/auth.js"></script><title>Intervention Type Master</title></head>
+  <meta charset="UTF-8" />
+  <title>Intervention Type Master | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    /* Page-specific overrides */
+    .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    h2 { margin-bottom: 1rem; color: #003366; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+    th { background: #f0f0f0; }
+    tr:nth-child(even) { background: #fafafa; }
+    .btn { margin: 0 .2rem; padding: .3rem .6rem; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-add { background: #28a745; color: #fff; }
+    .btn-edit { background: #ffc107; color: #212529; }
+    .btn-delete { background: #dc3545; color: #fff; }
+    .form-inline { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .form-inline input { flex: 1; padding: .4rem; }
+  </style>
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    // Ensure only planners can access
+    document.addEventListener('DOMContentLoaded', () => {
+      const role = localStorage.getItem('userRole');
+      if (role !== 'planner') {
+        alert('Access denied. Planner role required.');
+        window.location.href = '../login.html';
+      }
+    });
+  </script>
+</head>
 <body>
-<h2>Intervention Type Master</h2>
-<!-- 🚧 Manage Intervention Types with SheetDB -->
-<p>Placeholder: List of intervention types with add/edit/remove controls.</p>
+  <div class="container">
+    <h2>Intervention Type Master</h2>
+
+    <!-- Add New Intervention Type Form -->
+    <div class="form-inline" id="addForm">
+      <input type="text" id="newType" placeholder="New Intervention Type" />
+      <button class="btn btn-add" onclick="addType()">Add</button>
+    </div>
+
+    <!-- Table of Intervention Types -->
+    <table id="typesTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Intervention Type</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- rows populated dynamically -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const sheetDBEndpoint = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/InterventionTypes';
+
+    // Fetch and render all intervention types
+    async function loadTypes() {
+      try {
+        const res = await fetch(sheetDBEndpoint);
+        const data = await res.json();
+        const tbody = document.querySelector('#typesTable tbody');
+        tbody.innerHTML = '';
+        data.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.id}</td>
+            <td>
+              <span class="type-label">${item.type}</span>
+              <input class="edit-input" type="text" value="${item.type}" style="display:none;" />
+            </td>
+            <td>
+              <button class="btn btn-edit" onclick="startEdit(this)">Edit</button>
+              <button class="btn btn-delete" onclick="deleteType(${item.id})">Delete</button>
+              <button class="btn btn-add" style="display:none;" onclick="saveEdit(this)">Save</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Error loading types:', err);
+        alert('Could not load intervention types.');
+      }
+    }
+
+    // Add a new type
+    async function addType() {
+      const input = document.getElementById('newType');
+      const newType = input.value.trim();
+      if (!newType) return alert('Please enter a type.');
+      try {
+        await fetch(sheetDBEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: { type: newType } })
+        });
+        input.value = '';
+        loadTypes();
+      } catch (err) {
+        console.error('Add error:', err);
+        alert('Failed to add intervention type.');
+      }
+    }
+
+    // Begin inline edit
+    function startEdit(btn) {
+      const row = btn.closest('tr');
+      row.querySelector('.type-label').style.display = 'none';
+      row.querySelector('.edit-input').style.display = '';
+      btn.style.display = 'none';
+      row.querySelector('.btn-add').style.display = '';
+    }
+
+    // Save inline edit
+    async function saveEdit(btn) {
+      const row = btn.closest('tr');
+      const id = row.children[0].textContent;
+      const input = row.querySelector('.edit-input').value.trim();
+      if (!input) return alert('Type cannot be empty.');
+      try {
+        await fetch(`${sheetDBEndpoint}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: { type: input } })
+        });
+        loadTypes();
+      } catch (err) {
+        console.error('Update error:', err);
+        alert('Failed to update type.');
+      }
+    }
+
+    // Delete a type
+    async function deleteType(id) {
+      if (!confirm('Delete this intervention type?')) return;
+      try {
+        await fetch(`${sheetDBEndpoint}/${id}`, { method: 'DELETE' });
+        loadTypes();
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Failed to delete type.');
+      }
+    }
+
+    // Initial load
+    loadTypes();
+  </script>
 </body>
 </html>
