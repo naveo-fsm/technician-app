@@ -3,54 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <title>Technician Master | Naveo FSM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: Arial, sans-serif; margin:2rem; background:#f5f7fa; }
-    h2    { color:#003366; }
+    :root {
+      --primary: #007bff;
+      --primary-dark: #0056b3;
+      --success: #28a745;
+      --danger: #dc3545;
+      --bg: #f5f7fa;
+      --card-bg: #fff;
+      --radius: 8px;
+      --spacing: 1rem;
+      --text: #333;
+      --border: #e0e0e0;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: var(--spacing);
+    }
+    h2 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: var(--spacing);
+      font-size: 1.5rem;
+    }
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
-      gap: .5rem;
-      margin-bottom:1rem;
-      align-items:center;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: var(--spacing);
     }
     .form-grid input,
-    .form-grid select {
-      padding:.5rem; border:1px solid #ccc; border-radius:4px; width:100%;
-      box-sizing:border-box;
+    .form-grid select,
+    .form-grid button {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      font-size: 1rem;
+    }
+    .form-grid input:focus,
+    .form-grid select:focus {
+      outline: none;
+      border-color: var(--primary);
     }
     .form-grid button {
-      padding:.6rem 1.2rem; background:#28a745; color:#fff;
-      border:none; border-radius:4px; cursor:pointer;
+      background: var(--success);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    .form-grid button:hover { background:#218838; }
+    .form-grid button:hover { background: #218838; }
+    .table-container {
+      overflow-x: auto;
+    }
     table {
-      width:100%; border-collapse:collapse; background:#fff;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-top:1rem;
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     th, td {
-      padding:.75rem; border-bottom:1px solid #e0e0e0;
-      text-align:left; vertical-align:middle;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 0.95rem;
     }
-    th { background:#003366; color:#fff; }
-    td img { max-height:40px; border-radius:4px; }
-    td input, td select {
-      width:100%; padding:.4rem; border:1px solid #ccc;
-      border-radius:3px; box-sizing:border-box;
+    th {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
     }
+    tr:nth-child(even) td { background: #f9f9f9; }
+    td img {
+      max-height: 40px;
+      border-radius: var(--radius);
+    }
+    td input[type=file] { padding: 0.4rem; }
     .actions button {
-      margin-right:.3rem; padding:.4rem .8rem;
-      border:none; border-radius:4px; cursor:pointer; color:#fff;
-      font-size:.9rem;
+      margin-right: 0.3rem;
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      color: #fff;
+      font-size: 0.85rem;
+      transition: opacity 0.3s;
     }
-    .btn-edit   { background:#007bff; }
-    .btn-save   { background:#28a745; }
-    .btn-cancel { background:#6c757d; }
-    .btn-delete { background:#dc3545; }
-    .btn-edit:hover   { background:#0056b3; }
-    .btn-save:hover   { background:#218838; }
-    .btn-cancel:hover { background:#5a6268; }
-    .btn-delete:hover { background:#c82333; }
+    .btn-edit { background: var(--primary); }
+    .btn-save { background: var(--success); }
+    .btn-cancel { background: #6c757d; }
+    .btn-delete { background: var(--danger); }
+    .actions button:hover { opacity: 0.8; }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      th, td { font-size: 0.9rem; }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    }
   </style>
   <script src="../assets/js/auth.js"></script>
   <script>
@@ -58,82 +114,57 @@
     const SHEETDB_ENDPOINT = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/Technicians';
 
     // Cloudinary configuration
-    const CLOUD_NAME   = 'dcnji9xvd';
-    const API_KEY      = '463168698129863';
-    const UPLOAD_PRESET= 'YOUR_UNSIGNED_PRESET'; // ← replace with your actual unsigned upload preset
+    const CLOUD_NAME    = 'dcnji9xvd';
+    const API_KEY       = '463168698129863';
+    const UPLOAD_PRESET = 'YOUR_UNSIGNED_PRESET';
 
-    // Enforce planner-only access
-    document.addEventListener('DOMContentLoaded',()=>{
-      if(localStorage.getItem('userRole')!=='planner'){
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('userRole') !== 'planner') {
         alert('Access denied');
-        location.href='../login.html';
+        location.href = '../login.html';
       }
       loadTechs();
     });
 
-    // Helper for JSON fetch
-    async function fetchJSON(url, opts){
+    async function fetchJSON(url, opts) {
       const res = await fetch(url, opts);
-      if(!res.ok) throw new Error(res.status+' '+res.statusText);
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
       return res.json();
     }
 
-    // Load & render table
-    async function loadTechs(){
+    async function loadTechs() {
       try {
         const data = await fetchJSON(SHEETDB_ENDPOINT);
         const tbody = document.querySelector('#techTable tbody');
         tbody.innerHTML = '';
-        data.forEach(item=>{
+        data.forEach(item => {
           const tr = document.createElement('tr');
           tr.dataset.id = item.id;
           tr.innerHTML = `
             <td>${item.id}</td>
+            <td><span class="label name">${item.name}</span><input class="edit name" type="text" value="${item.name}" style="display:none;"/></td>
+            <td><span class="label email">${item.Email}</span><input class="edit email" type="email" value="${item.Email}" style="display:none;"/></td>
+            <td><span class="label phone">${item.Phone}</span><input class="edit phone" type="text" value="${item.Phone}" style="display:none;"/></td>
+            <td><span class="label pwd">••••••</span><input class="edit pwd" type="text" value="${item.Password}" style="display:none;"/></td>
+            <td><span class="label status">${item.Status}</span><select class="edit status" style="display:none;"><option${item.Status==='Active'? ' selected':''}>Active</option><option${item.Status==='Inactive'? ' selected':''}>Inactive</option></select></td>
             <td>
-              <span class="label name">${item.name}</span>
-              <input class="edit name" type="text" value="${item.name}" style="display:none;" />
-            </td>
-            <td>
-              <span class="label email">${item.Email}</span>
-              <input class="edit email" type="email" value="${item.Email}" style="display:none;" />
-            </td>
-            <td>
-              <span class="label phone">${item.Phone}</span>
-              <input class="edit phone" type="text" value="${item.Phone}" style="display:none;" />
-            </td>
-            <td>
-              <span class="label pwd">••••••</span>
-              <input class="edit pwd" type="text" value="${item.Password}" style="display:none;" />
-            </td>
-            <td>
-              <span class="label status">${item.Status}</span>
-              <select class="edit status" style="display:none;">
-                <option ${item.Status==='Active'?'selected':''}>Active</option>
-                <option ${item.Status==='Inactive'?'selected':''}>Inactive</option>
-              </select>
-            </td>
-            <td>
-              ${item.PhotoURL
-                ? `<img src="${item.PhotoURL}" />`
-                : `<span class="label photolabel">—</span>`
-              }
-              <input class="edit photo" type="file" accept="image/*" style="display:none;" />
+              ${item.PhotoURL ? `<img src="${item.PhotoURL}"/>` : `<span>—</span>`}
+              <input class="edit photo" type="file" accept="image/*" style="display:none;"/>
             </td>
             <td class="actions">
-              <button class="btn-edit"   onclick="startEdit(this)">Edit</button>
-              <button class="btn-save"   onclick="saveEdit(this)" style="display:none;">Save</button>
+              <button class="btn-edit" onclick="startEdit(this)">Edit</button>
+              <button class="btn-save" onclick="saveEdit(this)" style="display:none;">Save</button>
               <button class="btn-cancel" onclick="cancelEdit(this)" style="display:none;">Cancel</button>
               <button class="btn-delete" onclick="deleteTech(this)">Delete</button>
             </td>`;
           tbody.appendChild(tr);
         });
-      } catch(err){
-        alert('Error loading technicians: '+err.message);
+      } catch (err) {
+        alert('Error loading technicians: ' + err.message);
       }
     }
 
-    // Add new technician
-    async function addTech(){
+    async function addTech() {
       const name   = document.getElementById('newName').value.trim();
       const email  = document.getElementById('newEmail').value.trim();
       const phone  = document.getElementById('newPhone').value.trim();
@@ -141,62 +172,50 @@
       const status = document.getElementById('newStatus').value;
       const file   = document.getElementById('newPhoto').files[0];
 
-      if(!name||!email||!phone||!pwd)
-        return alert('Name, Email, Phone & Password are required.');
+      if (!name || !email || !phone || !pwd) return alert('Name, Email, Phone & Password are required.');
 
       let photoURL = '';
-      if(file){
-        photoURL = await uploadPhoto(file);
-      }
+      if (file) photoURL = await uploadPhoto(file);
 
       await fetchJSON(SHEETDB_ENDPOINT, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          data:{ name, Email:email, Phone:phone, Password:pwd, Status:status, PhotoURL:photoURL }
-        })
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data:{ name, Email: email, Phone: phone, Password: pwd, Status: status, PhotoURL: photoURL } })
       });
-      // Clear inputs
-      ['newName','newEmail','newPhone','newPwd','newPhoto']
-        .forEach(id=> document.getElementById(id).value='');
+      ['newName','newEmail','newPhone','newPwd','newPhoto'].forEach(id => document.getElementById(id).value = '');
       loadTechs();
     }
 
-    // Cloudinary upload
-    async function uploadPhoto(file){
+    async function uploadPhoto(file) {
       const form = new FormData();
       form.append('file', file);
       form.append('upload_preset', UPLOAD_PRESET);
       form.append('api_key', API_KEY);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-        method:'POST', body:form
-      });
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: form });
       const json = await res.json();
       return json.secure_url;
     }
 
-    // Inline edit controls
-    function startEdit(btn){
+    function startEdit(btn) {
       const tr = btn.closest('tr');
-      tr.querySelectorAll('.label').forEach(e=>e.style.display='none');
-      tr.querySelectorAll('.edit').forEach(e=>e.style.display='inline-block');
-      toggleActions(tr,true);
+      tr.querySelectorAll('.label').forEach(el => el.style.display = 'none');
+      tr.querySelectorAll('.edit').forEach(el => el.style.display = 'inline-block');
+      toggleActions(tr, true);
     }
-    function cancelEdit(btn){
+    function cancelEdit(btn) {
       const tr = btn.closest('tr');
-      tr.querySelectorAll('.label').forEach(e=>e.style.display='inline');
-      tr.querySelectorAll('.edit').forEach(e=>e.style.display='none');
-      toggleActions(tr,false);
+      tr.querySelectorAll('.label').forEach(el => el.style.display = 'inline');
+      tr.querySelectorAll('.edit').forEach(el => el.style.display = 'none');
+      toggleActions(tr, false);
     }
-    function toggleActions(tr,editing){
-      tr.querySelector('.btn-edit').style.display   = editing?'none':'inline-block';
-      tr.querySelector('.btn-delete').style.display = editing?'none':'inline-block';
-      tr.querySelector('.btn-save').style.display   = editing?'inline-block':'none';
-      tr.querySelector('.btn-cancel').style.display = editing?'inline-block':'none';
+    function toggleActions(tr, editing) {
+      tr.querySelector('.btn-edit').style.display   = editing ? 'none':'inline-block';
+      tr.querySelector('.btn-delete').style.display = editing ? 'none':'inline-block';
+      tr.querySelector('.btn-save').style.display   = editing ? 'inline-block':'none';
+      tr.querySelector('.btn-cancel').style.display = editing ? 'inline-block':'none';
     }
 
-    // Save edits
-    async function saveEdit(btn){
+    async function saveEdit(btn) {
       const tr      = btn.closest('tr');
       const id      = tr.dataset.id;
       const name    = tr.querySelector('.edit.name').value.trim();
@@ -207,26 +226,21 @@
       const fileEl  = tr.querySelector('.edit.photo');
       let photoURL  = tr.querySelector('img')?.src || '';
 
-      if(fileEl.files[0]){
-        photoURL = await uploadPhoto(fileEl.files[0]);
-      }
+      if (fileEl.files[0]) photoURL = await uploadPhoto(fileEl.files[0]);
 
       await fetchJSON(`${SHEETDB_ENDPOINT}/${id}`, {
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          data:{ name, Email:email, Phone:phone, Password:pwd, Status:status, PhotoURL:photoURL }
-        })
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data:{ name, Email: email, Phone: phone, Password: pwd, Status: status, PhotoURL: photoURL } })
       });
       cancelEdit(btn);
       loadTechs();
     }
 
-    // Delete
-    async function deleteTech(btn){
-      if(!confirm('Are you sure you want to delete?')) return;
+    async function deleteTech(btn) {
+      if (!confirm('Are you sure you want to delete?')) return;
       const id = btn.closest('tr').dataset.id;
-      await fetchJSON(`${SHEETDB_ENDPOINT}/${id}`,{ method:'DELETE' });
+      await fetchJSON(`${SHEETDB_ENDPOINT}/${id}`, { method:'DELETE' });
       loadTechs();
     }
   </script>
@@ -236,27 +250,29 @@
   <h2>Technician Master</h2>
 
   <div class="form-grid">
-    <input id="newName"  placeholder="Name"         />
-    <input id="newEmail" placeholder="Email"        />
-    <input id="newPhone" placeholder="Phone"        />
-    <input id="newPwd"   type="password" placeholder="Password"/>
+    <input id="newName"   placeholder="Name" />
+    <input id="newEmail"  placeholder="Email" />
+    <input id="newPhone"  placeholder="Phone" />
+    <input id="newPwd"    type="password" placeholder="Password" />
     <select id="newStatus">
       <option>Active</option>
       <option>Inactive</option>
     </select>
-    <input id="newPhoto"  type="file" accept="image/*"/>
+    <input id="newPhoto"  type="file" accept="image/*" />
     <button onclick="addTech()">Add Technician</button>
   </div>
 
-  <table id="techTable">
-    <thead>
-      <tr>
-        <th>ID</th><th>Name</th><th>Email</th><th>Phone</th>
-        <th>Password</th><th>Status</th><th>Photo</th><th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="table-container">
+    <table id="techTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Email</th><th>Phone</th>
+          <th>Password</th><th>Status</th><th>Photo</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
 </body>
 </html>
