@@ -1,11 +1,10 @@
-const CACHE_NAME = 'fsm-app-v2';
+const CACHE_NAME = 'fsm-app-v3';
 const APP_SHELL = [
   '/',                  // for index.html
   '/index.html',
   '/login.html',
   '/logout.html',
   '/manifest.json',
-  '/version.txt',
   // Planner screens
   '/planner/planner.html',
   '/planner/planner-jobs.html',
@@ -19,10 +18,8 @@ const APP_SHELL = [
   // Technician screens
   '/technician/technician.html',
   '/technician/checklist.html',
-  '/technician/profile.html',
   // Assets
   '/assets/css/style.css',
-  '/assets/js/api.js',
   '/assets/js/auth.js',
   '/sw.js'
 ];
@@ -52,6 +49,9 @@ self.addEventListener('activate', event => {
 
 // Fetch: serve from cache, then network
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') {
+    return;
+  }
   event.respondWith(
     caches.match(event.request)
       .then(cachedResp => {
