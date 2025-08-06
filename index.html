@@ -33,7 +33,7 @@
   <div id="msg">Loading FSM Platform...</div>
   <div class="footer">&copy; 2025 Naveo Ltd &mdash; Field Service Management</div>
   <script>
-    // Redirect based on session
+    // Role-based redirect
     setTimeout(function() {
       let role = localStorage.getItem('userRole');
       if (localStorage.getItem('isLoggedIn') === 'true' && role) {
