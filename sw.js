@@ -6,10 +6,11 @@ const urlsToCache = [
   '/logout.html',
   '/planner/planner.html',
   '/technician/assigned-jobs.html',
-  // Add all static assets and any other important pages/scripts
+  '/assets/js/auth.js',
+  // Add more static assets, module screens, icons as needed
 ];
 
-// Install
+// Install Service Worker & Cache Files
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -18,7 +19,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate
+// Activate and Clean Up Old Caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -28,7 +29,7 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch
+// Fetch from cache, fallback to network
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
