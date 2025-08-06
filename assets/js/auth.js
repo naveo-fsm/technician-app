@@ -1,6 +1,6 @@
 // assets/js/auth.js
 
-const SHEETDB_URL = "https://sheetdb.io/api/v1/xg2dgvssxzvag/Users";
+const SHEETDB_URL = "https://sheetdb-proxy.<yourname>.workers.dev/api/v1/xg2dgvssxzvag/Users";
 
 /**
  * Validate login credentials against SheetDB Users table.
