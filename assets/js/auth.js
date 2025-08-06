@@ -1,47 +1,42 @@
 // assets/js/auth.js
 
-// ————————————————————————————————————————————————————————————————
-// Simple credentials store.
-// For production, replace with SheetDB/DB fetch or OAuth integration.
-// ————————————————————————————————————————————————————————————————
-const CREDENTIALS = {
-  planner:    { email: "planner@naveo.mu",    pass: "plan1234"   },
-  technician: { email: "tech@naveo.mu",       pass: "tech1234"   },
-  admin:      { email: "administrator@naveo.mu", pass: "admin1234" }
-};
+// ———————————————————————————————————————————————
+// SheetDB API endpoint (update as needed)
+const SHEETDB_URL = "https://sheetdb.io/api/v1/xg2dgvssxzvag/Users";
 
-/**
- * Validate a login attempt.
- * @param {string} role      "planner"|"technician"|"admin"
- * @param {string} email     Login email/username
- * @param {string} password
- * @returns {boolean}
- */
-export function validateLogin(role, email, password) {
-  if (!CREDENTIALS[role]) return false;
-  // case-insensitive email match, exact password match
-  return (
-    CREDENTIALS[role].email.toLowerCase() === email.trim().toLowerCase()
-    && CREDENTIALS[role].pass === password
-  );
+// ———————————————————————————————————————————————
+// Validate login credentials against SheetDB Users table
+// @param {string} role - planner | technician | admin
+// @param {string} email
+// @param {string} password
+// @returns {Promise<object|false>} - user row if valid, false otherwise
+export async function validateLogin(role, email, password) {
+  // Build SheetDB query string
+  const url = `${SHEETDB_URL}/search?Role=${encodeURIComponent(role)}&Email=${encodeURIComponent(email.trim())}&Status=Active`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Network error");
+    const users = await res.json();
+    if (!Array.isArray(users) || users.length === 0) return false;
+    // Password check (case-sensitive)
+    const user = users.find(u => u.Password === password);
+    return user || false;
+  } catch (err) {
+    // Optionally log or show error
+    return false;
+  }
 }
 
-/**
- * Save session to localStorage
- * @param {string} role
- * @param {string} email
- */
-export function saveSession(role, email) {
+// Save session (same as before)
+export function saveSession(role, email, userObj) {
   localStorage.setItem('isLoggedIn', 'true');
   localStorage.setItem('userRole', role);
   localStorage.setItem('userEmail', email.trim().toLowerCase());
+  if (userObj && userObj.Name) localStorage.setItem('userName', userObj.Name);
+  if (userObj && userObj.ID) localStorage.setItem('userID', userObj.ID);
 }
 
-/**
- * Logout and clear session
- */
+// Logout (same as before)
 export function logout() {
-  localStorage.removeItem('isLoggedIn');
-  localStorage.removeItem('userRole');
-  localStorage.removeItem('userEmail');
+  localStorage.clear();
 }
