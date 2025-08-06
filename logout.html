@@ -15,10 +15,9 @@
   <img src="https://www.naveo.mu/wp-content/uploads/2023/10/NAVEO-Logo-WHITE.svg" alt="Naveo FSM" class="logo">
   <div class="msg">You have been logged out.<br>Redirecting to login...</div>
   <script>
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userEmail');
-    setTimeout(function(){ location.href = 'login.html'; }, 1400);
+    // Clear localStorage/session
+    localStorage.clear();
+    setTimeout(function(){ location.href = 'login.html'; }, 1300);
   </script>
 </body>
 </html>
