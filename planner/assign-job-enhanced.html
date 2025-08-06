@@ -194,14 +194,26 @@
   </div>
 
   <script>
-    const sheetDB = "https://sheetdb.io/api/v1/xg2dgvssxzvag";
+    // Use Cloudflare Worker Proxy for ALL SheetDB calls!
+    const sheetDB = "https://sheetdb-proxy.navegeo33.workers.dev/api/v1/xg2dgvssxzvag";
     let jobTypes = [];
 
     async function loadDropdowns() {
-      const techs = await fetch(`${sheetDB}/Technicians`).then(r=>r.json());
+      // Uncomment the one you really use:
+      // --- For Users sheet with Role column ---
+      const techs = await fetch(`${sheetDB}/Users/search?Role=technician&Status=Active`).then(r=>r.json());
+      // --- OR for Technicians sheet directly ---
+      // const techs = await fetch(`${sheetDB}/Technicians`).then(r=>r.json());
+
       const techSel = document.getElementById("technician");
       techSel.innerHTML = '<option value="">-- Select --</option>';
-      techs.forEach(t => techSel.add(new Option(t.FullName, t.TechnicianID)));
+      techs.forEach(t => {
+        // Adapt to your sheet: try t.FullName, t.Name, t.TechnicianID, t.Email
+        techSel.add(new Option(
+          t.FullName || t.Name || t.Email,
+          t.TechnicianID || t.ID || t.Email
+        ));
+      });
 
       jobTypes = await fetch(`${sheetDB}/JobTypes`).then(r=>r.json());
     }
