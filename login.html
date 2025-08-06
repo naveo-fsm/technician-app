@@ -77,7 +77,7 @@
       if (!role || !email || !pwd) {
         err.textContent = "All fields are required."; err.style.display = "block"; return;
       }
-      // --- SheetDB Live Auth ---
+      const SHEETDB_URL = "https://sheetdb-proxy.navegeo33.workers.dev/api/v1/xg2dgvssxzvag/Users";
       const user = await validateLogin(role, email, pwd);
       if (user) {
         saveSession(role, email, user);
