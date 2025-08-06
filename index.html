@@ -1,45 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Naveo FSM - Loading</title>
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Naveo FSM</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="https://www.naveo.mu/favicon.png"/>
   <style>
     body {
       background: #003366;
       color: #fff;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      flex-direction: column;
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      font-family: 'Segoe UI', Arial, sans-serif;
     }
-    .spinner {
+    .logo { margin-bottom: 1rem; }
+    .loader {
       border: 5px solid #f3f3f3;
       border-top: 5px solid #00c9a7;
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
+      width: 60px; height: 60px;
       animation: spin 1s linear infinite;
-      margin-bottom: 20px;
+      margin-bottom: 1.5rem;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .footer { position: fixed; bottom: 12px; color: #bbb; font-size: 0.95rem; }
   </style>
 </head>
 <body>
-  <div class="spinner"></div>
-  <div>Launching FSM Planner...</div>
-
+  <img src="https://www.naveo.mu/wp-content/uploads/2023/10/NAVEO-Logo-WHITE.svg" alt="Naveo FSM" class="logo" style="height:60px;">
+  <div class="loader"></div>
+  <div id="msg">Loading FSM Platform...</div>
+  <div class="footer">&copy; 2025 Naveo Ltd &mdash; Field Service Management</div>
   <script>
-    // Redirect after short delay
-    setTimeout(() => {
-      window.location.href = "planner/planner.html";
-    }, 1000);
+    // Redirect based on session
+    setTimeout(function() {
+      let role = localStorage.getItem('userRole');
+      if (localStorage.getItem('isLoggedIn') === 'true' && role) {
+        if (role === 'planner') location.href = 'planner/planner.html';
+        else if (role === 'technician') location.href = 'technician/assigned-jobs.html';
+        else location.href = 'login.html';
+      } else {
+        location.href = 'login.html';
+      }
+    }, 1100);
   </script>
 </body>
 </html>
