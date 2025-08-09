@@ -1,23 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Logout | Naveo FSM</title>
-  <link rel="icon" type="image/png" href="https://www.naveo.mu/favicon.png"/>
-  <style>
-    body { background: #003366; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: Arial, sans-serif;}
-    .msg { margin: 2rem; font-size: 1.3rem; }
-    .logo { height: 48px; margin-bottom: 1.5rem; }
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Logout</title>
+  <style>body{font-family:system-ui;display:grid;place-items:center;height:100vh} .card{padding:1rem}</style>
 </head>
 <body>
-  <img src="https://www.naveo.mu/wp-content/uploads/2023/10/NAVEO-Logo-WHITE.svg" alt="Naveo FSM" class="logo">
-  <div class="msg">You have been logged out.<br>Redirecting to login...</div>
-  <script>
-    // Clear localStorage/session
-    localStorage.clear();
-    setTimeout(function(){ location.href = 'login.html'; }, 1300);
-  </script>
+  <div class="card"><p>Signing you out…</p></div>
+  <script src="auth.js"></script>
+  <script>Auth.logout(); location.replace('login.html');</script>
 </body>
 </html>
