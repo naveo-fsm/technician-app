@@ -1,62 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Naveo FSM – Planner</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --primary:#0056b3; --secondary:#eaf2fb; --success:#28a745; --danger:#dc3545;
-    --muted:#6c757d; --text:#23272f; --bg:#f7fafd; --card:#fff; --table:#fcfcfc;
-    --input:#f4f8fb; --border:#edf0f6; --radius-lg:12px; --radius:6px; --shadow:0 4px 18px rgba(0,0,0,.08);
-  }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;background:var(--bg);font:16px/1.4 Poppins,system-ui,Segoe UI,Arial;color:var(--text);display:flex}
-  .sidebar{width:260px;background:#fff;border-right:1px solid var(--border);padding:24px 16px;box-shadow:var(--shadow)}
-  .brand{font-weight:700;color:var(--primary);font-size:1.2rem;margin-bottom:18px}
-  .nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:6px 0;border-radius:8px;color:var(--text);text-decoration:none}
-  .nav a:hover,.nav a.active{background:var(--secondary);color:var(--primary)}
-  .content{flex:1; padding:16px}
-  iframe{width:100%;height:calc(100vh - 32px);border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow)}
-  @media (max-width:900px){.sidebar{position:fixed;inset:0 auto 0 0;z-index:10;transform:translateX(0)} .content{margin-left:260px}}
-  @media (max-width:640px){.sidebar{width:220px} .content{margin-left:220px}}
-</style>
+  <meta charset="utf-8"/>
+  <title>Naveo FSM • Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --primary:#0056b3; --secondary:#eaf2fb; --muted:#6c757d;
+      --text:#23272f; --bg:#f7fafd; --card:#fff; --border:#edf0f6;
+      --radius-card:12px; --radius-el:6px; --shadow:0 4px 18px rgba(0,0,0,.08);
+      --sidebar-w:260px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:16px;
+      display:flex;min-height:100vh;
+    }
+    /* Sidebar */
+    .sidebar{
+      width:var(--sidebar-w);background:#fff;border-right:1px solid var(--border);
+      display:flex;flex-direction:column;gap:10px;padding:22px 16px;
+      position:fixed;inset:0 auto 0 0;z-index:3;box-shadow:var(--shadow);
+      transform:translateX(0);transition:transform .25s ease;
+    }
+    .brand{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .brand h1{font-size:1.05rem;color:var(--primary);margin:0;font-weight:800}
+    .hamburger{display:none;background:var(--secondary);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
+    nav{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+    .link{
+      display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+      color:#16324a;text-decoration:none;font-weight:600;border:1px solid transparent;
+    }
+    .link:hover{background:var(--secondary)}
+    .link[aria-current="page"]{background:var(--secondary);border-color:#d7e5f7;color:var(--primary)}
+    .icon{width:18px;height:18px;display:inline-block}
+    .group-title{margin:10px 4px 4px;color:var(--muted);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .sep{height:1px;background:var(--border);margin:8px 0}
+    .bottom{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+    .btn{border:0;border-radius:var(--radius-el);padding:9px 12px;cursor:pointer;font-weight:700}
+    .btn-muted{background:#e7ebf2}
+    .logout{background:#fff;border:1px solid var(--border);color:#b32020}
+
+    /* Main */
+    .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;
+    }
+    .title{font-size:1rem;color:var(--primary);font-weight:700}
+    .frame-wrap{flex:1;padding:16px}
+    iframe{
+      width:100%;height:calc(100vh - 84px);border:1px solid var(--border);
+      border-radius:12px;background:#fff;box-shadow:var(--shadow)
+    }
+
+    /* Mobile */
+    @media (max-width: 900px){
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0)}
+      .hamburger{display:inline-block}
+      .main{margin-left:0}
+      iframe{height:calc(100vh - 70px)}
+    }
+  </style>
 </head>
 <body>
-  <aside class="sidebar" aria-label="Planner navigation">
-    <div class="brand">Naveo Planner</div>
-    <nav class="nav">
-      <a href="#" data-page="dashboard.html" class="active">📊 Dashboard</a>
-      <a href="#" data-page="planner-jobs.html">📋 Service Orders</a>
-      <a href="#" data-page="assign-job-enhanced.html">📝 Create Order</a>
-      <a href="#" data-page="planner-inventory.html">📦 Inventory</a>
-      <a href="#" data-page="assign-inventory-selector.html">🧩 Assign Inventory</a>
-      <a href="#" data-page="admin-tech-master.html">👷 Tech Master</a>
-      <a href="#" data-page="admin-intervention-master.html">🧰 Intervention Types</a>
-      <a href="#" data-page="realtime-map.html">🗺 Live Map</a>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar" aria-label="Planner navigation">
+    <div class="brand">
+      <h1>Naveo Planner</h1>
+      <button class="hamburger" id="closeNav" aria-label="Close menu">✕</button>
+    </div>
+
+    <nav id="nav">
+      <div class="group-title">Planner</div>
+      <a href="#" class="link" data-page="planner-dashboard.html" aria-current="page">
+        <span class="icon">📊</span><span>Dashboard</span>
+      </a>
+      <a href="#" class="link" data-page="planner-jobs.html">
+        <span class="icon">📋</span><span>Service Orders</span>
+      </a>
+      <a href="#" class="link" data-page="planner-inventory.html">
+        <span class="icon">📦</span><span>Inventory</span>
+      </a>
+      <a href="#" class="link" data-page="realtime-map.html">
+        <span class="icon">🗺</span><span>Routes</span>
+      </a>
+      <a href="#" class="link" data-page="assign-job-enhanced.html">
+        <span class="icon">📝</span><span>Assign Job</span>
+      </a>
+      <a href="#" class="link" data-page="history.html">
+        <span class="icon">📜</span><span>History</span>
+      </a>
+      <a href="#" class="link" data-page="reports.html">
+        <span class="icon">📑</span><span>Reports</span>
+      </a>
+
+      <div class="sep"></div>
+      <div class="group-title">Admin</div>
+      <a href="#" class="link" data-page="admin-intervention-master.html">
+        <span class="icon">🧩</span><span>Intervention Types</span>
+      </a>
+      <a href="#" class="link" data-page="admin-tech-master.html">
+        <span class="icon">👷</span><span>Technicians</span>
+      </a>
+      <a href="#" class="link" data-page="assign-inventory-selector.html">
+        <span class="icon">🧰</span><span>Assign Inventory</span>
+      </a>
     </nav>
+
+    <div class="sep"></div>
+    <div class="bottom">
+      <button class="btn btn-muted" id="openDocs" type="button" title="Open README in new tab">Help / README</button>
+      <button class="btn logout" id="logoutBtn" type="button">Logout</button>
+    </div>
   </aside>
 
-  <main class="content">
-    <iframe id="frame" title="Planner content" src="dashboard.html"></iframe>
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div class="title" id="pageTitle">Dashboard</div>
+      <button class="hamburger" id="openNav" aria-label="Open menu">☰</button>
+    </div>
+    <div class="frame-wrap">
+      <!-- default page -->
+      <iframe id="frameView" title="Planner content frame" src="planner-dashboard.html" referrerpolicy="no-referrer"></iframe>
+    </div>
   </main>
 
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
+  <!-- Config + Auth -->
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/auth.js"></script>
   <script>
-    // protect planner
-    try { Auth.requireRole('planner'); } catch(e) {}
+    try { Auth.requireRole && Auth.requireRole('planner'); } catch (e) {}
 
-    const frame=document.getElementById('frame');
-    document.querySelectorAll('.nav a').forEach(a=>{
-      a.addEventListener('click',e=>{
-        e.preventDefault();
-        document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));
-        a.classList.add('active');
-        frame.src=a.dataset.page;
-      });
+    const frame = document.getElementById('frameView');
+    const pageTitle = document.getElementById('pageTitle');
+    const sidebar = document.getElementById('sidebar');
+
+    document.getElementById('nav').addEventListener('click', (e)=>{
+      const a = e.target.closest('a.link');
+      if(!a) return;
+      e.preventDefault();
+      const page = a.dataset.page;
+      if(!page) return;
+
+      frame.src = page;
+      pageTitle.textContent = a.textContent.trim();
+      document.querySelectorAll('.link').forEach(n=>n.removeAttribute('aria-current'));
+      a.setAttribute('aria-current','page');
+      sidebar.classList.remove('open');
     });
+
+    document.getElementById('openNav').addEventListener('click', ()=> sidebar.classList.add('open'));
+    document.getElementById('closeNav').addEventListener('click', ()=> sidebar.classList.remove('open'));
+
+    document.getElementById('openDocs').addEventListener('click', ()=>{
+      window.open('../README.html', '_blank', 'noopener');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{
+      try { Auth.logout && Auth.logout(); } catch(e){}
+      localStorage.removeItem('NC_TOKEN');
+      window.location.href = '../index.html';
+    });
+
+    (function bootFromQuery(){
+      const p = new URL(location.href).searchParams.get('page');
+      if(!p) return;
+      const link = document.querySelector(`.link[data-page="${p}"]`);
+      if(link){ link.click(); }
+    })();
   </script>
 </body>
 </html>
