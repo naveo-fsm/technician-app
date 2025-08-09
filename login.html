@@ -1,100 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FSM Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FSM – Sign in</title>
 
-  <!-- Optional: your global styles -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Poppins -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
-    :root { --primary:#0056b3; }
+    :root{
+      --primary:#0056b3; --bg:#f7fafd; --card:#fff; --muted:#6c757d;
+      --danger:#dc3545; --input:#f4f8fb; --border:#d6e0ea;
+    }
+    *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; display:grid; place-items:center; background:#f7fafd;
-      font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:#23272f;
+      margin:0;background:var(--bg);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:#23272f;display:flex;align-items:center;justify-content:center;padding:24px;
     }
     .card{
-      width:min(360px, 92vw); background:#fff; padding:28px; border-radius:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,.08);
+      width:100%;max-width:420px;background:var(--card);border-radius:12px;
+      box-shadow:0 4px 18px rgba(0,0,0,.08);padding:28px 24px;
     }
-    h2{margin:0 0 12px; color:var(--primary); font-weight:700; font-size:1.5rem}
-    label{display:block; font-weight:600; color:var(--primary); font-size:.99rem; margin:.6rem 0 .25rem}
+    h1{font-size:1.5rem;margin:0 0 18px;color:var(--primary);font-weight:700}
+    label{display:block;font-weight:600;color:var(--primary);margin:14px 0 6px}
     input[type="email"],input[type="password"]{
-      width:100%; padding:10px 14px; border:1px solid #d6e0ea; background:#f4f8fb; border-radius:6px; outline:0;
+      width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;background:var(--input);
+      outline:none;transition:border .15s;
     }
     input:focus{border-color:var(--primary)}
-    .row{display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin:.5rem 0 0}
-    .row a{color:var(--primary); text-decoration:none}
-    button{
-      width:100%; margin-top:14px; padding:10px 22px; border:0; border-radius:6px;
-      background:var(--primary); color:#fff; font-weight:700; cursor:pointer;
+    .row{
+      display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;color:var(--muted);
+      font-size:.95rem;
     }
-    button:focus{outline:2px solid #143a7b; outline-offset:2px}
-    .err{margin-top:.6rem; color:#dc3545; font-size:.95rem; min-height:1.2em}
+    .row a{color:var(--primary);text-decoration:none}
+    .row a:hover{text-decoration:underline}
+    .btn{
+      width:100%;padding:10px 22px;border-radius:6px;border:none;cursor:pointer;
+      background:var(--primary);color:#fff;font-weight:700;margin-top:10px;
+    }
+    .err{
+      margin-top:12px;font-size:.95rem;color:var(--danger);min-height:1.2em;
+    }
+    .foot-note{margin-top:8px;color:var(--muted);font-size:.85rem;text-align:center}
   </style>
-
-  <!-- Put the PAT in localStorage once (or use a meta tag). You can remove this after first run. -->
-  <script>
-    // Only set if not already present.
-    if (!localStorage.getItem('NC_PAT')) {
-      localStorage.setItem('NC_PAT', '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh');
-    }
-  </script>
-
-  <!-- IMPORTANT: proper script tag, not self-closing -->
-  <script src="assets/js/auth.js" defer></script>
 </head>
 <body>
-  <div class="card" role="form" aria-label="Login form">
-    <h2>Sign in</h2>
-    <form id="loginForm" autocomplete="on">
+  <main class="card" aria-labelledby="title">
+    <h1 id="title">Sign in</h1>
+
+    <form id="login-form" autocomplete="on">
       <label for="email">Email</label>
-      <input id="email" type="email" placeholder="you@example.com" required />
+      <input id="email" name="email" type="email" placeholder="you@example.com" required />
 
       <label for="password">Password</label>
-      <input id="password" type="password" placeholder="••••••••" required />
+      <input id="password" name="password" type="password" placeholder="••••••••" required />
 
       <div class="row">
-        <label style="display:flex;align-items:center;gap:.5rem">
+        <label style="display:flex;gap:8px;align-items:center;color:#23272f;font-weight:500;">
           <input id="remember" type="checkbox" /> Remember
         </label>
-        <a href="#" tabindex="0">Forgot?</a>
+        <a href="#" aria-label="Forgot password">Forgot?</a>
       </div>
 
-      <button type="submit">Log in</button>
-      <div id="err" class="err" role="alert" aria-live="polite"></div>
+      <button class="btn" type="submit">Log in</button>
+      <div id="login-error" class="err" role="alert" aria-live="polite"></div>
     </form>
-  </div>
 
-  <script>
-    // Simple login hook using global Auth from auth.js
-    const form = document.getElementById('loginForm');
-    const err  = document.getElementById('err');
+    <div class="foot-note">Use your Navo FSM credentials.</div>
+  </main>
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      err.textContent = '';
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-
-      try {
-        const session = await Auth.login(email, password);
-        // Role-based redirect
-        const role = (session.role || '').toLowerCase();
-        if (role === 'planner') {
-          location.href = 'planner/planner.html';
-        } else {
-          location.href = 'technician/assigned-jobs.html';
-        }
-      } catch (ex) {
-        err.textContent = ex.message || 'Login failed';
-      }
-    });
-  </script>
+  <!-- Auth script: handles login against NocoDB and redirects to index.html -->
+  <script src="assets/js/auth.js"></script>
 </body>
 </html>
