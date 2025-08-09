@@ -1,278 +1,461 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Technician Master | Naveo FSM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <title>Admin • Technician Master | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
-    :root {
-      --primary: #007bff;
-      --primary-dark: #0056b3;
-      --success: #28a745;
-      --danger: #dc3545;
-      --bg: #f5f7fa;
-      --card-bg: #fff;
-      --radius: 8px;
-      --spacing: 1rem;
-      --text: #333;
-      --border: #e0e0e0;
+    :root{
+      --primary:#0056b3;
+      --secondary:#eaf2fb;
+      --success:#28a745;
+      --danger:#dc3545;
+      --muted:#6c757d;
+      --text:#23272f;
+      --bg:#f7fafd;
+      --card:#fff;
+      --table-bg:#fcfcfc;
+      --input-bg:#f4f8fb;
+      --border:#edf0f6;
+      --radius-card:12px;
+      --radius-el:6px;
+      --shadow:0 4px 18px rgba(0,0,0,.08);
     }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: var(--spacing);
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-size:16px; color:var(--text); background:var(--bg);
     }
-    h2 {
-      text-align: center;
-      color: var(--primary);
-      margin-bottom: var(--spacing);
-      font-size: 1.5rem;
+
+    .wrap{max-width:1100px;margin:34px auto;padding:0 16px}
+    .card{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:32px}
+    h2{margin:0 0 8px;font-size:1.5rem;font-weight:700;color:var(--primary)}
+    .sub{margin:0 0 22px;color:var(--muted);font-size:.96rem}
+
+    .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+    .toolbar-left,.toolbar-right{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .search{position:relative;min-width:240px;flex:1 1 260px}
+    .search input{width:100%;padding:10px 14px 10px 36px;background:var(--input-bg);border:1px solid #d6e0ea;border-radius:var(--radius-el);outline:none}
+    .search input:focus{border-color:var(--primary)}
+    .search svg{position:absolute;top:9px;left:10px;fill:var(--muted)}
+    .btn{border:0;border-radius:var(--radius-el);padding:9px 22px;cursor:pointer;font-weight:700}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-muted{background:#e7ebf2;color:#223}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn:focus{outline:2px solid #9cc2f1;outline-offset:2px}
+
+    .table-wrap{background:var(--table-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;z-index:2;background:var(--secondary);color:var(--primary);text-align:left;font-weight:700;padding:12px;border-bottom:1px solid var(--border)}
+    tbody td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+    tbody tr:hover{background:#f8fbff}
+
+    .avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e9eef6}
+    .badge{display:inline-block;border-radius:999px;padding:4px 10px;font-size:.92rem;font-weight:700;color:#fff}
+    .badge-active{background:var(--success)}
+    .badge-inactive{background:var(--danger)}
+    .badge-tech{background:var(--primary)}
+    .badge-sup{background:#9556b3}
+
+    label{font-weight:700;color:var(--primary);font-size:.99rem;display:block;margin:8px 0 6px}
+    input[type="text"],input[type="email"],input[type="password"],select{
+      width:100%;padding:8px 14px;border:1px solid #d6e0ea;border-radius:var(--radius-el);background:var(--input-bg);outline:none
     }
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: var(--spacing);
-    }
-    .form-grid input,
-    .form-grid select,
-    .form-grid button {
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: #fff;
-      font-size: 1rem;
-    }
-    .form-grid input:focus,
-    .form-grid select:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    .form-grid button {
-      background: var(--success);
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .form-grid button:hover { background: #218838; }
-    .table-container {
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      vertical-align: middle;
-      font-size: 0.95rem;
-    }
-    th {
-      background: var(--primary);
-      color: #fff;
-      font-weight: 600;
-    }
-    tr:nth-child(even) td { background: #f9f9f9; }
-    td img {
-      max-height: 40px;
-      border-radius: var(--radius);
-    }
-    td input[type=file] { padding: 0.4rem; }
-    .actions button {
-      margin-right: 0.3rem;
-      padding: 0.4rem 0.8rem;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      color: #fff;
-      font-size: 0.85rem;
-      transition: opacity 0.3s;
-    }
-    .btn-edit { background: var(--primary); }
-    .btn-save { background: var(--success); }
-    .btn-cancel { background: #6c757d; }
-    .btn-delete { background: var(--danger); }
-    .actions button:hover { opacity: 0.8; }
-    @media (max-width: 600px) {
-      .form-grid { grid-template-columns: 1fr; }
-      th, td { font-size: 0.9rem; }
-      .actions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    input:focus,select:focus{border-color:var(--primary)}
+    .err{color:var(--danger);font-size:.95rem;margin-top:6px}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal{background:#fff;width:100%;max-width:520px;border-radius:12px;box-shadow:var(--shadow);padding:28px 22px}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .modal h3{margin:0;font-size:1.2rem;color:var(--primary)}
+    .close{background:none;border:0;color:var(--muted);font-size:1.3rem;cursor:pointer}
+    .grid{display:grid;gap:12px}
+    .row{display:flex;gap:12px}
+    .row > *{flex:1 1 0}
+    .footer{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+
+    .photo-uploader{display:flex;gap:12px;align-items:center}
+    .photo-uploader img{width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid #e9eef6}
+
+    .pagination{display:flex;gap:8px;justify-content:flex-end;padding:10px 0}
+    .page-btn{background:var(--primary);color:#fff;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
+    .page-btn[disabled]{opacity:.5;cursor:not-allowed}
+
+    @media (max-width:720px){
+      .card{padding:12px}
+      tbody td{padding:8px 6px}
     }
   </style>
-  <script src="../assets/js/auth.js"></script>
-  <script>
-    // ▶️ Your SheetDB base URL for 'Technicians'
-    const SHEETDB_ENDPOINT = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/Technicians';
-
-    // Cloudinary configuration
-    const CLOUD_NAME    = 'dcnji9xvd';
-    const API_KEY       = '463168698129863';
-    const UPLOAD_PRESET = 'YOUR_UNSIGNED_PRESET';
-
-    document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('userRole') !== 'planner') {
-        alert('Access denied');
-        location.href = '../login.html';
-      }
-      loadTechs();
-    });
-
-    async function fetchJSON(url, opts) {
-      const res = await fetch(url, opts);
-      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
-      return res.json();
-    }
-
-    async function loadTechs() {
-      try {
-        const data = await fetchJSON(SHEETDB_ENDPOINT);
-        const tbody = document.querySelector('#techTable tbody');
-        tbody.innerHTML = '';
-        data.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.dataset.id = item.id;
-          tr.innerHTML = `
-            <td>${item.id}</td>
-            <td><span class="label name">${item.name}</span><input class="edit name" type="text" value="${item.name}" style="display:none;"/></td>
-            <td><span class="label email">${item.Email}</span><input class="edit email" type="email" value="${item.Email}" style="display:none;"/></td>
-            <td><span class="label phone">${item.Phone}</span><input class="edit phone" type="text" value="${item.Phone}" style="display:none;"/></td>
-            <td><span class="label pwd">••••••</span><input class="edit pwd" type="text" value="${item.Password}" style="display:none;"/></td>
-            <td><span class="label status">${item.Status}</span><select class="edit status" style="display:none;"><option${item.Status==='Active'? ' selected':''}>Active</option><option${item.Status==='Inactive'? ' selected':''}>Inactive</option></select></td>
-            <td>
-              ${item.PhotoURL ? `<img src="${item.PhotoURL}"/>` : `<span>—</span>`}
-              <input class="edit photo" type="file" accept="image/*" style="display:none;"/>
-            </td>
-            <td class="actions">
-              <button class="btn-edit" onclick="startEdit(this)">Edit</button>
-              <button class="btn-save" onclick="saveEdit(this)" style="display:none;">Save</button>
-              <button class="btn-cancel" onclick="cancelEdit(this)" style="display:none;">Cancel</button>
-              <button class="btn-delete" onclick="deleteTech(this)">Delete</button>
-            </td>`;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        alert('Error loading technicians: ' + err.message);
-      }
-    }
-
-    async function addTech() {
-      const name   = document.getElementById('newName').value.trim();
-      const email  = document.getElementById('newEmail').value.trim();
-      const phone  = document.getElementById('newPhone').value.trim();
-      const pwd    = document.getElementById('newPwd').value.trim();
-      const status = document.getElementById('newStatus').value;
-      const file   = document.getElementById('newPhoto').files[0];
-
-      if (!name || !email || !phone || !pwd) return alert('Name, Email, Phone & Password are required.');
-
-      let photoURL = '';
-      if (file) photoURL = await uploadPhoto(file);
-
-      await fetchJSON(SHEETDB_ENDPOINT, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ data:{ name, Email: email, Phone: phone, Password: pwd, Status: status, PhotoURL: photoURL } })
-      });
-      ['newName','newEmail','newPhone','newPwd','newPhoto'].forEach(id => document.getElementById(id).value = '');
-      loadTechs();
-    }
-
-    async function uploadPhoto(file) {
-      const form = new FormData();
-      form.append('file', file);
-      form.append('upload_preset', UPLOAD_PRESET);
-      form.append('api_key', API_KEY);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: form });
-      const json = await res.json();
-      return json.secure_url;
-    }
-
-    function startEdit(btn) {
-      const tr = btn.closest('tr');
-      tr.querySelectorAll('.label').forEach(el => el.style.display = 'none');
-      tr.querySelectorAll('.edit').forEach(el => el.style.display = 'inline-block');
-      toggleActions(tr, true);
-    }
-    function cancelEdit(btn) {
-      const tr = btn.closest('tr');
-      tr.querySelectorAll('.label').forEach(el => el.style.display = 'inline');
-      tr.querySelectorAll('.edit').forEach(el => el.style.display = 'none');
-      toggleActions(tr, false);
-    }
-    function toggleActions(tr, editing) {
-      tr.querySelector('.btn-edit').style.display   = editing ? 'none':'inline-block';
-      tr.querySelector('.btn-delete').style.display = editing ? 'none':'inline-block';
-      tr.querySelector('.btn-save').style.display   = editing ? 'inline-block':'none';
-      tr.querySelector('.btn-cancel').style.display = editing ? 'inline-block':'none';
-    }
-
-    async function saveEdit(btn) {
-      const tr      = btn.closest('tr');
-      const id      = tr.dataset.id;
-      const name    = tr.querySelector('.edit.name').value.trim();
-      const email   = tr.querySelector('.edit.email').value.trim();
-      const phone   = tr.querySelector('.edit.phone').value.trim();
-      const pwd     = tr.querySelector('.edit.pwd').value.trim();
-      const status  = tr.querySelector('.edit.status').value;
-      const fileEl  = tr.querySelector('.edit.photo');
-      let photoURL  = tr.querySelector('img')?.src || '';
-
-      if (fileEl.files[0]) photoURL = await uploadPhoto(fileEl.files[0]);
-
-      await fetchJSON(`${SHEETDB_ENDPOINT}/${id}`, {
-        method: 'PUT',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ data:{ name, Email: email, Phone: phone, Password: pwd, Status: status, PhotoURL: photoURL } })
-      });
-      cancelEdit(btn);
-      loadTechs();
-    }
-
-    async function deleteTech(btn) {
-      if (!confirm('Are you sure you want to delete?')) return;
-      const id = btn.closest('tr').dataset.id;
-      await fetchJSON(`${SHEETDB_ENDPOINT}/${id}`, { method:'DELETE' });
-      loadTechs();
-    }
-  </script>
 </head>
 <body>
+  <div class="wrap">
+    <div class="card" role="region" aria-label="Technician Master">
+      <h2>Technician Master</h2>
+      <p class="sub">Manage technicians, contact details, status and profile photos.</p>
 
-  <h2>Technician Master</h2>
+      <div class="toolbar" role="toolbar" aria-label="Actions">
+        <div class="toolbar-left">
+          <div class="search" role="search">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 20l-5.6-5.6a7 7 0 10-1.4 1.4L20 21l1-1zM5 11a6 6 0 1112 0A6 6 0 015 11z"/></svg>
+            <input id="q" type="search" placeholder="Search name, email or phone…" aria-label="Search"/>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-muted" id="refreshBtn" aria-label="Refresh list">Refresh</button>
+          <button class="btn btn-primary" id="addBtn" aria-label="Add technician">+ Add Technician</button>
+        </div>
+      </div>
 
-  <div class="form-grid">
-    <input id="newName"   placeholder="Name" />
-    <input id="newEmail"  placeholder="Email" />
-    <input id="newPhone"  placeholder="Phone" />
-    <input id="newPwd"    type="password" placeholder="Password" />
-    <select id="newStatus">
-      <option>Active</option>
-      <option>Inactive</option>
-    </select>
-    <input id="newPhoto"  type="file" accept="image/*" />
-    <button onclick="addTech()">Add Technician</button>
+      <div class="table-wrap" role="table" aria-label="Technicians">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:64px">Photo</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th style="width:110px">Role</th>
+              <th style="width:120px">Status</th>
+              <th style="width:180px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows" aria-live="polite"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button class="page-btn" id="prev">‹</button>
+        <button class="page-btn" id="next">›</button>
+      </div>
+    </div>
   </div>
 
-  <div class="table-container">
-    <table id="techTable">
-      <thead>
-        <tr>
-          <th>ID</th><th>Name</th><th>Email</th><th>Phone</th>
-          <th>Password</th><th>Status</th><th>Photo</th><th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Technician</h3>
+        <button class="close" id="closeModal" aria-label="Close">✕</button>
+      </div>
+
+      <div class="grid">
+        <div class="photo-uploader">
+          <img id="photoPreview" alt="Avatar preview" src="https://dummyimage.com/100x100/e9eef6/7a8499&text=+" />
+          <div>
+            <label for="photoInput">Profile photo</label>
+            <input id="photoInput" type="file" accept="image/*" aria-label="Upload profile photo"/>
+            <div class="err" id="photoErr" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="nameInp">Full name</label>
+            <input id="nameInp" type="text" placeholder="e.g., Jane Doe" autocomplete="off"/>
+            <div class="err" id="nameErr" style="display:none"></div>
+          </div>
+          <div>
+            <label for="roleSel">Role</label>
+            <select id="roleSel">
+              <option value="Technician" selected>Technician</option>
+              <option value="Supervisor">Supervisor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="emailInp">Email</label>
+            <input id="emailInp" type="email" placeholder="you@example.com" autocomplete="off"/>
+            <div class="err" id="emailErr" style="display:none"></div>
+          </div>
+          <div>
+            <label for="phoneInp">Phone</label>
+            <input id="phoneInp" type="text" placeholder="+230 5xx xxxx"/>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="pwdInp">Password</label>
+            <input id="pwdInp" type="password" placeholder="Set/Reset password"/>
+          </div>
+          <div>
+            <label for="statusSel">Status</label>
+            <select id="statusSel">
+              <option value="Active" selected>Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button class="btn btn-muted" id="cancelModal">Cancel</button>
+        <button class="btn btn-primary" id="saveModal">Save</button>
+      </div>
+    </div>
   </div>
 
+  <!-- Config + Auth -->
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+
+  <script>
+    // ---------- Config ----------
+    // Table id can be centralized in config.js as window.TBL.technicians
+    const TABLE_ID = (window.TBL && window.TBL.technicians) || 'mzw1focsec0tekg';
+
+    // Field map (rename here if your column names differ)
+    const FIELD = {
+      id: 'id',
+      name: 'full_name',
+      email: 'email',
+      phone: 'phone',
+      role: 'role',                 // optional
+      status: 'status',
+      password: 'password',         // optional (stored here if you do)
+      photo: 'photo_url'
+    };
+
+    // Cloudinary unsigned upload
+    const CLOUD = {
+      cloudName: 'dcnji9xvd',
+      unsignedPreset: 'gps_uploads',
+      folder: 'gps_jobs' // optional
+    };
+
+    // ---------- NocoDB helper ----------
+    const NC = {
+      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
+      headers: () => ({
+        'accept':'application/json',
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${window.NC_TOKEN}`
+      }),
+      async list(tableId, { where, limit=25, offset=0, sort }={}){
+        const qs = new URLSearchParams();
+        if(where) qs.set('where', JSON.stringify(where));
+        qs.set('limit', String(limit));
+        qs.set('offset', String(offset));
+        if(sort) qs.set('sort', JSON.stringify(sort));
+        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
+        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
+        return res.json(); // { list, count }
+      },
+      async create(tableId, data){
+        const res = await fetch(this.url(tableId,'records'), { method:'POST', headers:this.headers(), body:JSON.stringify(data) });
+        if(!res.ok) throw new Error(`Create ${tableId} ${res.status}`);
+        return res.json();
+      },
+      async update(tableId, id, data){
+        const res = await fetch(this.url(tableId, `records/${id}`), { method:'PATCH', headers:this.headers(), body:JSON.stringify(data) });
+        if(!res.ok) throw new Error(`Update ${tableId} ${res.status}`);
+        return res.json();
+      },
+      async remove(tableId, id){
+        const res = await fetch(this.url(tableId, `records/${id}`), { method:'DELETE', headers:this.headers() });
+        if(!res.ok) throw new Error(`Delete ${tableId} ${res.status}`);
+        return res.json();
+      }
+    };
+
+    // ---------- State ----------
+    let page = 0, PAGE_SIZE = 10;
+    let editing = null; // record or null
+    let pendingPhotoFile = null;
+    const rowsEl = document.getElementById('rows');
+
+    // ---------- UI helpers ----------
+    const $ = s => document.querySelector(s);
+    function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); }
+    const badge = (v, type) => {
+      if(type==='status') return `<span class="badge ${v==='Active'?'badge-active':'badge-inactive'}">${escapeHtml(v||'Active')}</span>`;
+      if(type==='role'){
+        if((v||'').toLowerCase()==='supervisor') return `<span class="badge badge-sup">Supervisor</span>`;
+        return `<span class="badge badge-tech">Technician</span>`;
+      }
+      return '';
+    };
+
+    function openModal(record=null){
+      editing = record;
+      document.getElementById('modalTitle').textContent = editing ? 'Edit Technician' : 'Add Technician';
+
+      $('#nameInp').value = editing?.[FIELD.name] || '';
+      $('#roleSel').value = editing?.[FIELD.role] || 'Technician';
+      $('#emailInp').value = editing?.[FIELD.email] || '';
+      $('#phoneInp').value = editing?.[FIELD.phone] || '';
+      $('#pwdInp').value = ''; // never prefill
+      $('#statusSel').value = editing?.[FIELD.status] || 'Active';
+      document.getElementById('nameErr').style.display='none';
+      document.getElementById('emailErr').style.display='none';
+      document.getElementById('photoErr').style.display='none';
+      pendingPhotoFile = null;
+
+      const src = editing?.[FIELD.photo] || 'https://dummyimage.com/100x100/e9eef6/7a8499&text=+';
+      document.getElementById('photoPreview').src = src;
+
+      document.getElementById('modalBackdrop').style.display='flex';
+      $('#nameInp').focus();
+    }
+    function closeModal(){
+      document.getElementById('modalBackdrop').style.display='none';
+      editing = null;
+      pendingPhotoFile = null;
+      $('#photoInput').value = '';
+    }
+
+    function renderRows(list){
+      if(!list?.length){
+        rowsEl.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">No technicians found.</td></tr>`;
+        return;
+      }
+      rowsEl.innerHTML = list.map(r=>{
+        const photo = r[FIELD.photo] || 'https://dummyimage.com/100x100/e9eef6/7a8499&text=+';
+        return `
+          <tr>
+            <td><img class="avatar" src="${escapeHtml(photo)}" alt="${escapeHtml(r[FIELD.name]||'User')}"/></td>
+            <td>${escapeHtml(r[FIELD.name]||'')}</td>
+            <td>${escapeHtml(r[FIELD.email]||'')}</td>
+            <td>${escapeHtml(r[FIELD.phone]||'')}</td>
+            <td>${badge(r[FIELD.role]||'Technician','role')}</td>
+            <td>${badge(r[FIELD.status]||'Active','status')}</td>
+            <td>
+              <button class="btn btn-muted" aria-label="Edit ${escapeHtml(r[FIELD.name]||'technician')}" onclick='editRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>Edit</button>
+              <button class="btn btn-danger" aria-label="Delete ${escapeHtml(r[FIELD.name]||'technician')}" onclick="deleteRecord('${r[FIELD.id]}','${escapeHtml(r[FIELD.name]||'')}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ---------- Cloudinary upload (unsigned) ----------
+    async function uploadPhoto(file){
+      const url = `https://api.cloudinary.com/v1_1/${CLOUD.cloudName}/image/upload`;
+      const form = new FormData();
+      form.append('file', file);
+      form.append('upload_preset', CLOUD.unsignedPreset);
+      if(CLOUD.folder) form.append('folder', CLOUD.folder);
+      const res = await fetch(url, { method:'POST', body:form });
+      if(!res.ok) throw new Error('Upload failed');
+      const json = await res.json();
+      return json.secure_url || json.url;
+    }
+
+    // ---------- CRUD ----------
+    async function saveFromModal(){
+      const name = $('#nameInp').value.trim();
+      const role = $('#roleSel').value || 'Technician';
+      const email = $('#emailInp').value.trim();
+      const phone = $('#phoneInp').value.trim();
+      const pwd = $('#pwdInp').value.trim();
+      const status = $('#statusSel').value || 'Active';
+
+      // basic validation
+      let ok = true;
+      if(!name){ ok=false; $('#nameErr').textContent='Name is required'; $('#nameErr').style.display='block'; }
+      else $('#nameErr').style.display='none';
+      if(!email){ ok=false; $('#emailErr').textContent='Email is required'; $('#emailErr').style.display='block'; }
+      else $('#emailErr').style.display='none';
+      if(!ok) return;
+
+      let photoUrl = editing?.[FIELD.photo] || '';
+      try{
+        if(pendingPhotoFile){
+          photoUrl = await uploadPhoto(pendingPhotoFile);
+        }
+      }catch(err){
+        document.getElementById('photoErr').textContent = 'Photo upload failed';
+        document.getElementById('photoErr').style.display='block';
+        return;
+      }
+
+      const payload = {
+        [FIELD.name]: name,
+        [FIELD.role]: role,
+        [FIELD.email]: email,
+        [FIELD.phone]: phone,
+        [FIELD.status]: status,
+        [FIELD.photo]: photoUrl
+      };
+      if(pwd) payload[FIELD.password] = pwd;
+
+      try{
+        if(editing){
+          await NC.update(TABLE_ID, editing[FIELD.id], payload);
+        }else{
+          await NC.create(TABLE_ID, payload);
+        }
+        closeModal();
+        await load(page);
+      }catch(err){
+        alert('Save failed. Check API token/permissions.'); console.error(err);
+      }
+    }
+
+    async function deleteRecord(id, label){
+      if(!confirm(`Delete "${label}"? This cannot be undone.`)) return;
+      try{
+        await NC.remove(TABLE_ID, id);
+        await load(page);
+      }catch(err){
+        alert('Delete failed.'); console.error(err);
+      }
+    }
+    window.editRecord = openModal;
+    window.deleteRecord = deleteRecord;
+
+    // ---------- Data fetch ----------
+    async function load(pageIndex=0){
+      const term = (document.getElementById('q').value||'').trim();
+      const where = term
+        ? [["or",
+            [FIELD.name,"like",`%${term}%`],
+            [FIELD.email,"like",`%${term}%`],
+            [FIELD.phone,"like",`%${term}%`]
+          ]]
+        : [];
+      const res = await NC.list(TABLE_ID, { where, limit: PAGE_SIZE, offset: pageIndex*PAGE_SIZE, sort:[ [FIELD.name,"asc"] ] });
+      renderRows(res.list||[]);
+      document.getElementById('prev').disabled = pageIndex<=0;
+      document.getElementById('next').disabled = (pageIndex+1)*PAGE_SIZE >= (res.count||0);
+    }
+
+    // ---------- Events ----------
+    document.getElementById('addBtn').addEventListener('click', ()=>openModal());
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('cancelModal').addEventListener('click', closeModal);
+    document.getElementById('saveModal').addEventListener('click', saveFromModal);
+    document.getElementById('refreshBtn').addEventListener('click', ()=>load(page));
+    document.getElementById('prev').addEventListener('click', ()=>{ page=Math.max(0,page-1); load(page); });
+    document.getElementById('next').addEventListener('click', ()=>{ page=page+1; load(page); });
+    document.getElementById('q').addEventListener('input', ()=>{ page=0; load(page); });
+
+    document.getElementById('photoInput').addEventListener('change', e=>{
+      const f = e.target.files?.[0];
+      pendingPhotoFile = f || null;
+      if(f){
+        const url = URL.createObjectURL(f);
+        document.getElementById('photoPreview').src = url;
+      }
+    });
+
+    // ---------- Init ----------
+    (function init(){
+      try{ Auth.requireRole && Auth.requireRole('planner'); }catch(_){}
+      if(!window.NC_BASE || !window.NC_TOKEN){
+        alert('Missing NC_BASE / NC_TOKEN. Add them in config.js.');
+        return;
+      }
+      load(0);
+      if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+    })();
+  </script>
 </body>
 </html>
