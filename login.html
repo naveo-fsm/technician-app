@@ -1,59 +1,198 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Login | Naveo FSM</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Naveo FSM – Sign in</title>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f5f7fa;margin:0;display:grid;place-items:center;height:100vh}
-    .card{background:#fff;padding:1.25rem 1.5rem;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);min-width:320px}
-    h2{margin:.2rem 0;color:#003366}
-    label{display:block;margin-top:.75rem;font-weight:600;color:#334}
-    input{width:100%;padding:.65rem;border:1px solid #ccd;border-radius:8px;margin-top:.35rem}
-    .row{display:flex;justify-content:space-between;align-items:center;margin-top:.6rem}
-    button{width:100%;margin-top:1rem;padding:.7rem;border:0;border-radius:8px;background:#003366;color:#fff;font-weight:600;cursor:pointer}
-    .err{color:#c0392b;margin-top:.6rem;display:none}
+    :root{
+      --primary:#0056b3;
+      --secondary:#eaf2fb;
+      --success:#28a745;
+      --danger:#dc3545;
+      --muted:#6c757d;
+      --text:#23272f;
+      --bg:#f7fafd;
+      --card:#fff;
+      --table:#fcfcfc;
+      --input-bg:#f4f8fb;
+      --border:#d6e0ea;
+      --line:#edf0f6;
+      --radius-card:12px;
+      --radius:6px;
+      --shadow:0 4px 18px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      font-size:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .card{
+      width:100%;
+      max-width:420px;
+      background:var(--card);
+      border-radius:var(--radius-card);
+      box-shadow:var(--shadow);
+      padding:32px;
+    }
+    h2{
+      margin:0 0 20px;
+      color:var(--primary);
+      font-size:1.5rem;
+      font-weight:700;
+    }
+    label{
+      display:block;
+      font-weight:700;
+      color:var(--primary);
+      font-size:.99rem;
+      margin-bottom:6px;
+    }
+    .field{margin-bottom:14px}
+    input[type="email"],
+    input[type="password"]{
+      width:100%;
+      padding:10px 14px;
+      background:var(--input-bg);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      outline:0;
+      transition:border-color .15s ease;
+      font-family:inherit;
+      font-size:1rem;
+    }
+    input:focus{border-color:var(--primary)}
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:6px;
+    }
+    .muted{color:var(--muted); font-size:.95rem}
+    .link{color:var(--primary); text-decoration:none}
+    .btn{
+      width:100%;
+      border:0;
+      border-radius:var(--radius);
+      padding:9px 22px;
+      font-weight:700;
+      color:#fff;
+      background:var(--primary);
+      cursor:pointer;
+      margin-top:10px;
+    }
+    .btn:focus{outline:2px solid #2e7bd61f; outline-offset:2px}
+    .msg{min-height:22px; margin-top:10px; font-size:.95rem}
+    .msg.error{color:var(--danger)}
+    .msg.ok{color:var(--success)}
+    .badge{
+      display:inline-block;
+      background:var(--secondary);
+      color:var(--primary);
+      border-radius:999px;
+      padding:.2rem .6rem;
+      font-weight:600;
+      font-size:.9rem;
+    }
+    @media (max-width:480px){
+      .card{padding:18px}
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Sign in</h2>
-    <form id="f">
-      <label>Email<input type="email" id="email" required></label>
-      <label>Password<input type="password" id="password" required></label>
-      <div class="row">
-        <label><input type="checkbox" id="remember"> Remember</label>
-        <a href="#" onclick="alert('Ask admin to reset password in NocoDB.');return false;">Forgot?</a>
-      </div>
-      <button>Log in</button>
-      <div class="err" id="err"></div>
-    </form>
-  </div>
 
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
+  <main class="card" role="main" aria-labelledby="signin-title">
+    <h2 id="signin-title">Sign in</h2>
+
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@naveo.mu" autocomplete="username" required />
+        <div id="emailErr" class="msg error" aria-live="polite"></div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+        <div id="pwdErr" class="msg error" aria-live="polite"></div>
+      </div>
+
+      <div class="row">
+        <label class="muted">
+          <input id="remember" type="checkbox" />
+          <span>Remember</span>
+        </label>
+        <a class="link" href="#" onclick="alert('Ask your admin to reset your password.');return false;">Forgot?</a>
+      </div>
+
+      <button type="submit" class="btn" aria-label="Log in">Log in</button>
+      <div id="loginMsg" class="msg" aria-live="polite"></div>
+      <div class="muted" style="margin-top:8px">Environment: <span class="badge">NocoDB</span></div>
+    </form>
+  </main>
+
+  <!-- IMPORTANT: auth.js must be loaded before the handler below -->
+  <script src="assets/js/auth.js"></script>
   <script>
-    document.getElementById('f').addEventListener('submit', async (e)=>{
+    // Small utility for validation messages
+    function setErr(id, text){ const el=document.getElementById(id); el.textContent=text||''; }
+
+    // Restore remembered email
+    (function(){
+      const remembered = localStorage.getItem('remember_email');
+      if(remembered){ email.value = remembered; remember.checked = true; }
+    })();
+
+    loginForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const pwd   = document.getElementById('password').value;
-      const errEl = document.getElementById('err');
-      errEl.style.display='none';
+      setErr('emailErr',''); setErr('pwdErr','');
+      const msg = document.getElementById('loginMsg');
+      msg.className='msg'; msg.textContent='';
+
+      const emailVal = email.value.trim();
+      const pwdVal   = password.value;
+
+      let ok = true;
+      if(!emailVal){ setErr('emailErr','Please enter your email.'); ok=false; }
+      if(!pwdVal){ setErr('pwdErr','Password is required.'); ok=false; }
+      if(!ok) return;
+
       try{
-        const user = await Auth.login(email,pwd);
-        if(document.getElementById('remember').checked){ localStorage.setItem('rememberEmail', email); }
+        // Auth from auth.js (must be defined)
+        const session = await Auth.login(emailVal, pwdVal);
+
+        // Remember email optionally
+        if(remember.checked) localStorage.setItem('remember_email', emailVal);
+        else localStorage.removeItem('remember_email');
+
+        msg.classList.add('ok');
+        msg.textContent = 'Welcome back! Redirecting…';
+
         // Route by role
-        location.replace(user.role==='planner' ? 'planner/index.html' : 'assigned-jobs.html');
+        const role = (session.role || '').toLowerCase();
+        if(role === 'planner'){
+          window.location.href = 'planner/planner.html';
+        }else{
+          window.location.href = 'technician/assigned-jobs.html';
+        }
       }catch(err){
-        errEl.textContent = err.message || 'Login failed';
-        errEl.style.display='block';
+        msg.classList.add('error');
+        msg.textContent = err?.message || 'Auth failed';
       }
     });
-
-    // Pre-fill if remembered
-    const rem = localStorage.getItem('rememberEmail');
-    if(rem) document.getElementById('email').value = rem;
-    if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
   </script>
 </body>
 </html>
