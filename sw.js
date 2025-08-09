@@ -1,38 +1,30 @@
-const CACHE_NAME = 'naveo-fsm-cache-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/logout.html',
-  '/planner/planner.html',
-  '/technician/assigned-jobs.html',
-  '/assets/js/auth.js',
-  // Add more static assets, module screens, icons as needed
+// Very small, safe cache for static assets
+const CACHE = 'fsm-cache-v1';
+const STATIC_ASSETS = [
+  '/technician-app/',
+  '/technician-app/index.html',
+  '/technician-app/login.html',
+  '/technician-app/logout.html',
+  '/technician-app/manifest.json',
+  '/technician-app/auth.js'
 ];
 
-// Install Service Worker & Cache Files
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-  );
-  self.skipWaiting();
+self.addEventListener('install', (e)=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(STATIC_ASSETS)));
 });
-
-// Activate and Clean Up Old Caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+self.addEventListener('activate', (e)=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
 });
-
-// Fetch from cache, fallback to network
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(resp => resp || fetch(event.request))
-  );
+self.addEventListener('fetch', (e)=>{
+  const { request } = e;
+  // Cache-first for same-origin GETs
+  if(request.method === 'GET' && request.url.startsWith(self.location.origin)){
+    e.respondWith(
+      caches.match(request).then(hit => hit || fetch(request).then(res=>{
+        const copy = res.clone();
+        caches.open(CACHE).then(c=>c.put(request, copy));
+        return res;
+      }).catch(()=> hit))
+    );
+  }
 });
