@@ -1,279 +1,503 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Assign Service Order – Naveo FSM Planner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <title>Planner • Assign Service Order | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
-    :root {
-      --primary: #007bff;
-      --primary-dark: #0056b3;
-      --success: #28a745;
-      --danger: #dc3545;
-      --bg: #f5f7fa;
-      --card-bg: #fff;
-      --radius: 8px;
-      --spacing: 1rem;
-      --text: #333;
-      --border: #ddd;
+    :root{
+      --primary:#0056b3;
+      --secondary:#eaf2fb;
+      --success:#28a745;
+      --danger:#dc3545;
+      --muted:#6c757d;
+      --text:#23272f;
+      --bg:#f7fafd;
+      --card:#fff;
+      --input-bg:#f4f8fb;
+      --border:#edf0f6;
+      --table-bg:#fcfcfc;
+      --radius-card:12px;
+      --radius-el:6px;
+      --shadow:0 4px 18px rgba(0,0,0,.08);
     }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: var(--spacing);
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; font-size:16px;
     }
-    h2 {
-      text-align: center;
-      color: var(--primary);
-      margin-bottom: var(--spacing);
-      font-size: 1.5rem;
+    .wrap{max-width:1100px;margin:34px auto;padding:0 16px}
+    .card{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:32px}
+    h2{margin:0 0 6px;font-size:1.5rem;color:var(--primary);font-weight:700}
+    .sub{margin:0 0 22px;color:var(--muted);font-size:.96rem}
+
+    label{display:block;margin:10px 0 6px;font-weight:700;color:var(--primary);font-size:.99rem}
+    input[type="text"],input[type="date"],input[type="time"],input[type="tel"],select,textarea{
+      width:100%;padding:8px 14px;background:var(--input-bg);border:1px solid #d6e0ea;border-radius:var(--radius-el);outline:none;
     }
-    form {
-      max-width: 800px;
-      margin: 0 auto;
-      background: var(--card-bg);
-      padding: var(--spacing);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .form-group {
-      margin-bottom: var(--spacing);
-    }
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: var(--primary-dark);
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 0.6rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 1rem;
-    }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
-    #entries {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .row {
-      display: flex;
-      gap: 0.5rem;
-    }
-    .row > input, .row > select { flex: 1; }
-    .row button {
-      background: var(--danger);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      padding: 0 0.75rem;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .row button:hover { background: #c82333; }
-    .btn {
-      display: inline-block;
-      padding: 0.6rem 1.2rem;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.3s;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-success:hover { background: #218838; }
-    .btn + .btn { margin-left: 0.5rem; }
-    .table-container {
-      overflow-x: auto;
-      margin-top: var(--spacing);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      font-size: 0.95rem;
-    }
-    th { background: var(--primary); color: #fff; }
-    tr:nth-child(even) td { background: #f9f9f9; }
-    #modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6); display: none;
-      justify-content: center; align-items: center;
-    }
-    #modalContent {
-      background: var(--card-bg); padding: var(--spacing);
-      border-radius: var(--radius); width: 90%; max-width: 500px;
-      max-height: 80%; overflow-y: auto;
-    }
-    #modalContent h3 {
-      margin-top: 0; color: var(--primary);
-    }
-    @media (max-width: 600px) {
-      .row { flex-direction: column; }
-      .btn + .btn { margin-left: 0; margin-top: 0.5rem; }
-      form { padding: 0.5rem; }
-    }
+    input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+    textarea{min-height:84px;resize:vertical}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .row > *{flex:1 1 260px}
+    .btn{border:0;border-radius:var(--radius-el);padding:9px 22px;cursor:pointer;font-weight:700}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-muted{background:#e7ebf2}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn:focus{outline:2px solid #9cc2f1;outline-offset:2px}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+
+    .block{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px}
+    .small{font-size:.92rem;color:var(--muted)}
+    .vehicles{display:flex;flex-direction:column;gap:10px}
+    .veh-row{display:grid;grid-template-columns:2.2fr 2fr auto;gap:10px}
+    .veh-row button{white-space:nowrap}
+
+    .table-wrap{margin-top:16px;background:var(--table-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:var(--secondary);color:var(--primary);text-align:left;padding:12px;border-bottom:1px solid var(--border)}
+    tbody td{padding:10px 12px;border-bottom:1px solid var(--border)}
+    tbody tr:hover{background:#f8fbff}
+
+    .files{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:#eef4fb;border:1px solid #dbe7f6;border-radius:999px;padding:6px 10px;font-size:.9rem;color:#274b74}
+    .err{color:var(--danger);font-size:.95rem;margin-top:6px;display:none}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal{background:#fff;width:100%;max-width:560px;border-radius:12px;box-shadow:var(--shadow);padding:28px 22px}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .modal h3{margin:0;color:var(--primary);font-size:1.2rem}
+    .close{background:none;border:0;color:var(--muted);font-size:1.3rem;cursor:pointer}
+    .footer{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
   </style>
 </head>
 <body>
-  <h2>Assign Service Order</h2>
-  <form id="soForm">
-    <div class="form-group">
-      <label for="technician">Technician</label>
-      <select id="technician" required>
-        <option value="">-- Loading… --</option>
-      </select>
-    </div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Assign Service Order</h2>
+      <p class="sub">Create a job, attach files/photos, and preview before sending.</p>
 
-    <div class="form-group">
-      <label>Vehicle & Job Type</label>
-      <div id="entries"></div>
-      <button type="button" class="btn btn-primary" onclick="addRow()">+ Add Vehicle</button>
-    </div>
-
-    <div class="row">
-      <div class="form-group">
-        <label for="soDate">Date</label>
-        <input type="date" id="soDate" required />
+      <div class="toolbar">
+        <div class="small">SO IDs auto-generated (e.g., <code>SO20250809-153012</code>)</div>
+        <div>
+          <button class="btn btn-muted" id="resetForm">Reset</button>
+          <button class="btn btn-primary" id="previewBtn">Preview Summary</button>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="soTime">Time</label>
-        <input type="time" id="soTime" required />
+
+      <div class="block">
+        <div class="row">
+          <div>
+            <label for="technicianSel">Technician</label>
+            <select id="technicianSel" aria-label="Select Technician">
+              <option value="">Loading…</option>
+            </select>
+          </div>
+          <div>
+            <label for="prioritySel">Priority</label>
+            <select id="prioritySel">
+              <option>Normal</option>
+              <option>High</option>
+              <option>Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label for="statusSel">Initial Status</label>
+            <select id="statusSel">
+              <option>Assigned</option>
+              <option>Pending</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="block" style="margin-top:14px">
+        <label>Vehicle(s) & Job Type</label>
+        <div class="vehicles" id="vehiclesBox"></div>
+        <div style="margin-top:8px">
+          <button class="btn btn-muted" id="addVeh">+ Add Vehicle</button>
+        </div>
+        <div class="small" style="margin-top:8px">Add as many rows as needed — each vehicle can have its own job type.</div>
+      </div>
+
+      <div class="block" style="margin-top:14px">
+        <div class="row">
+          <div>
+            <label for="dateInp">Date</label>
+            <input id="dateInp" type="date"/>
+          </div>
+          <div>
+            <label for="timeInp">Time</label>
+            <input id="timeInp" type="time"/>
+          </div>
+          <div>
+            <label for="contactNameInp">Contact Person</label>
+            <input id="contactNameInp" type="text" placeholder="Customer name"/>
+          </div>
+          <div>
+            <label for="contactPhoneInp">Contact Phone</label>
+            <input id="contactPhoneInp" type="tel" placeholder="+230 5xx xxxx"/>
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1 1 100%">
+            <label for="addressInp">Address</label>
+            <textarea id="addressInp" placeholder="Site / address details"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1 1 100%">
+            <label for="notesInp">Planner Notes (optional)</label>
+            <textarea id="notesInp" placeholder="Internal notes for the technician"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="block" style="margin-top:14px">
+        <label for="fileInp">Attachments (images, PDFs)</label>
+        <input id="fileInp" type="file" multiple accept="image/*,.pdf"/>
+        <div id="fileErr" class="err">Upload failed. Please try again.</div>
+        <div class="files" id="filesList" style="margin-top:8px"></div>
+        <div class="small" style="margin-top:6px">Files are uploaded to Cloudinary on submit.</div>
+      </div>
+
+      <div class="table-wrap" style="margin-top:18px">
+        <table>
+          <thead><tr><th style="width:160px">Vehicle</th><th>Job Type</th></tr></thead>
+          <tbody id="summaryTable"><tr><td colspan="2" style="color:var(--muted);padding:14px">Add at least one vehicle row.</td></tr></tbody>
+        </table>
       </div>
     </div>
-
-    <div class="form-group">
-      <label for="address">Address</label>
-      <textarea id="address" rows="2" required></textarea>
-    </div>
-    <div class="row">
-      <div class="form-group">
-        <label for="contactPerson">Contact Person</label>
-        <input type="text" id="contactPerson" required />
-      </div>
-      <div class="form-group">
-        <label for="contactPhone">Contact Phone</label>
-        <input type="tel" id="contactPhone" required />
-      </div>
-    </div>
-
-    <button type="button" class="btn btn-primary" onclick="showSummary()">Preview Summary</button>
-  </form>
-
-  <div class="table-container">
-    <table id="summaryTable">
-      <thead>
-        <tr><th>Vehicle No</th><th>Job Type</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
   </div>
 
-  <div id="modal">
-    <div id="modalContent">
-      <h3>Service Order Summary</h3>
-      <div id="modalBody"></div>
-      <div style="text-align:right; margin-top:1rem;">
-        <button class="btn btn-primary" onclick="closeModal()">Edit</button>
-        <button class="btn btn-success" onclick="sendSO()">Send</button>
+  <!-- Preview Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h3 id="modalTitle">Service Order Summary</h3>
+        <button class="close" id="closeModal" aria-label="Close">✕</button>
+      </div>
+      <div id="modalBody" class="small" style="max-height:60vh;overflow:auto"></div>
+      <div class="footer">
+        <button class="btn btn-muted" id="editBtn">Edit</button>
+        <button class="btn btn-primary" id="sendBtn">Send</button>
       </div>
     </div>
   </div>
 
+  <!-- central config + auth -->
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/auth.js"></script>
   <script>
-    const sheetDB = "https://sheetdb-proxy.navegeo33.workers.dev/api/v1/xg2dgvssxzvag";
-    let jobTypes = [];
+    /* =========================
+       CONFIG (edit as needed)
+       ========================= */
+    // Table IDs (taken from your message). You can centralize them in config.js as window.TBL too.
+    const TBL = Object.assign({
+      technicians: 'mzw1focsec0tekg',
+      service_orders: 'm2dmcyfy30klv76',
+      intervention_types: (window.TBL && window.TBL.intervention_types) || null // optional
+    }, window.TBL || {});
 
-    async function loadDropdowns() {
-      // Technicians from Technicians sheet, only those active
-      const techs = await fetch(`${sheetDB}/Technicians/search?Status=Active`).then(r=>r.json());
-      const techSel = document.getElementById("technician");
-      techSel.innerHTML = '<option value="">-- Select --</option>';
-      techs.forEach(t => {
-        techSel.add(new Option(
-          `${t.FullName} (${t.Email})`,
-          t.TechnicianID
-        ));
-      });
+    // Column map for service_orders
+    const FIELD = {
+      id: 'id',
+      so: 'so_id',
+      tech: 'technician_id',
+      vehicles: 'vehicles',                 // CSV string
+      jobtypes: 'job_type_ids',             // CSV of IDs or names (choose below)
+      date: 'date',
+      time: 'time',
+      address: 'address',
+      contact: 'contact_person',
+      phone: 'contact_phone',
+      status: 'status',
+      priority: 'priority',
+      notes: 'notes',
+      attachments: 'attachments'            // JSON/text array of urls (string)
+    };
 
-      // Load job types from JobTypes sheet
-      jobTypes = await fetch(`${sheetDB}/JobTypes`).then(r=>r.json());
-    }
+    // If you don’t have an intervention types table yet,
+    // set JOB_TYPE_MODE to 'text'. If present, set to 'lookup' to use IDs.
+    const JOB_TYPE_MODE = TBL.intervention_types ? 'lookup' : 'text';
 
-    function addRow() {
-      const container = document.getElementById("entries");
-      const row = document.createElement("div"); row.className="row";
+    // Cloudinary unsigned upload
+    const CLOUD = { cloudName:'dcnji9xvd', unsignedPreset:'gps_uploads', folder:'gps_jobs' };
+
+    /* =========================
+       NocoDB helper
+       ========================= */
+    const NC = {
+      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
+      headers: () => ({
+        'accept':'application/json',
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${window.NC_TOKEN}`
+      }),
+      async list(tableId, { where, limit=1000, offset=0, sort }={}){
+        const qs = new URLSearchParams();
+        if(where) qs.set('where', JSON.stringify(where));
+        qs.set('limit', String(limit));
+        qs.set('offset', String(offset));
+        if(sort) qs.set('sort', JSON.stringify(sort));
+        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
+        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
+        return res.json(); // { list, count }
+      },
+      async create(tableId, data){
+        const res = await fetch(this.url(tableId,'records'), { method:'POST', headers:this.headers(), body:JSON.stringify(data) });
+        if(!res.ok) throw new Error(`Create ${tableId} ${res.status}`);
+        return res.json();
+      }
+    };
+
+    /* =========================
+       Page state
+       ========================= */
+    const vehiclesBox = document.getElementById('vehiclesBox');
+    const summaryBody = document.getElementById('summaryTable');
+
+    let techCache = [];
+    let jobTypesCache = []; // when lookup mode
+    let vehRows = [];       // [{veh:'', job:''|id}]
+    let pendingFiles = [];  // File[]
+    let uploadedUrls = [];  // after upload
+
+    /* =========================
+       UI helpers
+       ========================= */
+    const $ = s => document.querySelector(s);
+    function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); }
+
+    function addVehRow(v=''){
+      const idx = vehRows.length;
+      vehRows.push({veh:v||'', job:''});
+      const row = document.createElement('div');
+      row.className = 'veh-row';
+      row.dataset.idx = idx;
       row.innerHTML = `
-        <input type="text" name="vehicleNo" placeholder="Vehicle No" required />
-        <select name="jobType" required>
-          <option value="">-- Job Type --</option>
-          ${jobTypes.map(j=>`<option value="${j.JobTypeID}">${j.JobTypeName}</option>`).join('')}
-        </select>
-        <button type="button" onclick="this.parentNode.remove(); updateSummary()">–</button>`;
-      row.querySelectorAll("input,select").forEach(el=>el.addEventListener('change', updateSummary));
-      container.append(row);
-      updateSummary();
-    }
+        <input type="text" placeholder="Vehicle No" aria-label="Vehicle number"/>
+        ${JOB_TYPE_MODE==='lookup'
+          ? `<select aria-label="Job type"><option value="">-- Job Type --</option>${jobTypesCache.map(j=>`<option value="${j.id}">${escapeHtml(j.name||j.type||j.title||j.id)}</option>`).join('')}</select>`
+          : `<input type="text" placeholder="Job Type" aria-label="Job type"/>`
+        }
+        <button class="btn btn-danger" type="button" aria-label="Remove row">–</button>
+      `;
+      const [vehInp, jobEl, delBtn] = row.children;
 
-    function updateSummary(){
-      const tbody = document.querySelector("#summaryTable tbody"); tbody.innerHTML = '';
-      document.querySelectorAll("#entries .row").forEach(r=>{
-        const veh = r.querySelector("[name=vehicleNo]").value.trim();
-        const jt  = r.querySelector("[name=jobType] option:checked").text;
-        if(veh && jt) tbody.insertAdjacentHTML('beforeend', `<tr><td>${veh}</td><td>${jt}</td></tr>`);
+      vehInp.value = vehRows[idx].veh;
+      jobEl.value = vehRows[idx].job;
+
+      vehInp.addEventListener('input', ()=>{ vehRows[idx].veh = vehInp.value.trim(); renderSummary(); });
+      jobEl.addEventListener('input', ()=>{ vehRows[idx].job = jobEl.value; renderSummary(); });
+      jobEl.addEventListener('change', ()=>{ vehRows[idx].job = jobEl.value; renderSummary(); });
+      delBtn.addEventListener('click', ()=>{
+        vehRows.splice(idx,1);
+        vehiclesBox.removeChild(row);
+        // reindex dataset.idx
+        [...vehiclesBox.children].forEach((el,i)=>el.dataset.idx=i);
+        renderSummary();
       });
+
+      vehiclesBox.append(row);
+      renderSummary();
     }
 
-    function gatherData(){
-      const soId = 'SO' + new Date().toISOString().replace(/[-:.TZ]/g,'');
-      return Object.assign({
-        SO_ID: soId,
-        TechnicianID: document.getElementById('technician').value,
-        Date: document.getElementById('soDate').value,
-        Time: document.getElementById('soTime').value,
-        Address: document.getElementById('address').value.trim(),
-        ContactPerson: document.getElementById('contactPerson').value.trim(),
-        ContactPhone: document.getElementById('contactPhone').value.trim(),
-      }, (() => {
-        const v=[], j=[];
-        document.querySelectorAll('#entries .row').forEach(r=>{
-          const vv=r.querySelector('[name=vehicleNo]').value.trim();
-          const jj=r.querySelector('[name=jobType]').value;
-          if(vv&&jj){ v.push(vv); j.push(jj); }
+    function renderSummary(){
+      if(vehRows.length===0){
+        summaryBody.innerHTML = `<tr><td colspan="2" style="color:var(--muted);padding:14px">Add at least one vehicle row.</td></tr>`;
+        return;
+      }
+      const rows = vehRows
+        .filter(r=>r.veh && r.job)
+        .map(r=>{
+          const jobText = JOB_TYPE_MODE==='lookup'
+            ? (jobTypesCache.find(j=>String(j.id)===String(r.job))?.name || r.job)
+            : r.job;
+          return `<tr><td>${escapeHtml(r.veh)}</td><td>${escapeHtml(jobText)}</td></tr>`;
         });
-        return { Vehicles: v.join(','), JobTypeIDs: j.join(','), ChecklistStatus:'Pending', InventoryAssigned:'', FileURL:'' };
-      })());
+      summaryBody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="2" style="color:var(--muted);padding:14px">Fill vehicle and job type to preview summary.</td></tr>`;
     }
 
-    function showSummary(){
-      const data = gatherData();
-      document.getElementById('modalBody').innerHTML = '<pre>'+JSON.stringify(data,null,2)+'</pre>';
-      document.getElementById('modal').style.display = 'flex';
+    /* =========================
+       Modal controls
+       ========================= */
+    function openModal(){
+      const html = buildSummaryHTML();
+      document.getElementById('modalBody').innerHTML = html;
+      document.getElementById('modalBackdrop').style.display='flex';
     }
-    function closeModal(){ document.getElementById('modal').style.display = 'none'; }
+    function closeModal(){
+      document.getElementById('modalBackdrop').style.display='none';
+    }
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('editBtn').addEventListener('click', closeModal);
+
+    /* =========================
+       Data loading
+       ========================= */
+    async function loadTechs(){
+      const res = await NC.list(TBL.technicians, { where:[["status","=","Active"]], sort:[[ "full_name","asc" ]] });
+      techCache = (res.list||[]).map(r=>({
+        id: r.id ?? r.TechnicianID ?? r.technician_id,
+        name: r.full_name || r.FullName || r.name || `Tech ${r.id}`
+      }));
+      const sel = document.getElementById('technicianSel');
+      sel.innerHTML = `<option value="">-- Select --</option>` + techCache.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+    }
+
+    async function loadJobTypesIfAny(){
+      if(JOB_TYPE_MODE!=='lookup') return;
+      const res = await NC.list(TBL.intervention_types, { sort:[[ "type","asc" ]] });
+      jobTypesCache = (res.list||[]).map(r=>({
+        id: r.id,
+        name: r.type || r.name || r.title || `Type ${r.id}`
+      }));
+    }
+
+    /* =========================
+       Attachments
+       ========================= */
+    document.getElementById('fileInp').addEventListener('change', (e)=>{
+      pendingFiles = Array.from(e.target.files||[]);
+      const list = document.getElementById('filesList');
+      list.innerHTML = pendingFiles.length ? pendingFiles.map(f=>`<span class="chip">${escapeHtml(f.name)}</span>`).join('') : '';
+    });
+
+    async function uploadAll(){
+      uploadedUrls = [];
+      if(!pendingFiles.length) return;
+      const url = `https://api.cloudinary.com/v1_1/${CLOUD.cloudName}/auto/upload`;
+      for(const f of pendingFiles){
+        const fd = new FormData();
+        fd.append('file', f);
+        fd.append('upload_preset', CLOUD.unsignedPreset);
+        if(CLOUD.folder) fd.append('folder', CLOUD.folder);
+        const res = await fetch(url,{method:'POST',body:fd});
+        if(!res.ok){ throw new Error('upload failed'); }
+        const j = await res.json();
+        uploadedUrls.push(j.secure_url||j.url);
+      }
+    }
+
+    /* =========================
+       Build payload / Submit
+       ========================= */
+    function nextSO(){
+      const d = new Date();
+      const pad = n=>String(n).padStart(2,'0');
+      return `SO${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+
+    function buildSummaryHTML(){
+      const tech = techCache.find(t=>String(t.id)===String($('#technicianSel').value))?.name || '—';
+      const rows = vehRows.filter(r=>r.veh && r.job);
+      const atts = uploadedUrls.length ? uploadedUrls.map(u=>`<li><a href="${u}" target="_blank" rel="noopener">Attachment</a></li>`).join('') : '<li>—</li>';
+
+      return `
+        <div class="row"><div><strong>Technician:</strong> ${escapeHtml(tech)}</div><div><strong>Priority:</strong> ${escapeHtml($('#prioritySel').value)}</div></div>
+        <div class="row" style="margin-top:6px"><div><strong>Date:</strong> ${escapeHtml($('#dateInp').value||'—')}</div><div><strong>Time:</strong> ${escapeHtml($('#timeInp').value||'—')}</div></div>
+        <div style="margin-top:6px"><strong>Address:</strong> ${escapeHtml($('#addressInp').value||'—')}</div>
+        <div style="margin-top:6px"><strong>Contact:</strong> ${escapeHtml($('#contactNameInp').value||'—')} (${escapeHtml($('#contactPhoneInp').value||'—')})</div>
+        <div style="margin-top:10px"><strong>Vehicles & Jobs</strong>
+          <div class="table-wrap" style="margin-top:6px">
+            <table>
+              <thead><tr><th style="width:160px">Vehicle</th><th>Job Type</th></tr></thead>
+              <tbody>
+                ${rows.length ? rows.map(r=>{
+                    const jobText = JOB_TYPE_MODE==='lookup'
+                      ? (jobTypesCache.find(j=>String(j.id)===String(r.job))?.name || r.job)
+                      : r.job;
+                    return `<tr><td>${escapeHtml(r.veh)}</td><td>${escapeHtml(jobText)}</td></tr>`;
+                  }).join('') : `<tr><td colspan="2" style="color:var(--muted);padding:14px">No rows.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="margin-top:10px"><strong>Notes:</strong> ${escapeHtml($('#notesInp').value||'—')}</div>
+        <div style="margin-top:10px"><strong>Attachments:</strong><ul>${atts}</ul></div>
+      `;
+    }
+
     async function sendSO(){
-      const payload={ data: gatherData() };
-      const res = await fetch(`${sheetDB}/ServiceOrders`,{
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
-      });
-      if(res.ok){ alert('Service Order created!'); location.reload(); }
-      else { alert('Error: '+res.status); }
+      // Validate
+      const techId = $('#technicianSel').value;
+      if(!techId){ alert('Please select a technician.'); return; }
+      if(vehRows.filter(r=>r.veh && r.job).length===0){ alert('Add at least one vehicle with a job type.'); return; }
+      // upload attachments (if any)
+      $('#fileErr').style.display = 'none';
+      try{ await uploadAll(); }catch(e){ $('#fileErr').style.display='block'; return; }
+
+      // Build payload
+      const rows = vehRows.filter(r=>r.veh && r.job);
+      const vehiclesCsv = rows.map(r=>r.veh.trim()).join(',');
+      const jobCsv = rows.map(r=>String(r.job).trim()).join(',');
+
+      const data = {
+        [FIELD.so]: nextSO(),
+        [FIELD.tech]: techId,
+        [FIELD.vehicles]: vehiclesCsv,
+        [FIELD.jobtypes]: jobCsv,                      // if lookup, this is ID CSV; if text mode, it’s names
+        [FIELD.date]: $('#dateInp').value || null,
+        [FIELD.time]: $('#timeInp').value || null,
+        [FIELD.address]: $('#addressInp').value.trim(),
+        [FIELD.contact]: $('#contactNameInp').value.trim(),
+        [FIELD.phone]: $('#contactPhoneInp').value.trim(),
+        [FIELD.status]: $('#statusSel').value || 'Assigned',
+        [FIELD.priority]: $('#prioritySel').value || 'Normal',
+        [FIELD.notes]: $('#notesInp').value.trim(),
+        [FIELD.attachments]: uploadedUrls.length ? JSON.stringify(uploadedUrls) : '[]'
+      };
+
+      try{
+        await NC.create(TBL.service_orders, data);
+        alert('✅ Service Order created.');
+        closeModal();
+        resetAll();
+      }catch(err){
+        console.error(err);
+        alert('Creating the service order failed. Check API token/columns.');
+      }
     }
 
-    loadDropdowns().then(addRow);
+    /* =========================
+       Init / events
+       ========================= */
+    function resetAll(){
+      $('#technicianSel').value = '';
+      $('#prioritySel').value = 'Normal';
+      $('#statusSel').value = 'Assigned';
+      $('#dateInp').value = '';
+      $('#timeInp').value = '';
+      $('#addressInp').value = '';
+      $('#contactNameInp').value = '';
+      $('#contactPhoneInp').value = '';
+      $('#notesInp').value = '';
+      $('#fileInp').value = '';
+      $('#filesList').innerHTML = '';
+      pendingFiles = [];
+      uploadedUrls = [];
+      vehRows = [];
+      vehiclesBox.innerHTML = '';
+      addVehRow();
+      renderSummary();
+    }
+
+    document.getElementById('addVeh').addEventListener('click', ()=> addVehRow());
+    document.getElementById('previewBtn').addEventListener('click', openModal);
+    document.getElementById('sendBtn').addEventListener('click', sendSO);
+    document.getElementById('resetForm').addEventListener('click', resetAll);
+
+    (async function init(){
+      try{ Auth.requireRole && Auth.requireRole('planner'); }catch(_){}
+      if(!window.NC_BASE || !window.NC_TOKEN){ alert('Missing NC_BASE / NC_TOKEN in config.js'); return; }
+      await loadJobTypesIfAny();
+      await loadTechs();
+      addVehRow();
+    })();
   </script>
 </body>
 </html>
