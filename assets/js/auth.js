@@ -1,74 +1,96 @@
-// auth.js
-
-const API_URL = "https://api.nocodb.com"; // Replace with your NocoDB URL if self-hosted
-const BASE_ID = "navegeo33"; // If using cloud, you can skip this, else set your base slug
-const TABLE_ID_USERS = "mes51s7dmb2mewm"; // users table ID
-const PAT = "7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh"; // Your Personal Access Token
-
-async function loginUser(email, password) {
-    try {
-        // Fetch user from NocoDB
-        const res = await fetch(`${API_URL}/api/v2/tables/${TABLE_ID_USERS}/records`, {
-            method: "GET",
-            headers: {
-                "xc-token": PAT,
-                "Content-Type": "application/json"
-            }
-        });
-
-        const data = await res.json();
-        if (!data.list) {
-            throw new Error("Invalid response from server");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FSM Login</title>
+    <link rel="stylesheet" href="assets/css/style.css"> <!-- Optional external CSS -->
+    <style>
+        body {
+            background-color: #f5f7fa;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-
-        // Find matching user
-        const user = data.list.find(u => 
-            u.email_address?.toLowerCase() === email.toLowerCase() && 
-            u.password === password &&
-            u.status?.toLowerCase() === "active"
-        );
-
-        if (!user) {
-            alert("Invalid email, password, or inactive account.");
-            return false;
+        .login-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            width: 350px;
         }
-
-        // Save user session
-        localStorage.setItem("loggedInUser", JSON.stringify({
-            id: user.id,
-            email: user.email_address,
-            role: user.user_role,
-            name: user.full_name || "",
-            phone: user.phone || ""
-        }));
-
-        // Redirect based on role
-        if (user.user_role === "Planner") {
-            window.location.href = "planner/planner.html";
-        } else if (user.user_role === "Technician") {
-            window.location.href = "technician/technician.html";
-        } else {
-            window.location.href = "index.html";
+        h2 {
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #003366;
         }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+            color: #333;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #003366;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover {
+            background: #0055a5;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Sign in</h2>
+        <form id="loginForm">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email" required>
 
-        return true;
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" required>
 
-    } catch (error) {
-        console.error("Login error:", error);
-        alert("Login failed. Please try again.");
-        return false;
-    }
-}
+            <div class="remember-forgot">
+                <label>
+                    <input type="checkbox" id="remember"> Remember
+                </label>
+                <a href="#">Forgot?</a>
+            </div>
 
-// Attach to form
-document.addEventListener("DOMContentLoaded", () => {
-    const loginForm = document.querySelector("form");
-    if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const email = document.querySelector("input[type='email']").value;
-            const password = document.querySelector("input[type='password']").value;
-            await loginUser(email, password);
-        });
-    }
-});
+            <button type="submit">Log in</button>
+            <div id="error-message" class="error"></div>
+        </form>
+    </div>
+
+    <!-- Auth JS -->
+    <script src="assets/js/auth.js"></script>
+</body>
+</html>
