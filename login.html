@@ -1,228 +1,100 @@
-/* assets/js/auth.js
-   Naveo FSM – Auth helper for NocoDB v2
-   ---------------------------------------------------------
-   - Looks up users in your NocoDB 'users' table
-   - Exposes Auth.login / Auth.logout / Auth.me / Auth.requireRole
-   - Stores a minimal session in localStorage
-*/
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FSM Login</title>
 
-(function (global) {
-  "use strict";
+  <!-- Optional: your global styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
-  // ======== CONFIG (edit if needed) =========================================
-  const NC_BASE_URL = "https://app.nocodb.com";               // NocoDB host
-  const USERS_TABLE_ID = "mes51s7dmb2mewm";                   // users table id
-  const USERS_FIELDS = [
-    "id",
-    "email_address",
-    "password",
-    "user_role",
-    "status",
-    "phone",
-    "last_login",
-    "address"
-  ];
-
-  // Where we cache the session client-side
-  const SESSION_KEY = "naveo_session";
-
-  // ======== TOKEN RESOLUTION =================================================
-  function readMetaPAT() {
-    const meta = document.querySelector('meta[name="nocodb-pat"]');
-    return meta?.content?.trim() || "";
-  }
-  function resolvePAT() {
-    // Priority: localStorage -> meta tag -> (empty)
-    return (
-      localStorage.getItem("NC_PAT") ||
-      readMetaPAT() ||
-      ""
-    );
-  }
-
-  function ensurePAT() {
-    const pat = resolvePAT();
-    if (!pat) {
-      const err = new Error(
-        "NocoDB PAT is missing. Set it once with: localStorage.setItem('NC_PAT','<your PAT>')"
-      );
-      err.code = "NO_PAT";
-      throw err;
+  <style>
+    :root { --primary:#0056b3; }
+    html,body{height:100%}
+    body{
+      margin:0; display:grid; place-items:center; background:#f7fafd;
+      font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:#23272f;
     }
-    return pat;
-  }
+    .card{
+      width:min(360px, 92vw); background:#fff; padding:28px; border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08);
+    }
+    h2{margin:0 0 12px; color:var(--primary); font-weight:700; font-size:1.5rem}
+    label{display:block; font-weight:600; color:var(--primary); font-size:.99rem; margin:.6rem 0 .25rem}
+    input[type="email"],input[type="password"]{
+      width:100%; padding:10px 14px; border:1px solid #d6e0ea; background:#f4f8fb; border-radius:6px; outline:0;
+    }
+    input:focus{border-color:var(--primary)}
+    .row{display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin:.5rem 0 0}
+    .row a{color:var(--primary); text-decoration:none}
+    button{
+      width:100%; margin-top:14px; padding:10px 22px; border:0; border-radius:6px;
+      background:var(--primary); color:#fff; font-weight:700; cursor:pointer;
+    }
+    button:focus{outline:2px solid #143a7b; outline-offset:2px}
+    .err{margin-top:.6rem; color:#dc3545; font-size:.95rem; min-height:1.2em}
+  </style>
 
-  // ======== LOW-LEVEL API HELPER ============================================
-  async function ncFetch(path, options = {}) {
-    const pat = ensurePAT();
-    const headers = {
-      "Content-Type": "application/json",
-      // NocoDB v2 accepts either of these header names; we’ll send both:
-      "xc-token": pat,
-      "x-api-key": pat,
-      ...(options.headers || {})
-    };
+  <!-- Put the PAT in localStorage once (or use a meta tag). You can remove this after first run. -->
+  <script>
+    // Only set if not already present.
+    if (!localStorage.getItem('NC_PAT')) {
+      localStorage.setItem('NC_PAT', '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh');
+    }
+  </script>
 
-    const res = await fetch(`${NC_BASE_URL}${path}`, {
-      ...options,
-      headers
-    });
+  <!-- IMPORTANT: proper script tag, not self-closing -->
+  <script src="assets/js/auth.js" defer></script>
+</head>
+<body>
+  <div class="card" role="form" aria-label="Login form">
+    <h2>Sign in</h2>
+    <form id="loginForm" autocomplete="on">
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="you@example.com" required />
 
-    if (!res.ok) {
-      let details = "";
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="••••••••" required />
+
+      <div class="row">
+        <label style="display:flex;align-items:center;gap:.5rem">
+          <input id="remember" type="checkbox" /> Remember
+        </label>
+        <a href="#" tabindex="0">Forgot?</a>
+      </div>
+
+      <button type="submit">Log in</button>
+      <div id="err" class="err" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <script>
+    // Simple login hook using global Auth from auth.js
+    const form = document.getElementById('loginForm');
+    const err  = document.getElementById('err');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
       try {
-        const j = await res.json();
-        details = j?.message || JSON.stringify(j);
-      } catch {
-        details = await res.text();
+        const session = await Auth.login(email, password);
+        // Role-based redirect
+        const role = (session.role || '').toLowerCase();
+        if (role === 'planner') {
+          location.href = 'planner/planner.html';
+        } else {
+          location.href = 'technician/assigned-jobs.html';
+        }
+      } catch (ex) {
+        err.textContent = ex.message || 'Login failed';
       }
-      const err = new Error(`NocoDB error ${res.status}: ${details || res.statusText}`);
-      err.status = res.status;
-      throw err;
-    }
-    // Try JSON first, fall back to text
-    const contentType = res.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) return res.json();
-    return res.text();
-  }
-
-  // ======== USERS LOOKUP (by email) =========================================
-  async function getUserByEmail(email) {
-    const where = encodeURIComponent(`(email_address,eq,${JSON.stringify(email)})`);
-    const fields = encodeURIComponent(USERS_FIELDS.join(","));
-    const url = `/api/v2/tables/${USERS_TABLE_ID}/records?where=${where}&limit=1&fields=${fields}`;
-    const data = await ncFetch(url, { method: "GET" });
-    const rows = Array.isArray(data?.list) ? data.list : (Array.isArray(data) ? data : []);
-    return rows[0] || null;
-  }
-
-  async function patchUser(id, payload) {
-    return ncFetch(`/api/v2/tables/${USERS_TABLE_ID}/records/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload)
     });
-  }
-
-  // ======== SESSION HELPERS ==================================================
-  function saveSession(session) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  }
-  function loadSession() {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }
-  function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
-  }
-
-  // ======== PUBLIC API =======================================================
-  const Auth = {
-    /**
-     * Login by email + password (plain-text comparison as per your table).
-     * Returns a session object { id,email,role,status,phone,address }.
-     */
-    async login(email, password) {
-      if (!email || !password) {
-        throw new Error("Email and password are required.");
-      }
-
-      const user = await getUserByEmail(email.trim().toLowerCase());
-      if (!user) {
-        const e = new Error("No account found for this email.");
-        e.code = "NO_USER";
-        throw e;
-      }
-
-      // Your current dataset stores plain text passwords.
-      // If you later hash passwords, replace this comparison.
-      const matches = String(user.password || "") === String(password);
-      if (!matches) {
-        const e = new Error("Invalid email or password.");
-        e.code = "BAD_CREDENTIALS";
-        throw e;
-      }
-
-      // Enforce status
-      const status = (user.status || "").toLowerCase();
-      if (status && status !== "active") {
-        const e = new Error("Your account is not active. Please contact the administrator.");
-        e.code = "INACTIVE";
-        throw e;
-      }
-
-      // Update last_login (best-effort)
-      try {
-        await patchUser(user.id, { last_login: new Date().toISOString() });
-      } catch {
-        // non-fatal
-      }
-
-      const session = {
-        id: user.id,
-        email: user.email_address,
-        role: user.user_role || "",
-        status: user.status || "",
-        phone: user.phone || "",
-        address: user.address || ""
-      };
-
-      saveSession(session);
-      return session;
-    },
-
-    /** Return current session (or null). */
-    me() {
-      return loadSession();
-    },
-
-    /** Clear session. */
-    logout() {
-      clearSession();
-    },
-
-    /** Guard that ensures a user is logged in; if not, redirects to login. */
-    requireAuth(options = {}) {
-      const sess = loadSession();
-      if (!sess) {
-        const loginUrl = options.loginUrl || "/login.html";
-        window.location.href = loginUrl + `?next=${encodeURIComponent(location.pathname + location.search)}`;
-        return null;
-      }
-      return sess;
-    },
-
-    /** Guard that ensures a user has one of the required roles. */
-    requireRole(roles, options = {}) {
-      const sess = this.requireAuth(options);
-      if (!sess) return null;
-      const ok = (Array.isArray(roles) ? roles : [roles])
-        .map(String)
-        .map(r => r.toLowerCase())
-        .includes(String(sess.role || "").toLowerCase());
-      if (!ok) {
-        // default: bounce to home
-        window.location.href = options.fallback || "/";
-        return null;
-      }
-      return sess;
-    },
-
-    /** Utility: get/set PAT at runtime */
-    getPAT() {
-      return resolvePAT();
-    },
-    setPAT(token) {
-      if (!token) throw new Error("Empty token");
-      localStorage.setItem("NC_PAT", token);
-      return token;
-    }
-  };
-
-  // Expose globally
-  global.Auth = Auth;
-
-})(window);
+  </script>
+</body>
+</html>
