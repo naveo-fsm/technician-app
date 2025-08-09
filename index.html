@@ -1,49 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Naveo FSM</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="https://www.naveo.mu/favicon.png"/>
+  <meta name="theme-color" content="#003366"/>
   <style>
-    body {
-      background: #003366;
-      color: #fff;
-      min-height: 100vh;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      font-family: 'Segoe UI', Arial, sans-serif;
-    }
-    .logo { margin-bottom: 1rem; }
-    .loader {
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid #00c9a7;
-      border-radius: 50%;
-      width: 60px; height: 60px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1.5rem;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .footer { position: fixed; bottom: 12px; color: #bbb; font-size: 0.95rem; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f5f7fa;margin:0;display:grid;place-items:center;height:100vh}
+    .card{background:#fff;padding:1.25rem 1.5rem;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);min-width:320px;text-align:center}
+    h1{margin:.2rem 0;color:#003366}
+    p{color:#555;margin:.5rem 0 1rem}
+    a.btn{display:inline-block;background:#003366;color:#fff;text-decoration:none;padding:.6rem 1rem;border-radius:8px}
   </style>
 </head>
 <body>
-  <img src="https://www.naveo.mu/wp-content/uploads/2023/10/NAVEO-Logo-WHITE.svg" alt="Naveo FSM" class="logo" style="height:60px;">
-  <div class="loader"></div>
-  <div id="msg">Loading FSM Platform...</div>
-  <div class="footer">&copy; 2025 Naveo Ltd &mdash; Field Service Management</div>
+  <div class="card">
+    <h1>Naveo FSM</h1>
+    <p id="status">Checking session…</p>
+    <a class="btn" href="login.html" id="loginBtn" style="display:none">Log in</a>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
   <script>
-    // Role-based redirect
-    setTimeout(function() {
-      let role = localStorage.getItem('userRole');
-      if (localStorage.getItem('isLoggedIn') === 'true' && role) {
-        if (role === 'planner') location.href = 'planner/planner.html';
-        else if (role === 'technician') location.href = 'technician/assigned-jobs.html';
-        else location.href = 'login.html';
-      } else {
-        location.href = 'login.html';
+    (async function(){
+      try {
+        const user = Auth.getSession();
+        if(!user){ document.getElementById('loginBtn').style.display='inline-block'; document.getElementById('status').textContent='Please log in.'; return; }
+        // Route by role
+        if(user.role === 'planner'){
+          location.replace('planner/index.html'); // optional planner app
+        }else{
+          location.replace('assigned-jobs.html'); // your technician list page
+        }
+      }catch(e){
+        document.getElementById('status').textContent='Session invalid. Please log in.';
+        document.getElementById('loginBtn').style.display='inline-block';
       }
-    }, 1100);
+    })();
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
   </script>
 </body>
 </html>
