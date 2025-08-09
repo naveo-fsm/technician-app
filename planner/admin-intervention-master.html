@@ -1,220 +1,411 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intervention Type Master</title>
+  <meta charset="utf-8"/>
+  <title>Admin • Intervention Types | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
-    :root {
-      --primary: #007bff;
-      --primary-dark: #0056b3;
-      --bg: #f5f7fa;
-      --card-bg: #fff;
-      --radius: 8px;
-      --spacing: 1rem;
-      --text: #333;
-      --text-muted: #666;
-      --border: #e0e0e0;
+    :root{
+      --primary:#0056b3;
+      --secondary:#eaf2fb;
+      --success:#28a745;
+      --danger:#dc3545;
+      --muted:#6c757d;
+      --text:#23272f;
+      --bg:#f7fafd;
+      --card:#fff;
+      --table-bg:#fcfcfc;
+      --input-bg:#f4f8fb;
+      --border:#edf0f6;
+      --radius-card:12px;
+      --radius-el:6px;
+      --shadow:0 4px 18px rgba(0,0,0,.08);
     }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: var(--spacing);
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-size:16px; color:var(--text); background:var(--bg);
     }
-    h2 {
-      font-size: 1.5rem;
-      color: var(--primary);
-      margin-bottom: var(--spacing);
-      text-align: center;
-    }
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: var(--spacing);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: var(--spacing);
-    }
-    .form-inline {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .form-inline input {
-      flex: 1;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: #fff;
-    }
-    .form-inline button {
-      padding: 0.75rem 1.5rem;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .form-inline button:hover { background: var(--primary-dark); }
 
-    .table-container {
-      overflow-x: auto;
+    /* Shell */
+    .wrap{max-width:1100px;margin:34px auto;padding:0 16px}
+    .card{
+      background:var(--card); border-radius:var(--radius-card); box-shadow:var(--shadow);
+      padding:32px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      font-size: 0. ninerem;
-    }
-    th {
-      background: var(--primary);
-      color: #fff;
-      font-weight: 600;
-    }
-    tr:nth-child(even) td { background: #f9f9f9; }
+    h2{margin:0 0 8px; font-weight:700; font-size:1.5rem; color:var(--primary)}
+    .sub{color:var(--muted); margin:0 0 22px; font-size:.96rem}
 
-    .actions button {
-      margin-right: 0.25rem;
-      padding: 0.4rem 0.8rem;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      color: #fff;
-      font-size: 0.85rem;
-      transition: opacity 0.3s;
+    /* Toolbar */
+    .toolbar{
+      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:18px;
     }
-    .btn-edit   { background: #17a2b8; }
-    .btn-save   { background: #28a745; }
-    .btn-cancel { background: #6c757d; }
-    .btn-delete { background: #dc3545; }
-    .actions button:hover { opacity: 0.8; }
+    .toolbar-left, .toolbar-right{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    .search{
+      position:relative; min-width:240px; flex:1 1 260px;
+    }
+    .search input{
+      width:100%; padding:10px 14px 10px 36px; background:var(--input-bg);
+      border:1px solid #d6e0ea; border-radius:var(--radius-el); outline:none;
+      transition:border .15s;
+    }
+    .search input:focus{border-color:var(--primary)}
+    .search svg{position:absolute; top:9px; left:10px; fill:var(--muted)}
+    .btn{
+      border:0; border-radius:var(--radius-el); padding:9px 22px; cursor:pointer;
+      font-weight:700;
+    }
+    .btn-primary{background:var(--primary); color:#fff}
+    .btn-muted{background:#e7ebf2; color:#223}
+    .btn-danger{background:var(--danger); color:#fff}
+    .btn:focus{outline:2px solid #9cc2f1; outline-offset:2px}
 
-    @media (max-width: 600px) {
-      .form-inline { flex-direction: column; }
-      .actions { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    /* Table */
+    .table-wrap{
+      background:var(--table-bg); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    }
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    thead th{
+      position:sticky; top:0; z-index:2; background:var(--secondary); color:var(--primary);
+      text-align:left; font-weight:700; padding:12px; border-bottom:1px solid var(--border);
+    }
+    tbody td{padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle}
+    tbody tr:hover{background:#f8fbff}
+    .actions{display:flex; gap:8px; align-items:center}
+
+    /* Badges */
+    .badge{display:inline-block; border-radius:999px; padding:4px 10px; font-size:.92rem; font-weight:700; color:#fff}
+    .badge-active{background:var(--success)}
+    .badge-inactive{background:var(--danger)}
+
+    /* Inputs / labels */
+    label{font-weight:700; color:var(--primary); font-size:.99rem; display:block; margin:8px 0 6px}
+    select,input[type="text"],textarea{
+      width:100%; padding:8px 14px; border:1px solid #d6e0ea; border-radius:var(--radius-el);
+      background:var(--input-bg); outline:none; transition:border .15s;
+    }
+    select:focus,input:focus,textarea:focus{border-color:var(--primary)}
+    .hint{color:var(--muted); font-size:.88rem}
+    .err{color:var(--danger); font-size:.95rem; margin-top:6px}
+
+    /* Modal */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; padding:16px;
+    }
+    .modal{background:#fff; width:100%; max-width:420px; border-radius:12px; box-shadow:var(--shadow); padding:28px 22px}
+    .modal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+    .modal h3{margin:0; font-size:1.2rem; color:var(--primary)}
+    .close{background:none;border:0;color:var(--muted);font-size:1.3rem;cursor:pointer}
+    .modal .grid{display:grid; gap:12px}
+    .modal .row{display:flex; gap:12px}
+    .modal .row > *{flex:1 1 0}
+    .modal .footer{display:flex; gap:10px; justify-content:flex-end; margin-top:14px}
+
+    /* Pagination */
+    .pagination{display:flex; gap:8px; justify-content:flex-end; padding:10px 0}
+    .page-btn{background:var(--primary); color:#fff; border:0; border-radius:6px; padding:6px 10px; cursor:pointer}
+    .page-btn[disabled]{opacity:.5; cursor:not-allowed}
+
+    /* Responsive */
+    @media (max-width:720px){
+      .card{padding:12px}
+      .toolbar{gap:8px}
+      tbody td{padding:8px 6px}
     }
   </style>
 </head>
 <body>
-  <h2>Intervention Type Master</h2>
+  <div class="wrap">
+    <div class="card" role="region" aria-label="Intervention Type Master">
+      <h2>Intervention Type Master</h2>
+      <p class="sub">Create, update, and manage intervention types and their default checklists.</p>
 
-  <div class="card">
-    <div class="form-inline" id="addForm">
-      <input type="text" id="newType" placeholder="New Intervention Type" />
-      <input type="text" id="newChecklist" placeholder="Default Checklist Template" />
-      <button onclick="addType()">Add</button>
+      <!-- Toolbar -->
+      <div class="toolbar" role="toolbar" aria-label="Actions">
+        <div class="toolbar-left">
+          <div class="search" role="search">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 20l-5.6-5.6a7 7 0 10-1.4 1.4L20 21l1-1zM5 11a6 6 0 1112 0A6 6 0 015 11z"/></svg>
+            <input id="q" type="search" placeholder="Search intervention types…" aria-label="Search"/>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-muted" id="refreshBtn" aria-label="Refresh list">Refresh</button>
+          <button class="btn btn-primary" id="addBtn" aria-label="Add intervention type">+ Add Type</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap" role="table" aria-label="Intervention Types">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:110px">ID</th>
+              <th>Type</th>
+              <th>Default Checklist</th>
+              <th style="width:160px">Status</th>
+              <th style="width:170px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows" aria-live="polite"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button class="page-btn" id="prev">‹</button>
+        <button class="page-btn" id="next">›</button>
+      </div>
     </div>
   </div>
 
-  <div class="table-container">
-    <table id="typesTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Type</th>
-          <th>Default Checklist</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Intervention Type</h3>
+        <button class="close" id="closeModal" aria-label="Close">✕</button>
+      </div>
+      <div class="grid">
+        <div>
+          <label for="typeName">Type name</label>
+          <input id="typeName" type="text" placeholder="e.g., New Installation" autocomplete="off"/>
+          <div class="err" id="typeErr" style="display:none"></div>
+        </div>
+        <div>
+          <label for="checklistSel">Default checklist (optional)</label>
+          <select id="checklistSel" aria-label="Default checklist">
+            <option value="">— None —</option>
+          </select>
+          <div class="hint">Choose a checklist to attach by default when this intervention is scheduled.</div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="statusSel">Status</label>
+            <select id="statusSel">
+              <option value="Active" selected>Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <div>
+            <label for="notes">Notes (optional)</label>
+            <input id="notes" type="text" placeholder="Short description"/>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn btn-muted" id="cancelModal">Cancel</button>
+        <button class="btn btn-primary" id="saveModal">Save</button>
+      </div>
+    </div>
   </div>
 
+  <!-- Config + Auth -->
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+
   <script>
-    const sheetDBEndpoint = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/collections/InterventionTypes';
-    async function fetchJSON(url, opts) {
-      const res = await fetch(url, opts);
-      if (!res.ok) throw new Error(res.statusText);
-      return res.json();
+    // ======= TABLE IDS (from config.js preferred; fallback to known IDs) =======
+    const TABLES = {
+      intervention_types: (window.TBL && window.TBL.intervention_types) || 'mb4yox88hd24r0h',
+      checklists: 'ma917pno6w5e1ed' // provided in your list
+    };
+
+    // ======= NocoDB helper =======
+    const NC = {
+      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
+      headers: () => ({
+        'accept':'application/json',
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${window.NC_TOKEN}`
+      }),
+      async list(tableId, { where, limit=25, offset=0, sort }={}){
+        const qs = new URLSearchParams();
+        if(where) qs.set('where', JSON.stringify(where));
+        qs.set('limit', String(limit));
+        qs.set('offset', String(offset));
+        if(sort) qs.set('sort', JSON.stringify(sort));
+        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
+        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
+        return res.json(); // { list, count }
+      },
+      async create(tableId, data){
+        const res = await fetch(this.url(tableId,'records'), { method:'POST', headers:this.headers(), body:JSON.stringify(data) });
+        if(!res.ok) throw new Error(`Create ${tableId} ${res.status}`);
+        return res.json();
+      },
+      async update(tableId, id, data){
+        // PATCH records => body { "records": [ { "Id": id, ... } ] } also works,
+        // but simpler: /records/{recordId}
+        const res = await fetch(this.url(tableId, `records/${id}`), { method:'PATCH', headers:this.headers(), body:JSON.stringify(data) });
+        if(!res.ok) throw new Error(`Update ${tableId} ${res.status}`);
+        return res.json();
+      },
+      async remove(tableId, id){
+        const res = await fetch(this.url(tableId, `records/${id}`), { method:'DELETE', headers:this.headers() });
+        if(!res.ok) throw new Error(`Delete ${tableId} ${res.status}`);
+        return res.json();
+      }
+    };
+
+    // ======= State =======
+    let page = 0, PAGE_SIZE = 10;
+    let cacheChecklists = [];
+    let editingId = null;
+
+    // ======= UI helpers =======
+    const $ = sel => document.querySelector(sel);
+    const rowsEl = $('#rows');
+    const qEl = $('#q');
+
+    function badge(status){
+      const cls = status === 'Active' ? 'badge-active' : 'badge-inactive';
+      return `<span class="badge ${cls}" aria-label="${status} status">${status}</span>`;
     }
-    async function loadTypes() {
-      try {
-        const data = await fetchJSON(sheetDBEndpoint);
-        const tbody = document.querySelector('#typesTable tbody');
-        tbody.innerHTML = '';
-        data.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.dataset.id = item.id;
-          tr.innerHTML = `
-            <td>${item.id}</td>
-            <td><span class="label-type">${item.type}</span><input class="edit-type" type="text" value="${item.type}" style="display:none;"/></td>
-            <td><span class="label-check">${item.defaultChecklist||''}</span><input class="edit-check" type="text" value="${item.defaultChecklist||''}" style="display:none;"/></td>
-            <td class="actions">
-              <button class="btn-edit"   onclick="startEdit(this)">Edit</button>
-              <button class="btn-save"   onclick="saveEdit(this)" style="display:none;">Save</button>
-              <button class="btn-cancel" onclick="cancelEdit(this)" style="display:none;">Cancel</button>
-              <button class="btn-delete" onclick="deleteType(this)">Delete</button>
-            </td>`;
-          tbody.appendChild(tr);
-        });
-      } catch(err) { alert('Error loading: '+err.message); }
+
+    function openModal(edit=null){
+      editingId = edit?.id || null;
+      $('#modalTitle').textContent = editingId ? 'Edit Intervention Type' : 'Add Intervention Type';
+      $('#typeName').value = edit?.type || '';
+      $('#statusSel').value = edit?.status || 'Active';
+      $('#notes').value = edit?.notes || '';
+      $('#typeErr').style.display='none';
+
+      // preselect checklist
+      const cid = edit?.default_checklist_id || '';
+      $('#checklistSel').value = cid ? String(cid) : '';
+
+      $('#modalBackdrop').style.display='flex';
+      $('#typeName').focus();
     }
-    async function addType() {
-      const type = document.getElementById('newType').value.trim();
-      const checklist = document.getElementById('newChecklist').value.trim();
-      if(!type) return alert('Enter a type');
-      try {
-        await fetchJSON(sheetDBEndpoint, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ data:{ type, defaultChecklist:checklist } })
-        });
-        document.getElementById('newType').value='';
-        document.getElementById('newChecklist').value='';
-        loadTypes();
-      } catch(err){ alert('Error adding: '+err.message); }
+    function closeModal(){
+      $('#modalBackdrop').style.display='none';
+      editingId = null;
     }
-    function startEdit(btn) {
-      const tr=btn.closest('tr');
-      tr.querySelector('.label-type').hidden=true;
-      tr.querySelector('.label-check').hidden=true;
-      tr.querySelector('.edit-type').style.display='block';
-      tr.querySelector('.edit-check').style.display='block';
-      tr.querySelector('.btn-edit, .btn-delete').forEach(e=>e.hidden=true);
-      tr.querySelector('.btn-save, .btn-cancel').forEach(e=>e.style.display='inline-block');
+
+    // ======= Data loading =======
+    async function loadChecklists(){
+      const res = await NC.list(TABLES.checklists, { limit: 200, sort:[["name","asc"]] }).catch(()=>({list:[]}));
+      cacheChecklists = res.list || [];
+      const sel = $('#checklistSel');
+      sel.innerHTML = '<option value="">— None —</option>' + cacheChecklists.map(c=>`<option value="${c.id}">${escapeHtml(c.name||('Checklist '+c.id))}</option>`).join('');
     }
-    function cancelEdit(btn) {
-      const tr=btn.closest('tr');
-      tr.querySelector('.label-type').hidden=false;
-      tr.querySelector('.label-check').hidden=false;
-      tr.querySelector('.edit-type').style.display='none';
-      tr.querySelector('.edit-check').style.display='none';
-      tr.querySelector('.btn-edit, .btn-delete').forEach(e=>e.hidden=false);
-      tr.querySelector('.btn-save, .btn-cancel').forEach(e=>e.style.display='none');
+
+    async function load(pageIndex=0){
+      const term = qEl.value.trim();
+      const where = term ? [["type","like",`%${term}%`]] : [];
+      const res = await NC.list(TABLES.intervention_types, { where, limit: PAGE_SIZE, offset: pageIndex*PAGE_SIZE, sort:[["type","asc"]] });
+      renderRows(res.list || []);
+      // buttons
+      $('#prev').disabled = pageIndex<=0;
+      $('#next').disabled = (pageIndex+1)*PAGE_SIZE >= (res.count||0);
     }
-    async function saveEdit(btn) {
-      const tr=btn.closest('tr');
-      const id=tr.dataset.id;
-      const newType=tr.querySelector('.edit-type').value.trim();
-      const newChecklist=tr.querySelector('.edit-check').value.trim();
-      if(!newType) return alert('Type cannot be empty');
+
+    function renderRows(list){
+      if(!Array.isArray(list) || list.length===0){
+        rowsEl.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:18px">No records found.</td></tr>`;
+        return;
+      }
+      rowsEl.innerHTML = list.map(r=>{
+        const type = escapeHtml(r.type || '');
+        const check = displayChecklistName(r.default_checklist_id);
+        const st = escapeHtml(r.status || 'Active');
+        return `
+          <tr>
+            <td>${r.id}</td>
+            <td>${type}</td>
+            <td>${check}</td>
+            <td>${badge(st)}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-muted" aria-label="Edit ${type}" onclick='editRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>Edit</button>
+                <button class="btn btn-danger" aria-label="Delete ${type}" onclick="deleteRecord('${r.id}','${type}')">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function displayChecklistName(id){
+      if(!id) return '<span style="color:var(--muted)">—</span>';
+      const c = cacheChecklists.find(x=>String(x.id)===String(id));
+      return c ? escapeHtml(c.name || `Checklist ${id}`) : `#${id}`;
+    }
+
+    // ======= CRUD =======
+    async function saveFromModal(){
+      const name = $('#typeName').value.trim();
+      const status = $('#statusSel').value || 'Active';
+      const notes = $('#notes').value.trim();
+      const checklist_id = $('#checklistSel').value || null;
+
+      if(!name){
+        $('#typeErr').textContent = 'Type name is required';
+        $('#typeErr').style.display='block';
+        $('#typeName').focus();
+        return;
+      }
+      const payload = {
+        type: name,
+        status,
+        notes,
+        default_checklist_id: checklist_id
+      };
       try{
-        await fetchJSON(`${sheetDBEndpoint}/${id}`,{
-          method:'PUT',headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ data:{ type:newType, defaultChecklist:newChecklist } })
-        });
-        cancelEdit(btn);
-        loadTypes();
-      } catch(err){ alert('Error saving: '+err.message); }
+        if(editingId){
+          await NC.update(TABLES.intervention_types, editingId, payload);
+        }else{
+          await NC.create(TABLES.intervention_types, payload);
+        }
+        closeModal();
+        await load(page);
+      }catch(err){
+        alert('Save failed. Please check your API token & permissions.');
+        console.error(err);
+      }
     }
-    async function deleteType(btn) {
-      if(!confirm('Remove this type?')) return;
-      const tr=btn.closest('tr');
-      const id=tr.dataset.id;
+
+    async function deleteRecord(id, label){
+      if(!confirm(`Delete "${label}"? This cannot be undone.`)) return;
       try{
-        await fetchJSON(`${sheetDBEndpoint}/${id}`,{ method:'DELETE' });
-        loadTypes();
-      } catch(err){ alert('Error deleting: '+err.message); }
+        await NC.remove(TABLES.intervention_types, id);
+        await load(page);
+      }catch(err){
+        alert('Delete failed.'); console.error(err);
+      }
     }
-    document.addEventListener('DOMContentLoaded', loadTypes);
+
+    // inline helpers needed by onclick in template
+    window.editRecord = openModal;
+    window.deleteRecord = deleteRecord;
+
+    // ======= Utils =======
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    // ======= Events =======
+    $('#addBtn').addEventListener('click', ()=>openModal());
+    $('#closeModal').addEventListener('click', closeModal);
+    $('#cancelModal').addEventListener('click', closeModal);
+    $('#saveModal').addEventListener('click', saveFromModal);
+    $('#refreshBtn').addEventListener('click', ()=>load(page));
+    $('#prev').addEventListener('click', ()=>{ page=Math.max(0,page-1); load(page); });
+    $('#next').addEventListener('click', ()=>{ page=page+1; load(page); });
+    qEl.addEventListener('input', ()=>{ page=0; load(page); });
+
+    // ======= Init (with guard if you want only planners) =======
+    (function init(){
+      try{ Auth.requireRole && Auth.requireRole('planner'); }catch(_){}
+      if(!window.NC_BASE || !window.NC_TOKEN){
+        alert('Missing NC_BASE / NC_TOKEN. Add them in config.js');
+        return;
+      }
+      loadChecklists().then(()=>load(0));
+      if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+    })();
   </script>
 </body>
 </html>
