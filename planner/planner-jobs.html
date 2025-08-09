@@ -1,211 +1,507 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="../assets/js/auth.js"></script>
-  <meta charset="UTF-8" />
-  <title>Planner – Service Orders</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <title>Planner • Service Orders | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- jsPDF + autotable for PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
   <style>
-    :root {
-      --primary: #007bff;
-      --primary-dark: #0056b3;
-      --bg: #f9f9f9;
-      --card-bg: #fff;
-      --border: #ccc;
-      --radius: 6px;
-      --spacing: 1rem;
-      --text: #333;
+    :root{
+      --primary:#0056b3;
+      --secondary:#eaf2fb;
+      --success:#28a745;
+      --danger:#dc3545;
+      --muted:#6c757d;
+      --text:#23272f;
+      --bg:#f7fafd;
+      --card:#fff;
+      --input-bg:#f4f8fb;
+      --border:#edf0f6;
+      --table-bg:#fcfcfc;
+      --radius-card:12px;
+      --radius-el:6px;
+      --shadow:0 4px 18px rgba(0,0,0,.08);
     }
-    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      padding: var(--spacing);
-      color: var(--text);
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:16px;
     }
-    h2 {
-      text-align: center;
-      color: var(--primary);
-      margin-bottom: var(--spacing);
-      font-size: 1.5rem;
+    .wrap{max-width:1200px;margin:34px auto;padding:0 16px}
+    h2{margin:0 0 6px;font-size:1.5rem;color:var(--primary);font-weight:700}
+    .sub{margin:0 0 18px;color:var(--muted);font-size:.96rem}
+
+    .card{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:32px}
+
+    .toolbar{
+      background:#fff;border:1px solid var(--border);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:12px;
+      display:flex;gap:12px;align-items:end;flex-wrap:wrap;justify-content:space-between;
     }
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--spacing);
-      margin-bottom: var(--spacing);
-      justify-content: center;
+    .filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+    label{display:block;margin:0 0 6px;font-weight:700;color:var(--primary);font-size:.99rem}
+    select,input[type="date"],input[type="text"]{
+      padding:8px 14px;background:var(--input-bg);border:1px solid #d6e0ea;border-radius:var(--radius-el);outline:none;
     }
-    .filters label {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.9rem;
-      color: var(--text);
+    select:focus,input:focus{border-color:var(--primary)}
+    .search{display:flex;flex-direction:column}
+    .btn{border:0;border-radius:var(--radius-el);padding:9px 22px;cursor:pointer;font-weight:700}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-muted{background:#e7ebf2}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn:focus{outline:2px solid #9cc2f1;outline-offset:2px}
+
+    .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .kpi{flex:1 1 160px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px}
+    .kpi h3{margin:0 0 6px;font-size:.95rem;color:var(--muted);font-weight:600}
+    .kpi .num{font-size:1.4rem;font-weight:700;color:var(--primary)}
+
+    .table-card{background:var(--table-bg);border:1px solid var(--border);border-radius:var(--radius-card);overflow:hidden}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{
+      position:sticky;top:0;background:var(--secondary);color:var(--primary);
+      text-align:left;padding:12px;border-bottom:1px solid var(--border);user-select:none;cursor:pointer;
     }
-    .filters select, .filters input {
-      padding: 0.5rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      min-width: 120px;
-    }
-    .filters .btn {
-      align-self: flex-end;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .filters .btn:hover { background: var(--primary-dark); }
-    .table-container {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 600px;
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      font-size: 0.95rem;
-    }
-    th {
-      background: var(--primary);
-      color: #fff;
-      cursor: pointer;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    tr:nth-child(even) td { background: #f1f1f1; }
-    .btn-action {
-      padding: 0.4rem 0.8rem;
-      border: none;
-      border-radius: var(--radius);
-      color: #fff;
-      background: var(--primary);
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.3s;
-    }
-    .btn-action:hover { background: var(--primary-dark); }
-    .pagination {
-      margin-top: var(--spacing);
-      text-align: center;
-    }
-    .page-btn {
-      padding: 0.4rem 0.8rem;
-      margin: 0 0.2rem;
-      border: none;
-      border-radius: var(--radius);
-      background: #e0e0e0;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .page-btn.active {
-      background: var(--primary);
-      color: #fff;
-    }
-    .page-btn:hover { background: var(--primary-dark); color:#fff; }
-    .modal {
-      display: none;
-      position: fixed; top:0; left:0;
-      width:100%; height:100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center; align-items: center;
-    }
-    .modal-content {
-      background: var(--card-bg);
-      padding: var(--spacing);
-      border-radius: var(--radius);
-      width: 90%; max-width: 500px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    .modal-content h3 { margin-top:0; color: var(--primary); }
-    @media (max-width: 768px) {
-      .filters { flex-direction: column; align-items: stretch; }
-      .pagination { text-align: left; }
-      table { min-width: unset; }
-    }
+    tbody td{padding:10px 12px;border-bottom:1px solid var(--border)}
+    tbody tr:hover{background:#f8fbff}
+    .badge{display:inline-block;border-radius:999px;padding:4px 10px;font-size:.9rem;font-weight:700;color:#fff}
+    .Assigned{background:#6c757d}
+    .In\ Progress{background:#17a2b8}
+    .Completed{background:#28a745}
+    .Cancelled{background:#dc3545}
+
+    .pagination{display:flex;gap:6px;justify-content:flex-end;padding:12px}
+    .page-btn{background:var(--primary);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer}
+    .page-btn[disabled]{opacity:.45;cursor:not-allowed}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal{background:#fff;width:100%;max-width:520px;border-radius:12px;box-shadow:var(--shadow);padding:28px 22px}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .modal h3{margin:0;color:var(--primary);font-size:1.2rem}
+    .close{background:none;border:0;color:var(--muted);font-size:1.3rem;cursor:pointer}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .row > *{flex:1 1 220px}
+    textarea{min-height:90px;resize:vertical}
+    .footer{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
   </style>
 </head>
 <body>
-  <h2>📋 Planner – Service Orders</h2>
+  <div class="wrap">
+    <h2>📋 Service Orders</h2>
+    <p class="sub">Filter, edit, and export service orders. Click a row’s Edit to update status, technician, vehicles, date or remarks.</p>
 
-  <div class="filters">
-    <label>Technician
-      <select id="techFilter"><option value="">All</option></select>
-    </label>
-    <label>Status
-      <select id="statusFilter">
-        <option value="">All</option>
-        <option value="Assigned">Assigned</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Completed">Completed</option>
-        <option value="Cancelled">Cancelled</option>
-      </select>
-    </label>
-    <label>From
-      <input type="date" id="fromDate" />
-    </label>
-    <label>To
-      <input type="date" id="toDate" />
-    </label>
-    <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
-    <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
-    <button class="btn btn-primary" onclick="exportPDF()">Export PDF</button>
-  </div>
+    <div class="kpis" id="kpiBox">
+      <div class="kpi"><h3>Total</h3><div class="num" id="kpiTotal">0</div></div>
+      <div class="kpi"><h3>Completed</h3><div class="num" id="kpiCompleted">0</div></div>
+      <div class="kpi"><h3>In Progress</h3><div class="num" id="kpiProgress">0</div></div>
+      <div class="kpi"><h3>Cancelled</h3><div class="num" id="kpiCancelled">0</div></div>
+    </div>
 
-  <div class="table-container">
-    <table id="soTable">
-      <thead>
-        <tr>
-          <th onclick="sortTable(0)">ID</th>
-          <th onclick="sortTable(1)">Technician</th>
-          <th onclick="sortTable(2)">Vehicle</th>
-          <th onclick="sortTable(3)">Date</th>
-          <th onclick="sortTable(4)">Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="filters">
+          <div>
+            <label for="techFilter">Technician</label>
+            <select id="techFilter"><option value="">All</option></select>
+          </div>
+          <div>
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="">All</option>
+              <option>Assigned</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label for="fromDate">From</label>
+            <input type="date" id="fromDate"/>
+          </div>
+          <div>
+            <label for="toDate">To</label>
+            <input type="date" id="toDate"/>
+          </div>
+          <div class="search">
+            <label for="q">Search</label>
+            <input type="text" id="q" placeholder="SO ID, contact…"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-muted" id="applyBtn">Apply</button>
+          <button class="btn btn-muted" id="csvBtn">Export CSV</button>
+          <button class="btn btn-primary" id="pdfBtn">Export PDF</button>
+        </div>
+      </div>
 
-  <div class="pagination" id="pagination"></div>
-
-  <div class="modal" id="editModal">
-    <div class="modal-content">
-      <h3>📝 Update Service Order</h3>
-      <input type="hidden" id="editSOID">
-      <label>Technician</label>
-      <input type="text" id="editTech">
-      <label>Vehicle No</label>
-      <input type="text" id="editVehicle">
-      <label>Status</label>
-      <select id="editStatus">
-        <option>Assigned</option>
-        <option>In Progress</option>
-        <option>Completed</option>
-        <option>Cancelled</option>
-      </select>
-      <label>Remarks</label>
-      <textarea id="editRemarks"></textarea>
-      <button class="btn btn-primary" onclick="submitEdit()">💾 Save</button>
+      <div class="table-card">
+        <table aria-label="Service orders">
+          <thead>
+            <tr>
+              <th data-k="so_id">SO ID</th>
+              <th data-k="technician_id">Technician</th>
+              <th data-k="vehicles">Vehicles</th>
+              <th data-k="date">Date</th>
+              <th data-k="status">Status</th>
+              <th data-k="priority">Priority</th>
+              <th style="width:140px">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="pagination">
+          <button class="page-btn" id="prevPg">&lt;</button>
+          <button class="page-btn" id="nextPg">&gt;</button>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- Edit Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h3 id="modalTitle">Update Service Order</h3>
+        <button class="close" id="closeModal" aria-label="Close">✕</button>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="editSO">SO ID</label>
+          <input id="editSO" type="text" readonly/>
+        </div>
+        <div>
+          <label for="editTech">Technician</label>
+          <select id="editTech"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="editVehicles">Vehicles (CSV)</label>
+          <input id="editVehicles" type="text" placeholder="e.g., 1234 MR, 5678 MR"/>
+        </div>
+        <div>
+          <label for="editDate">Date</label>
+          <input id="editDate" type="date"/>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="editStatus">Status</label>
+          <select id="editStatus">
+            <option>Assigned</option>
+            <option>In Progress</option>
+            <option>Completed</option>
+            <option>Cancelled</option>
+          </select>
+        </div>
+        <div>
+          <label for="editPriority">Priority</label>
+          <select id="editPriority">
+            <option>Normal</option>
+            <option>High</option>
+            <option>Urgent</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1 1 100%">
+          <label for="editRemarks">Remarks</label>
+          <textarea id="editRemarks" placeholder="Notes, context, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button class="btn btn-muted" id="cancelModal">Cancel</button>
+        <button class="btn btn-primary" id="saveModal">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- central config + auth -->
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/auth.js"></script>
   <script>
-    // JS unchanged...
+    /* =========================
+       Config — update if needed
+       ========================= */
+    const TBL = Object.assign({
+      technicians: 'mzw1focsec0tekg',
+      service_orders: 'm2dmcyfy30klv76'
+    }, window.TBL || {});
+
+    // Map your actual column names in NocoDB
+    const FIELD = {
+      id: 'id',
+      so_id: 'so_id',
+      technician_id: 'technician_id',
+      vehicles: 'vehicles',          // CSV string
+      date: 'date',
+      time: 'time',                  // optional (not shown in grid)
+      status: 'status',
+      priority: 'priority',
+      remarks: 'remarks',
+      contact: 'contact_person',     // for searching
+      phone: 'contact_phone'         // for searching
+    };
+
+    /* =========================
+       NocoDB helpers
+       ========================= */
+    const NC = {
+      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
+      headers: () => ({
+        'accept':'application/json',
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${window.NC_TOKEN}`
+      }),
+      async list(tableId, { where, limit=500, offset=0, sort }={}){
+        const qs = new URLSearchParams();
+        if(where) qs.set('where', JSON.stringify(where));
+        qs.set('limit', String(limit));
+        qs.set('offset', String(offset));
+        if(sort) qs.set('sort', JSON.stringify(sort));
+        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
+        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
+        return res.json(); // { list, count }
+      },
+      async update(tableId, id, data){
+        const res = await fetch(this.url(tableId, `records/${id}`), { method:'PATCH', headers:this.headers(), body:JSON.stringify(data) });
+        if(!res.ok) throw new Error(`Update ${tableId} ${res.status}`);
+        return res.json();
+      }
+    };
+
+    /* =========================
+       State
+       ========================= */
+    let raw = [];        // all rows
+    let filtered = [];   // after filters
+    let techs = [];      // [{id,name}]
+    let page = 0, pageSize = 12;
+    let sortKey = 'date', sortAsc = false; // newest first
+    const tbody = document.getElementById('tbody');
+
+    /* =========================
+       UI helpers
+       ========================= */
+    function $ (s){ return document.querySelector(s); }
+    function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); }
+    function techName(id){ return techs.find(t=>String(t.id)===String(id))?.name || id || '—'; }
+    function setKPIs(data){
+      $('#kpiTotal').textContent = data.length;
+      $('#kpiCompleted').textContent = data.filter(x=>x[FIELD.status]==='Completed').length;
+      $('#kpiProgress').textContent  = data.filter(x=>x[FIELD.status]==='In Progress').length;
+      $('#kpiCancelled').textContent = data.filter(x=>x[FIELD.status]==='Cancelled').length;
+    }
+
+    function render(){
+      const start = page * pageSize;
+      const view = filtered.slice(start, start + pageSize);
+      if(!view.length){
+        tbody.innerHTML = `<tr><td colspan="7" style="color:#888;padding:14px">No data.</td></tr>`;
+      }else{
+        tbody.innerHTML = view.map(d=>`
+          <tr>
+            <td>${escapeHtml(d[FIELD.so_id]||'')}</td>
+            <td>${escapeHtml(techName(d[FIELD.technician_id]))}</td>
+            <td>${escapeHtml(d[FIELD.vehicles]||'')}</td>
+            <td>${escapeHtml(d[FIELD.date]||'')}</td>
+            <td><span class="badge ${escapeHtml(d[FIELD.status]||'Assigned').replace(' ','\\ ')}">${escapeHtml(d[FIELD.status]||'Assigned')}</span></td>
+            <td>${escapeHtml(d[FIELD.priority]||'Normal')}</td>
+            <td>
+              <button class="btn btn-muted" onclick='openEdit(${JSON.stringify({ id: null, ...d }).replace(/'/g,"&#39;")})'>Edit</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+      document.getElementById('prevPg').disabled = page===0;
+      document.getElementById('nextPg').disabled = (start + pageSize) >= filtered.length;
+      setKPIs(filtered);
+    }
+
+    function applyFilters(){
+      const tech = $('#techFilter').value;
+      const status = $('#statusFilter').value;
+      const from = $('#fromDate').value;
+      const to   = $('#toDate').value;
+      const q    = ($('#q').value || '').trim().toLowerCase();
+
+      filtered = raw.filter(r=>{
+        if(tech && String(r[FIELD.technician_id])!==String(tech)) return false;
+        if(status && r[FIELD.status]!==status) return false;
+        if(from && (r[FIELD.date]||'') < from) return false;
+        if(to   && (r[FIELD.date]||'') > to)   return false;
+        if(q){
+          const hay = [r[FIELD.so_id], r[FIELD.contact], r[FIELD.phone], r[FIELD.vehicles]].map(x=>(x||'').toString().toLowerCase()).join(' ');
+          if(!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      // sort after filtering
+      if(sortKey){
+        filtered.sort((a,b)=>{
+          const av = a[sortKey] ?? '';
+          const bv = b[sortKey] ?? '';
+          return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+        });
+      }
+      page = 0;
+      render();
+    }
+
+    // Sorting
+    document.querySelectorAll('thead th[data-k]').forEach(th=>{
+      th.addEventListener('click', ()=>{
+        const k = th.dataset.k;
+        if(sortKey === k) sortAsc = !sortAsc; else { sortKey = k; sortAsc = true; }
+        applyFilters();
+      });
+    });
+
+    // Export
+    function exportCSV(){
+      const cols = ['SO_ID','Technician','Vehicles','Date','Status','Priority','Remarks'];
+      const rows = filtered.map(d=>[
+        d[FIELD.so_id]||'',
+        techName(d[FIELD.technician_id]),
+        d[FIELD.vehicles]||'',
+        d[FIELD.date]||'',
+        d[FIELD.status]||'',
+        d[FIELD.priority]||'',
+        d[FIELD.remarks]||''
+      ]);
+      const csv = [cols, ...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'service_orders.csv';
+      a.click();
+    }
+
+    function exportPDF(){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({orientation:'landscape'});
+      doc.setFontSize(16);
+      doc.text('Service Orders', 14, 16);
+      const head = [['SO ID','Technician','Vehicles','Date','Status','Priority','Remarks']];
+      const body = filtered.map(d=>[
+        d[FIELD.so_id]||'',
+        techName(d[FIELD.technician_id]),
+        d[FIELD.vehicles]||'',
+        d[FIELD.date]||'',
+        d[FIELD.status]||'',
+        d[FIELD.priority]||'',
+        d[FIELD.remarks]||''
+      ]);
+      doc.autoTable({
+        startY: 22,
+        head, body,
+        styles:{ font:'helvetica', fontSize:8 },
+        headStyles:{ fillColor:[234,242,251], textColor:[0,86,179] },
+        theme:'grid'
+      });
+      doc.save('service_orders.pdf');
+    }
+
+    /* =========================
+       Edit modal
+       ========================= */
+    let editing = null;
+    function fillTechSelect(selectEl, value){
+      selectEl.innerHTML = techs.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+      selectEl.value = value ?? '';
+    }
+
+    function openEdit(row){
+      editing = row;
+      $('#editSO').value = row[FIELD.so_id] || '';
+      fillTechSelect($('#editTech'), row[FIELD.technician_id]);
+      $('#editVehicles').value = row[FIELD.vehicles] || '';
+      $('#editDate').value = row[FIELD.date] || '';
+      $('#editStatus').value = row[FIELD.status] || 'Assigned';
+      $('#editPriority').value = row[FIELD.priority] || 'Normal';
+      $('#editRemarks').value = row[FIELD.remarks] || '';
+
+      document.getElementById('modalBackdrop').style.display='flex';
+    }
+    window.openEdit = openEdit;
+
+    function closeModal(){
+      document.getElementById('modalBackdrop').style.display='none';
+      editing = null;
+    }
+
+    async function saveEdit(){
+      if(!editing) return;
+      const payload = {
+        [FIELD.technician_id]: $('#editTech').value,
+        [FIELD.vehicles]: $('#editVehicles').value.trim(),
+        [FIELD.date]: $('#editDate').value || null,
+        [FIELD.status]: $('#editStatus').value,
+        [FIELD.priority]: $('#editPriority').value,
+        [FIELD.remarks]: $('#editRemarks').value.trim()
+      };
+      try{
+        await NC.update(TBL.service_orders, editing[FIELD.id], payload);
+        closeModal();
+        await loadData(); // refresh
+        applyFilters();
+        alert('✅ Service order updated.');
+      }catch(err){
+        console.error(err);
+        alert('Update failed. Check permissions/columns.');
+      }
+    }
+
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('cancelModal').addEventListener('click', closeModal);
+    document.getElementById('saveModal').addEventListener('click', saveEdit);
+
+    /* =========================
+       Data loading
+       ========================= */
+    async function loadTechs(){
+      const res = await NC.list(TBL.technicians, { sort:[[ 'full_name','asc' ]] });
+      techs = (res.list||[]).map(r=>({
+        id: r.id ?? r.TechnicianID ?? r.technician_id,
+        name: r.full_name || r.FullName || r.name || `Tech ${r.id}`
+      }));
+      // filter select
+      const sel = $('#techFilter');
+      sel.innerHTML = `<option value="">All</option>` + techs.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+    }
+
+    async function loadData(){
+      const res = await NC.list(TBL.service_orders, { limit: 2000, sort:[[ FIELD.date,'desc' ]] });
+      raw = res.list || [];
+      filtered = [...raw];
+      render();
+      setKPIs(raw);
+    }
+
+    // Controls
+    document.getElementById('applyBtn').addEventListener('click', applyFilters);
+    document.getElementById('csvBtn').addEventListener('click', exportCSV);
+    document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+    document.getElementById('prevPg').addEventListener('click', ()=>{ if(page>0){ page--; render(); } });
+    document.getElementById('nextPg').addEventListener('click', ()=>{ if((page+1)*pageSize<filtered.length){ page++; render(); } });
+    document.getElementById('q').addEventListener('input', ()=>{ applyFilters(); });
+
+    (async function init(){
+      try{ Auth.requireRole && Auth.requireRole('planner'); }catch(_){}
+      if(!window.NC_BASE || !window.NC_TOKEN){ alert('Missing NC_BASE / NC_TOKEN in config.js'); return; }
+      await loadTechs();
+      await loadData();
+    })();
   </script>
 </body>
 </html>
