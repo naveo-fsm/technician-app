@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Planner • History | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- jsPDF + autotable for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root{
+      --primary:#0056b3;--secondary:#eaf2fb;--success:#28a745;--danger:#dc3545;--muted:#6c757d;
+      --text:#23272f;--bg:#f7fafd;--card:#fff;--table-bg:#fcfcfc;--input-bg:#f4f8fb;--border:#edf0f6;
+      --radius-card:12px;--radius-el:6px;--shadow:0 4px 18px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:16px}
+    .wrap{max-width:1260px;margin:34px auto;padding:0 16px}
+    h2{margin:0 0 6px;font-size:1.5rem;color:var(--primary);font-weight:700}
+    .sub{margin:0 0 18px;color:var(--muted);font-size:.96rem}
+
+    /* toolbar */
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:12px 0 18px}
+    label{display:block;margin:0 0 6px;font-weight:700;color:var(--primary);font-size:.99rem}
+    select,input[type="date"],input[type="text"]{
+      padding:8px 14px;background:var(--input-bg);border:1px solid #d6e0ea;border-radius:var(--radius-el);outline:none
+    }
+    select:focus,input:focus{border-color:var(--primary)}
+    .btn{border:0;border-radius:var(--radius-el);padding:9px 22px;cursor:pointer;font-weight:700}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-muted{background:#e7ebf2}
+    .btn-danger{background:var(--danger);color:#fff}
+    .chip{padding:7px 12px;border:1px solid var(--border);border-radius:18px;background:#fff;cursor:pointer}
+    .chip.active{background:var(--secondary);border-color:#d7e5f7;color:var(--primary);font-weight:700}
+
+    .card{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:24px;border:1px solid var(--border)}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .row>*{flex:1 1 220px}
+    .row.compact>*{flex:0 0 auto}
+
+    /* table */
+    .table-card{background:var(--table-bg);border:1px solid var(--border);border-radius:var(--radius-card);overflow:auto}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:var(--secondary);color:var(--primary);padding:12px;border-bottom:1px solid var(--border);text-align:left;cursor:pointer}
+    tbody td{padding:10px 12px;border-bottom:1px solid var(--border)}
+    tbody tr:hover{background:#f9fbff}
+    .badge{display:inline-block;padding:4px 10px;border-radius:999px;color:#fff;font-weight:700;font-size:.9rem}
+    .st-Completed{background:var(--success)} .st-In\ Progress{background:#17a2b8}
+    .st-Assigned{background:#6c8ef5} .st-Cancelled{background:var(--danger)}
+
+    /* pagination */
+    .pagination{display:flex;gap:8px;justify-content:flex-end;padding:10px 4px}
+    .page-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer}
+    .page-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+    /* modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10}
+    .modal.open{display:flex}
+    .modal-card{background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);width:min(920px,96vw);max-height:80vh;display:flex;flex-direction:column}
+    .modal-hd{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--border)}
+    .modal-ct{padding:12px;overflow:auto}
+    .xbtn{background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>📜 History</h2>
+    <p class="sub">Browse and export past Service Orders. Click a row for full details.</p>
+
+    <div class="card">
+      <!-- Global filters -->
+      <div class="toolbar" role="region" aria-label="Filters">
+        <div><label for="fFrom">From</label><input type="date" id="fFrom"></div>
+        <div><label for="fTo">To</label><input type="date" id="fTo"></div>
+
+        <div>
+          <label>Status</label>
+          <div class="row compact" id="statusChips">
+            <button class="chip" data-status="">All</button>
+            <button class="chip" data-status="Assigned">Assigned</button>
+            <button class="chip" data-status="In Progress">In&nbsp;Progress</button>
+            <button class="chip" data-status="Completed">Completed</button>
+            <button class="chip" data-status="Cancelled">Cancelled</button>
+          </div>
+        </div>
+
+        <div style="min-width:220px">
+          <label for="fTech">Technician</label>
+          <select id="fTech"><option value="">All</option></select>
+        </div>
+
+        <div style="min-width:260px">
+          <label for="fSearch">Search (SO ID / Contact / Address)</label>
+          <input type="text" id="fSearch" placeholder="Type to filter…"/>
+        </div>
+
+        <div class="row compact">
+          <button class="btn btn-primary" id="fApply">Apply</button>
+          <button class="btn btn-muted" id="fReset">Reset</button>
+        </div>
+
+        <div class="row compact" style="margin-left:auto">
+          <select id="colToggle" title="Columns"></select>
+          <button class="btn btn-muted" id="exportCSV">CSV</button>
+          <button class="btn btn-muted" id="exportPDF">PDF</button>
+          <select id="viewSel" title="Saved Views"></select>
+          <button class="btn btn-muted" id="viewSave">Save View</button>
+          <button class="btn btn-muted" id="viewDelete">Delete</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <table id="tbl">
+          <thead>
+            <tr id="thead"></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pager"></div>
+    </div>
+  </div>
+
+  <!-- Drilldown modal -->
+  <div class="modal" id="ddModal" role="dialog" aria-modal="true" aria-labelledby="ddTitle">
+    <div class="modal-card">
+      <div class="modal-hd">
+        <strong id="ddTitle">Service Order</strong>
+        <button class="xbtn" id="ddClose">Close</button>
+      </div>
+      <div class="modal-ct">
+        <div class="table-card">
+          <table>
+            <thead><tr id="ddHead"></tr></thead>
+            <tbody id="ddBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config + Auth -->
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    try { Auth.requireRole && Auth.requireRole('planner'); } catch (e) {}
+
+    /* ---------- Config: table IDs & field maps ---------- */
+    const TBL = Object.assign({
+      technicians: 'mzw1focsec0tekg',
+      service_orders: 'm2dmcyfy30klv76'
+    }, window.TBL || {});
+
+    const ORD = {
+      id:'id', so_id:'so_id', technician_id:'technician_id',
+      date:'date', time:'time', status:'status', remarks:'remarks',
+      address:'address', contact:'contact_person', phone:'contact_phone',
+      vehicles:'vehicles', priority:'priority'
+    };
+    const TECH = { id:'id', name:'full_name' };
+
+    /* ---------- NocoDB helper ---------- */
+    const NC = {
+      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
+      headers: () => ({ 'accept':'application/json','Content-Type':'application/json','Authorization':`Bearer ${window.NC_TOKEN}` }),
+      async list(tableId, { where, limit=5000, offset=0, sort }={}){
+        const qs = new URLSearchParams();
+        if(where) qs.set('where', JSON.stringify(where));
+        qs.set('limit', String(limit));
+        qs.set('offset', String(offset));
+        if(sort) qs.set('sort', JSON.stringify(sort));
+        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
+        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
+        return res.json(); // { list, count }
+      }
+    };
+
+    /* ---------- State ---------- */
+    let allOrders = [];   // raw from API
+    let techs = [];
+    let view = [];        // filtered + sorted
+    let page = 1, pageSize = 12, sortKey = ORD.date, sortAsc = false;
+    let visibleCols = []; // column keys
+    const VIEWS_KEY = 'naveo_history_views';
+
+    /* ---------- Columns definition (order & labels) ---------- */
+    const COLUMNS = [
+      { key: ORD.so_id,        label:'SO ID',       width:120 },
+      { key: ORD.date,         label:'Date',        width:120 },
+      { key: ORD.time,         label:'Time',        width:90  },
+      { key: ORD.status,       label:'Status',      width:130 },
+      { key: ORD.technician_id,label:'Technician',  width:180, render:(v)=>escapeHtml(techName(v)) },
+      { key: ORD.vehicles,     label:'Vehicle(s)',  width:180 },
+      { key: ORD.contact,      label:'Contact',     width:180 },
+      { key: ORD.phone,        label:'Phone',       width:140 },
+      { key: ORD.address,      label:'Address',     width:260 },
+      { key: ORD.priority,     label:'Priority',    width:110 },
+      { key: ORD.remarks,      label:'Remarks',     width:220 }
+    ];
+
+    function techName(id){ return techs.find(t=>String(t.id)===String(id))?.name || id || '—'; }
+    function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); }
+
+    /* ---------- Filters ---------- */
+    const filters = { from:'', to:'', status:'', tech:'', q:'' };
+
+    function applyFilters(){
+      const f = filters;
+      const q = (f.q||'').toLowerCase();
+      view = allOrders.filter(o=>{
+        if(f.from && o[ORD.date] && o[ORD.date] < f.from) return false;
+        if(f.to   && o[ORD.date] && o[ORD.date] > f.to) return false;
+        if(f.status && o[ORD.status] !== f.status) return false;
+        if(f.tech && String(o[ORD.technician_id]) !== f.tech) return false;
+        if(q){
+          const hay = [o[ORD.so_id], o[ORD.contact], o[ORD.address]].join(' ').toLowerCase();
+          if(!hay.includes(q)) return false;
+        }
+        return true;
+      });
+      sortView();
+      page = 1;
+      renderTable();
+    }
+
+    /* ---------- Sorting ---------- */
+    function sortView(){
+      view.sort((a,b)=>{
+        const x = (a[sortKey] ?? '').toString();
+        const y = (b[sortKey] ?? '').toString();
+        return sortAsc ? x.localeCompare(y) : y.localeCompare(x);
+      });
+    }
+
+    /* ---------- Rendering ---------- */
+    function renderHeader(){
+      const thead = document.getElementById('thead');
+      thead.innerHTML = visibleCols.map(key=>{
+        const col = COLUMNS.find(c=>c.key===key);
+        const active = key===sortKey ? ' ▲▼' : '';
+        return `<th style="min-width:${col.width}px" data-key="${key}" aria-sort="${(key===sortKey && (sortAsc?'ascending':'descending'))||'none'}">${col.label}${active}</th>`;
+      }).join('');
+      // click sorting
+      [...thead.querySelectorAll('th')].forEach(th=>{
+        th.onclick = ()=>{
+          const key = th.dataset.key;
+          if(sortKey===key) sortAsc = !sortAsc; else { sortKey=key; sortAsc=true; }
+          sortView(); renderTable();
+        };
+      });
+    }
+
+    function renderTable(){
+      const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
+      const start = (page-1)*pageSize, end = start+pageSize;
+      const slice = view.slice(start,end);
+
+      slice.forEach(row=>{
+        const tr = document.createElement('tr');
+        tr.tabIndex = 0;
+        tr.onclick = ()=> openDrilldown(row);
+        tr.onkeydown = (e)=>{ if(e.key==='Enter') openDrilldown(row); };
+
+        tr.innerHTML = visibleCols.map(key=>{
+          let val = row[key] ?? '';
+          const col = COLUMNS.find(c=>c.key===key);
+          if(col?.render) val = col.render(val, row);
+          if(key===ORD.status){
+            const cls = 'st-'+String(row[ORD.status]||'').replace(/\s/g,'\\ ');
+            return `<td><span class="badge ${cls}">${escapeHtml(row[ORD.status]||'')}</span></td>`;
+          }
+          return `<td>${escapeHtml(val)}</td>`;
+        }).join('');
+        tbody.append(tr);
+      });
+
+      renderPager();
+    }
+
+    function renderPager(){
+      const pager = document.getElementById('pager'); pager.innerHTML='';
+      const pages = Math.max(1, Math.ceil(view.length / pageSize));
+      const addBtn = (txt, p, active=false, disabled=false)=>{
+        const b=document.createElement('button'); b.textContent=txt; b.className='page-btn'+(active?' active':'');
+        b.disabled = disabled;
+        b.onclick=()=>{ page=p; renderTable(); };
+        pager.append(b);
+      };
+      addBtn('<', Math.max(1,page-1), false, page===1);
+      for(let i=Math.max(1,page-2); i<=Math.min(pages,page+2); i++) addBtn(String(i), i, i===page);
+      addBtn('>', Math.min(pages,page+1), false, page===pages);
+    }
+
+    /* ---------- Column toggle ---------- */
+    function initColumnToggle(){
+      const sel = document.getElementById('colToggle');
+      sel.innerHTML = COLUMNS.map(c=>`<option value="${c.key}">${c.label}</option>`).join('');
+      // default visible
+      visibleCols = COLUMNS.map(c=>c.key);
+      renderHeader();
+      renderTable();
+
+      // ctrl+click to hide/show quickly:
+      sel.onchange = ()=>{
+        const key = sel.value;
+        if(!key) return;
+        const i = visibleCols.indexOf(key);
+        if(i>=0){ visibleCols.splice(i,1); } else { visibleCols.push(key); }
+        if(visibleCols.length===0) visibleCols = [ORD.so_id]; // keep at least one
+        renderHeader(); renderTable();
+      };
+    }
+
+    /* ---------- Export ---------- */
+    function exportCSV(){
+      const cols = visibleCols.map(k=>COLUMNS.find(c=>c.key===k).label);
+      const rows = view.map(r=> visibleCols.map(k=> {
+        const col = COLUMNS.find(c=>c.key===k);
+        let v = r[k] ?? '';
+        if(col?.render) v = col.render(v, r);
+        return String(v).replace(/"/g,'""');
+      }));
+      const csv = [cols, ...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\r\n');
+      const blob = new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='history.csv'; a.click();
+    }
+    function exportPDF(){
+      const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation:'landscape'});
+      doc.setFontSize(16); doc.text('History', 14, 16);
+      const head = [visibleCols.map(k=>COLUMNS.find(c=>c.key===k).label)];
+      const body = view.slice(0,1000).map(r=> visibleCols.map(k=>{
+        const col = COLUMNS.find(c=>c.key===k);
+        let v = r[k] ?? ''; if(col?.render) v = col.render(v, r);
+        return String(v);
+      }));
+      doc.autoTable({ startY:22, head, body, styles:{ fontSize:8 }, headStyles:{ fillColor:[234,242,251], textColor:[0,86,179] } });
+      doc.save('history.pdf');
+    }
+
+    /* ---------- Drilldown ---------- */
+    function openDrilldown(row){
+      const cols = Object.keys(row).filter(k=>!k.startsWith('_'));
+      document.getElementById('ddTitle').textContent = `SO ${row[ORD.so_id]||row[ORD.id]||''}`;
+      document.getElementById('ddHead').innerHTML = cols.map(c=>`<th>${escapeHtml(c)}</th>`).join('');
+      document.getElementById('ddBody').innerHTML = `<tr>${cols.map(c=>`<td>${escapeHtml(row[c])}</td>`).join('')}</tr>`;
+      document.getElementById('ddModal').classList.add('open');
+    }
+    document.getElementById('ddClose').onclick = ()=> document.getElementById('ddModal').classList.remove('open');
+
+    /* ---------- Saved Views ---------- */
+    function loadViews(){ return JSON.parse(localStorage.getItem(VIEWS_KEY)||'[]'); }
+    function saveViews(arr){ localStorage.setItem(VIEWS_KEY, JSON.stringify(arr)); fillViewSel(arr); }
+    function fillViewSel(arr){ const sel=document.getElementById('viewSel'); sel.innerHTML = `<option value="">— Views —</option>` + arr.map((p,i)=>`<option value="${i}">${escapeHtml(p.name)}</option>`).join(''); }
+    function currentViewState(){
+      return {
+        from:filters.from, to:filters.to, status:filters.status, tech:filters.tech, q:filters.q,
+        sortKey, sortAsc, visibleCols
+      };
+    }
+    function applyViewState(s){
+      if(!s) return;
+      filters.from=s.from||''; filters.to=s.to||''; filters.status=s.status||''; filters.tech=s.tech||''; filters.q=s.q||'';
+      sortKey=s.sortKey||ORD.date; sortAsc=!!s.sortAsc; visibleCols=s.visibleCols?.slice()||COLUMNS.map(c=>c.key);
+
+      document.getElementById('fFrom').value=filters.from;
+      document.getElementById('fTo').value=filters.to;
+      document.getElementById('fTech').value=filters.tech;
+      document.getElementById('fSearch').value=filters.q;
+      document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.toggle('active', c.dataset.status===filters.status));
+      renderHeader(); applyFilters();
+    }
+
+    document.getElementById('viewSave').onclick = ()=>{
+      const name = prompt('Name this view:'); if(!name) return;
+      const list = loadViews(); list.push({ name, state: currentViewState() }); saveViews(list); alert('View saved.');
+    };
+    document.getElementById('viewDelete').onclick = ()=>{
+      const sel = document.getElementById('viewSel'); const idx = sel.value ? Number(sel.value) : -1;
+      if(idx<0) return alert('Select a view first.');
+      const list = loadViews(); list.splice(idx,1); saveViews(list); sel.value='';
+    };
+    document.getElementById('viewSel').onchange = ()=>{
+      const idx = Number(document.getElementById('viewSel').value);
+      const p = loadViews()[idx]; if(!p) return;
+      applyViewState(p.state);
+    };
+
+    /* ---------- Boot ---------- */
+    async function loadTechs(){
+      const res = await NC.list(TBL.technicians, { sort:[[ TECH.name,'asc' ]] });
+      techs = (res.list||[]).map(r=>({ id: r[TECH.id] ?? r.id, name: r[TECH.name] || r.FullName || r.name || `Tech ${r.id}` }));
+      const sel=document.getElementById('fTech'); techs.forEach(t=> sel.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`);
+    }
+    async function loadOrders(){
+      const res = await NC.list(TBL.service_orders, { limit:5000, sort:[[ ORD.date,'desc' ], [ORD.time,'desc'] ] });
+      allOrders = res.list || [];
+    }
+
+    function wireFilters(){
+      const chips = document.querySelectorAll('#statusChips .chip');
+      chips.forEach(ch=>{
+        ch.addEventListener('click', ()=>{
+          chips.forEach(c=>c.classList.remove('active'));
+          ch.classList.add('active');
+          filters.status = ch.dataset.status || '';
+        });
+      });
+      document.getElementById('fApply').onclick = ()=>{
+        filters.from = document.getElementById('fFrom').value;
+        filters.to   = document.getElementById('fTo').value;
+        filters.tech = document.getElementById('fTech').value;
+        filters.q    = document.getElementById('fSearch').value.trim();
+        applyFilters();
+      };
+      document.getElementById('fReset').onclick = ()=>{
+        const today=new Date(); const d0=new Date(today); d0.setDate(today.getDate()-30);
+        document.getElementById('fFrom').value=d0.toISOString().slice(0,10);
+        document.getElementById('fTo').value=today.toISOString().slice(0,10);
+        document.getElementById('fTech').value='';
+        document.getElementById('fSearch').value='';
+        document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active'));
+        document.querySelector('#statusChips .chip[data-status=""]').classList.add('active');
+        filters.from=document.getElementById('fFrom').value;
+        filters.to=document.getElementById('fTo').value;
+        filters.status=''; filters.tech=''; filters.q='';
+        applyFilters();
+      };
+      // quick search typing
+      document.getElementById('fSearch').addEventListener('input', ()=>{
+        filters.q = document.getElementById('fSearch').value.trim(); applyFilters();
+      });
+    }
+
+    document.getElementById('exportCSV').onclick = exportCSV;
+    document.getElementById('exportPDF').onclick = exportPDF;
+
+    (async function init(){
+      if(!window.NC_BASE || !window.NC_TOKEN){ alert('Missing NC_BASE / NC_TOKEN in config.js'); return; }
+      await Promise.all([loadTechs(), loadOrders()]);
+
+      // default dates (last 30 days)
+      const today=new Date(); const d0=new Date(today); d0.setDate(today.getDate()-30);
+      document.getElementById('fFrom').value = d0.toISOString().slice(0,10);
+      document.getElementById('fTo').value = today.toISOString().slice(0,10);
+
+      initColumnToggle();
+      wireFilters();
+      fillViewSel(loadViews());
+
+      // default status chip = All
+      document.querySelector('#statusChips .chip[data-status=""]').classList.add('active');
+
+      // first render
+      filters.from=document.getElementById('fFrom').value;
+      filters.to=document.getElementById('fTo').value;
+      applyFilters();
+    })().catch(err=>{ console.error(err); alert('Failed to load history.'); });
+  </script>
+</body>
+</html>
