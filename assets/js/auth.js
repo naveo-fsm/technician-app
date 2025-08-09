@@ -1,101 +1,74 @@
-/* global window, localStorage, fetch */
+// auth.js
 
-// ================== CONFIG ==================
-// Put your secrets in config.js (not committed).
-// config.js must define:
-/// window.NC_BASE = "https://app.nocodb.com/api/v2";
-/// window.NC_TOKEN = "YOUR_NOCODB_BEARER";
-/// window.CLOUD_NAME = "dcnji9xvd";
-/// window.CLOUD_PRESET = "gps_uploads";
+const API_URL = "https://api.nocodb.com"; // Replace with your NocoDB URL if self-hosted
+const BASE_ID = "navegeo33"; // If using cloud, you can skip this, else set your base slug
+const TABLE_ID_USERS = "mes51s7dmb2mewm"; // users table ID
+const PAT = "7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh"; // Your Personal Access Token
 
-if(!window.NC_BASE){ console.warn("Missing NC_BASE. Create config.js from config.example.js."); }
+async function loginUser(email, password) {
+    try {
+        // Fetch user from NocoDB
+        const res = await fetch(`${API_URL}/api/v2/tables/${TABLE_ID_USERS}/records`, {
+            method: "GET",
+            headers: {
+                "xc-token": PAT,
+                "Content-Type": "application/json"
+            }
+        });
 
-// Table IDs (from your screenshots)
-const TBL = {
-  technicians: 'mzw1focsec0tekg',
-  users: 'mes51s7dmb2mewm',
-  service_orders: 'm2dmcyfy30klv76',
-  inventory: 'mu70y5tmw0pqflp',
-  inventory_assignment: 'mt71bvrpbemeziu',
-  inventory_alerts: 'mol0oedvhajviux',
-  checklists: 'ma917pno6w5e1ed',
-  service_order_inventory: 'm40n0bb2o41gfxp',
-  service_order_checklist: 'mibtqjiulezywtx'
-};
+        const data = await res.json();
+        if (!data.list) {
+            throw new Error("Invalid response from server");
+        }
 
-// Helpers
-const NC = {
-  url: (tableId, path='records') => `${window.NC_BASE}/tables/${tableId}/${path}`,
-  headers: () => ({
-    'Content-Type': 'application/json',
-    'accept': 'application/json',
-    'Authorization': `Bearer ${window.NC_TOKEN}`
-  }),
-  async get(tableId, params={}) {
-    const qs = new URLSearchParams(params).toString();
-    const res = await fetch(`${this.url(tableId,'records')}${qs?`?${qs}`:''}`, { headers: this.headers() });
-    if(!res.ok) throw new Error(`NC GET ${tableId} ${res.status}`);
-    return res.json();
-  },
-  async post(tableId, data) {
-    const res = await fetch(this.url(tableId,'records'), { method:'POST', headers: this.headers(), body: JSON.stringify(data) });
-    if(!res.ok) throw new Error(`NC POST ${tableId} ${res.status}`);
-    return res.json();
-  },
-  async patch(tableId, data) {
-    const res = await fetch(this.url(tableId,'records'), { method:'PATCH', headers: this.headers(), body: JSON.stringify(data) });
-    if(!res.ok) throw new Error(`NC PATCH ${tableId} ${res.status}`);
-    return res.json();
-  }
-};
+        // Find matching user
+        const user = data.list.find(u => 
+            u.email_address?.toLowerCase() === email.toLowerCase() && 
+            u.password === password &&
+            u.status?.toLowerCase() === "active"
+        );
 
-// Public API
-const Auth = {
-  // Login against users table: fields expected: email, password, role, technician_id (optional)
-  async login(email, password){
-    // NOTE: adjust field names here if your users table differs
-    const where = JSON.stringify([["email","eq",email]]);
-    const data = await NC.get(TBL.users, { where, limit: 1 });
-    const row = data?.list?.[0];
-    if(!row) throw new Error('User not found');
-    if(String(row.password) !== String(password)) throw new Error('Invalid password'); // replace with hash check if needed
-    const user = {
-      id: row.id,
-      email: row.email,
-      role: row.role || 'technician',
-      technician_id: row.technician_id || null,
-      name: row.full_name || row.name || ''
-    };
-    localStorage.setItem('fsm_user', JSON.stringify(user));
-    return user;
-  },
-  getSession(){ const s = localStorage.getItem('fsm_user'); return s? JSON.parse(s): null; },
-  requireRole(role){
-    const u = this.getSession(); if(!u) location.replace('login.html');
-    if(role && u.role !== role) location.replace('index.html');
-  },
-  logout(){ localStorage.removeItem('fsm_user'); },
+        if (!user) {
+            alert("Invalid email, password, or inactive account.");
+            return false;
+        }
 
-  // Cloudinary unsigned upload
-  async uploadImage(file){
-    const form = new FormData();
-    form.append('file', file);
-    form.append('upload_preset', window.CLOUD_PRESET);
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${window.CLOUD_NAME}/upload`, { method:'POST', body: form });
-    if(!res.ok) throw new Error('Upload failed');
-    return res.json(); // { secure_url, public_id, ... }
-  },
+        // Save user session
+        localStorage.setItem("loggedInUser", JSON.stringify({
+            id: user.id,
+            email: user.email_address,
+            role: user.user_role,
+            name: user.full_name || "",
+            phone: user.phone || ""
+        }));
 
-  // Example: fetch current user’s service orders
-  async myServiceOrders(){
-    const u = this.getSession();
-    if(!u) throw new Error('Not logged in');
-    // filter by technician if available
-    const where = u.technician_id
-      ? JSON.stringify([["TechnicianID","eq",u.technician_id]])
-      : JSON.stringify([]);
-    return NC.get(TBL.service_orders, { where, limit: 200 });
-  }
-};
+        // Redirect based on role
+        if (user.user_role === "Planner") {
+            window.location.href = "planner/planner.html";
+        } else if (user.user_role === "Technician") {
+            window.location.href = "technician/technician.html";
+        } else {
+            window.location.href = "index.html";
+        }
 
-window.Auth = Auth; // expose globally
+        return true;
+
+    } catch (error) {
+        console.error("Login error:", error);
+        alert("Login failed. Please try again.");
+        return false;
+    }
+}
+
+// Attach to form
+document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.querySelector("form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.querySelector("input[type='email']").value;
+            const password = document.querySelector("input[type='password']").value;
+            await loginUser(email, password);
+        });
+    }
+});
