@@ -20,3 +20,20 @@ This is the deployable Progressive Web App (PWA) version of the Naveo Field Serv
 3. Visit `https://<username>.github.io/<repo-name>/`
 
 Ensure all integrations (SheetDB, Cloudinary) are configured with your own credentials.
+
+
+# Naveo FSM – Technician/Planner (GitHub Pages)
+
+Frontend for technicians & planners, backed by **NocoDB** and **Cloudinary**.
+
+## Quick start
+
+1. **Clone** this repo.
+2. **Create `config.js`** from the example below (do **not** commit secrets):
+
+```js
+// config.js (DO NOT COMMIT)
+window.NC_BASE   = "https://app.nocodb.com/api/v2";
+window.NC_TOKEN  = "YOUR_NOCODB_BEARER_TOKEN";
+window.CLOUD_NAME   = "dcnji9xvd";
+window.CLOUD_PRESET = "gps_uploads";
