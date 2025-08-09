@@ -1,140 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>FSM Planner Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    :root {
-      --primary-start: #4e54c8;
-      --primary-end: #8f94fb;
-      --success-start: #11998e;
-      --success-end: #38ef7d;
-      --warning-start: #f7971e;
-      --warning-end: #ffd200;
-      --danger-start: #e53935;
-      --danger-end: #e35d5b;
-      --bg: #f5f5f5;
-      --card-bg: #fff;
-      --radius: 8px;
-      --spacing: 1rem;
-      --text: #333;
-      --border: #ddd;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: var(--spacing);
-    }
-    .header {
-      font-size: 1.75rem;
-      text-align: center;
-      margin-bottom: var(--spacing);
-      color: var(--primary-start);
-    }
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--spacing);
-      justify-content: center;
-      margin-bottom: calc(var(--spacing) * 1.5);
-    }
-    .filters label {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.9rem;
-      color: var(--text);
-    }
-    .filters select, .filters input {
-      padding: 0.6rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      min-width: 140px;
-    }
-    .filters .btn {
-      align-self: flex-end;
-      padding: 0.6rem 1.2rem;
-      border-radius: var(--radius);
-    }
-    .btn-primary { background: var(--primary-start); color: #fff; border: none; cursor: pointer; transition: background 0.3s; }
-    .btn-primary:hover { background: var(--primary-end); }
-    .kpi-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: var(--spacing);
-      margin-bottom: calc(var(--spacing) * 2);
-    }
-    .kpi-card {
-      background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
-      padding: calc(var(--spacing) * 1.2);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      text-align: center;
-      color: #fff;
-    }
-    .kpi-card:nth-child(1) { background: linear-gradient(135deg, var(--primary-start), var(--primary-end)); }
-    .kpi-card:nth-child(2) { background: linear-gradient(135deg, var(--success-start), var(--success-end)); }
-    .kpi-card:nth-child(3) { background: linear-gradient(135deg, var(--warning-start), var(--warning-end)); }
-    .kpi-card:nth-child(4) { background: linear-gradient(135deg, var(--danger-start), var(--danger-end)); }
-    .kpi-card h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
-    .kpi-card p { font-size: 1.5rem; margin: 0; }
-    .charts {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--spacing);
-      flex-wrap: wrap;
-    }
-    .chart-card {
-      background: var(--card-bg);
-      padding: var(--spacing);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    @media (max-width: 800px) {
-      .charts { grid-template-columns: 1fr; }
-    }
-    canvas { width: 100% !important; height: auto !important; }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Planner – Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{--primary:#0056b3;--secondary:#eaf2fb;--success:#28a745;--danger:#dc3545;--muted:#6c757d;--text:#23272f;--bg:#f7fafd;--card:#fff;--table:#fcfcfc;--input:#f4f8fb;--border:#edf0f6;--radius-lg:12px;--radius:6px;--shadow:0 4px 18px rgba(0,0,0,.08)}
+  body{margin:0;background:var(--bg);font:16px/1.4 Poppins,system-ui,Arial;color:var(--text)}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px}
+  h2{color:var(--primary);font-size:1.5rem;margin:0 0 14px;font-weight:700}
+  .toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:14px}
+  label{font-weight:600;color:var(--primary);font-size:.99rem}
+  input,select{padding:8px 14px;background:var(--input);border:1px solid #d6e0ea;border-radius:6px;outline:none}
+  input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(0,86,179,.08)}
+  .btn{background:var(--primary);color:#fff;border:0;border-radius:6px;padding:9px 22px;font-weight:700;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .kpi{background:var(--card);border-radius:12px;padding:24px;box-shadow:var(--shadow);text-align:center}
+  .kpi .num{font-size:1.8rem;font-weight:700}
+  .charts{display:grid;grid-template-columns:1fr 1.6fr;gap:16px}
+  canvas{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:16px}
+  @media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)} .charts{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <div class="header">📊 FSM Planner Dashboard</div>
+<div class="wrap">
+  <h2>📊 Planner Dashboard</h2>
 
-  <div class="filters">
-    <label>Technician
-      <select id="techFilter"><option value="">All</option></select>
-    </label>
-    <label>From
-      <input type="date" id="from" />
-    </label>
-    <label>To
-      <input type="date" id="to" />
-    </label>
-    <button class="btn btn-primary" onclick="renderDashboard()">Apply</button>
-    <button class="btn btn-primary" onclick="exportPDF()">Export PDF</button>
-  </div>
-
-  <div class="kpi-container">
-    <div class="kpi-card"><h3>Total Jobs</h3><p id="kpi-total">0</p></div>
-    <div class="kpi-card"><h3>Completed</h3><p id="kpi-completed">0</p></div>
-    <div class="kpi-card"><h3>In Progress</h3><p id="kpi-progress">0</p></div>
-    <div class="kpi-card"><h3>Cancelled</h3><p id="kpi-cancelled">0</p></div>
-  </div>
-
-  <div class="charts">
-    <div class="chart-card">
-      <canvas id="statusChart"></canvas>
+  <div class="toolbar">
+    <div>
+      <label for="from">From</label><br>
+      <input type="date" id="from">
     </div>
-    <div class="chart-card">
-      <canvas id="trendChart"></canvas>
+    <div>
+      <label for="to">To</label><br>
+      <input type="date" id="to">
     </div>
+    <button class="btn" id="apply">Apply</button>
   </div>
 
-  <script>
-    // JS unchanged
-  </script>
+  <section class="grid" aria-label="KPIs">
+    <div class="kpi"><div>Total</div><div class="num" id="k-total">0</div></div>
+    <div class="kpi"><div>Completed</div><div class="num" id="k-done">0</div></div>
+    <div class="kpi"><div>In Progress</div><div class="num" id="k-prog">0</div></div>
+    <div class="kpi"><div>Cancelled</div><div class="num" id="k-cancel">0</div></div>
+  </section>
+
+  <section class="charts">
+    <canvas id="statusChart" height="280"></canvas>
+    <canvas id="trendChart" height="280"></canvas>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script>
+  // minimal NC helper + table IDs (works even without auth.js)
+  const TBL = (window.TBL)||{ service_orders:'m2dmcyfy30klv76' };
+  const NC  = (window.NC)||{
+    url:(t,p='records')=>`${window.NC_BASE}/tables/${t}/${p}`,
+    headers:()=>({'Content-Type':'application/json','accept':'application/json','Authorization':`Bearer ${window.NC_TOKEN}`}),
+    get:async (t,params={})=>{
+      const qs=new URLSearchParams(params).toString();
+      const r=await fetch(`${NC.url(t)}${qs?`?${qs}`:''}`,{headers:NC.headers()});
+      if(!r.ok) throw new Error(r.status); return r.json();
+    }
+  };
+
+  let raw=[], statusChart, trendChart;
+
+  async function load(){
+    const from=document.getElementById('from').value;
+    const to=document.getElementById('to').value;
+    const where=[];
+    if(from) where.push(["Date","ge",from]);
+    if(to)   where.push(["Date","le",to]);
+    const data=await NC.get(TBL.service_orders, { where: JSON.stringify(where), limit: 2000 });
+    raw=data.list||[];
+    render();
+  }
+
+  function render(){
+    // KPIs
+    const total = raw.length;
+    const done  = raw.filter(x=>x.Status==='Completed').length;
+    const prog  = raw.filter(x=>x.Status==='In Progress').length;
+    const canc  = raw.filter(x=>x.Status==='Cancelled').length;
+    document.getElementById('k-total').textContent=total;
+    document.getElementById('k-done').textContent=done;
+    document.getElementById('k-prog').textContent=prog;
+    document.getElementById('k-cancel').textContent=canc;
+
+    // Status pie
+    const counts={Completed:done,"In Progress":prog,Cancelled:canc};
+    statusChart?.destroy();
+    statusChart=new Chart(document.getElementById('statusChart'),{
+      type:'pie',
+      data:{labels:Object.keys(counts),
+        datasets:[{data:Object.values(counts)}]
+      }
+    });
+
+    // Trend bar (per date)
+    const map={}; raw.forEach(o=>map[o.Date]=(map[o.Date]||0)+1);
+    const dates=Object.keys(map).sort();
+    trendChart?.destroy();
+    trendChart=new Chart(document.getElementById('trendChart'),{
+      type:'bar',
+      data:{labels:dates, datasets:[{label:'Jobs per Day', data:dates.map(d=>map[d])}]}
+    });
+  }
+
+  document.getElementById('apply').addEventListener('click',load);
+  load().catch(err=>alert('Load error: '+err));
+</script>
 </body>
 </html>
