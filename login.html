@@ -1,17 +1,59 @@
-<script>
-  document.getElementById('loginForm').onsubmit = function(e) {
-    e.preventDefault();
-    const role = document.getElementById('role').value;
-    if (!role) {
-      alert("Please select a role to proceed.");
-      return;
-    }
-    // (Optional) Save role/email to localStorage for later use
-    localStorage.setItem('userRole', role);
-    localStorage.setItem('userEmail', document.getElementById('email').value.trim());
-    // Redirect based on role (case-sensitive!)
-    if (role === "planner") window.location.href = "planner/planner.html";
-    else if (role === "technician") window.location.href = "technician/assigned-jobs.html";
-    else window.location.href = "index.html";
-  };
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Login | Naveo FSM</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f5f7fa;margin:0;display:grid;place-items:center;height:100vh}
+    .card{background:#fff;padding:1.25rem 1.5rem;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);min-width:320px}
+    h2{margin:.2rem 0;color:#003366}
+    label{display:block;margin-top:.75rem;font-weight:600;color:#334}
+    input{width:100%;padding:.65rem;border:1px solid #ccd;border-radius:8px;margin-top:.35rem}
+    .row{display:flex;justify-content:space-between;align-items:center;margin-top:.6rem}
+    button{width:100%;margin-top:1rem;padding:.7rem;border:0;border-radius:8px;background:#003366;color:#fff;font-weight:600;cursor:pointer}
+    .err{color:#c0392b;margin-top:.6rem;display:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Sign in</h2>
+    <form id="f">
+      <label>Email<input type="email" id="email" required></label>
+      <label>Password<input type="password" id="password" required></label>
+      <div class="row">
+        <label><input type="checkbox" id="remember"> Remember</label>
+        <a href="#" onclick="alert('Ask admin to reset password in NocoDB.');return false;">Forgot?</a>
+      </div>
+      <button>Log in</button>
+      <div class="err" id="err"></div>
+    </form>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    document.getElementById('f').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const pwd   = document.getElementById('password').value;
+      const errEl = document.getElementById('err');
+      errEl.style.display='none';
+      try{
+        const user = await Auth.login(email,pwd);
+        if(document.getElementById('remember').checked){ localStorage.setItem('rememberEmail', email); }
+        // Route by role
+        location.replace(user.role==='planner' ? 'planner/index.html' : 'assigned-jobs.html');
+      }catch(err){
+        errEl.textContent = err.message || 'Login failed';
+        errEl.style.display='block';
+      }
+    });
+
+    // Pre-fill if remembered
+    const rem = localStorage.getItem('rememberEmail');
+    if(rem) document.getElementById('email').value = rem;
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+  </script>
+</body>
+</html>
