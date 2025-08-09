@@ -1,173 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="../assets/js/auth.js"></script>
-  <meta charset="UTF-8" />
-  <title>Planner - Inventory</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <title>Planner • Inventory Overview | Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- jsPDF + autotable for PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
   <style>
-    :root {
-      --primary: #007bff;
-      --primary-dark: #0056b3;
-      --success: #28a745;
-      --bg: #f8f9fa;
-      --card-bg: #fff;
-      --border: #ccc;
-      --radius: 6px;
-      --spacing: 1rem;
-      --text: #333;
+    :root{
+      --primary:#0056b3;
+      --secondary:#eaf2fb;
+      --success:#28a745;
+      --danger:#dc3545;
+      --muted:#6c757d;
+      --text:#23272f;
+      --bg:#f7fafd;
+      --card:#fff;
+      --input-bg:#f4f8fb;
+      --border:#edf0f6;
+      --table-bg:#fcfcfc;
+      --radius-card:12px;
+      --radius-el:6px;
+      --shadow:0 4px 18px rgba(0,0,0,.08);
     }
-    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      padding: var(--spacing);
-      color: var(--text);
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:16px;
     }
-    h2 {
-      color: var(--primary);
-      margin-bottom: var(--spacing);
-      text-align: center;
-      font-size: 1.5rem;
+    .wrap{max-width:1200px;margin:34px auto;padding:0 16px}
+    h2{margin:0 0 6px;font-size:1.5rem;color:var(--primary);font-weight:700}
+    .sub{margin:0 0 18px;color:var(--muted);font-size:.96rem}
+
+    .card{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:32px}
+    .toolbar{
+      background:#fff;border:1px solid var(--border);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:12px;
+      display:flex;gap:12px;align-items:end;flex-wrap:wrap;justify-content:space-between;
     }
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--spacing);
-      margin-bottom: var(--spacing);
-      justify-content: center;
+    .filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+    label{display:block;margin:0 0 6px;font-weight:700;color:var(--primary);font-size:.99rem}
+    select,input[type="date"],input[type="text"]{
+      padding:8px 14px;background:var(--input-bg);border:1px solid #d6e0ea;border-radius:var(--radius-el);outline:none;
     }
-    .filters label {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.9rem;
+    select:focus,input:focus{border-color:var(--primary)}
+
+    .btn{border:0;border-radius:var(--radius-el);padding:9px 22px;cursor:pointer;font-weight:700}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-muted{background:#e7ebf2}
+    .btn:focus{outline:2px solid #9cc2f1;outline-offset:2px}
+
+    .table-card{background:var(--table-bg);border:1px solid var(--border);border-radius:var(--radius-card);overflow:hidden}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{
+      position:sticky;top:0;background:var(--secondary);color:var(--primary);
+      text-align:left;padding:12px;border-bottom:1px solid var(--border);user-select:none;cursor:pointer;
     }
-    .filters select, .filters input {
-      padding: 0.5rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      min-width: 120px;
-    }
-    .filters button {
-      align-self: flex-end;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .filters button:hover { background: var(--primary-dark); }
-    .table-container {
-      overflow-x: auto;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      text-align: left;
-      font-size: 0.95rem;
-    }
-    th {
-      background: var(--primary);
-      color: #fff;
-      cursor: pointer;
-      position: relative;
-    }
-    th::after {
-      content: '\25B2';
-      position: absolute;
-      right: 8px;
-      opacity: 0.3;
-      transform: rotate(180deg);
-      transition: transform 0.3s;
-    }
-    th.sort-asc::after { transform: rotate(0deg); opacity:1; }
-    th.sort-desc::after { transform: rotate(180deg); opacity:1; }
-    tbody tr:nth-child(even) { background: #f9f9f9; }
-    .pagination {
-      margin-top: var(--spacing);
-      text-align: center;
-    }
-    .page-btn {
-      padding: 0.4rem 0.8rem;
-      margin: 0 0.2rem;
-      border: none;
-      border-radius: var(--radius);
-      background: #e0e0e0;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .page-btn.active {
-      background: var(--primary);
-      color: #fff;
-    }
-    .page-btn:hover { background: var(--primary-dark); color: #fff; }
-    @media (max-width: 768px) {
-      table, thead, tbody, th, td, tr { display: block; }
-      thead tr { position: absolute; top: -9999px; left: -9999px; }
-      tr { border: 1px solid var(--border); margin-bottom: var(--spacing); border-radius: var(--radius); overflow: hidden; }
-      td { border: none; border-bottom: 1px solid var(--border); position: relative; padding-left: 50%; }
-      td::before { position: absolute; top: 0.75rem; left: 0.75rem; width: 45%; white-space: nowrap; font-weight:600; }
-      td:nth-of-type(1)::before { content: 'Date'; }
-      td:nth-of-type(2)::before { content: 'Item'; }
-      td:nth-of-type(3)::before { content: 'Make'; }
-      td:nth-of-type(4)::before { content: 'Model'; }
-      td:nth-of-type(5)::before { content: 'Serial #'; }
-      td:nth-of-type(6)::before { content: 'SIM #'; }
-      td:nth-of-type(7)::before { content: 'Technician'; }
-      td:nth-of-type(8)::before { content: 'Consumed'; }
+    tbody td{padding:10px 12px;border-bottom:1px solid var(--border)}
+    tbody tr:hover{background:#f8fbff}
+
+    .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .kpi{flex:1 1 160px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px}
+    .kpi h3{margin:0 0 6px;font-size:.95rem;color:var(--muted);font-weight:600}
+    .kpi .num{font-size:1.4rem;font-weight:700;color:var(--primary)}
+
+    .pagination{display:flex;gap:6px;justify-content:flex-end;padding:12px}
+    .page-btn{background:var(--primary);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer}
+    .page-btn[disabled]{opacity:.45;cursor:not-allowed}
+
+    @media (max-width:700px){
+      .toolbar{align-items:stretch}
+      .filters{width:100%}
+      .filters > div{flex:1 1 160px}
     }
   </style>
 </head>
 <body>
-  <h2>📦 Inventory Overview</h2>
+  <div class="wrap">
+    <h2>📦 Inventory Overview</h2>
+    <p class="sub">Track consumed / assigned inventory across service orders. Filter by technician and date range, export to CSV or PDF.</p>
 
-  <div class="filters">
-    <label>Technician
-      <select id="techFilter"><option value="">All</option></select>
-    </label>
-    <label>From
-      <input type="date" id="fromDate" />
-    </label>
-    <label>To
-      <input type="date" id="toDate" />
-    </label>
-    <button class="btn" onclick="applyFilters()">Apply</button>
-    <button class="btn" onclick="exportCSV()">Export CSV</button>
-    <button class="btn" onclick="exportPDF()">Export PDF</button>
+    <div class="kpis" id="kpiBox">
+      <div class="kpi"><h3>Total Rows</h3><div class="num" id="kpiTotal">0</div></div>
+      <div class="kpi"><h3>Unique Items</h3><div class="num" id="kpiItems">0</div></div>
+      <div class="kpi"><h3>Technicians</h3><div class="num" id="kpiTechs">0</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters">
+        <div>
+          <label for="techFilter">Technician</label>
+          <select id="techFilter"><option value="">All</option></select>
+        </div>
+        <div>
+          <label for="fromDate">From</label>
+          <input type="date" id="fromDate"/>
+        </div>
+        <div>
+          <label for="toDate">To</label>
+          <input type="date" id="toDate"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-muted" id="applyBtn">Apply</button>
+        <button class="btn btn-muted" id="csvBtn">Export CSV</button>
+        <button class="btn btn-primary" id="pdfBtn">Export PDF</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table aria-label="Inventory table">
+        <thead>
+          <tr>
+            <th data-k="date">Date</th>
+            <th data-k="item">Item</th>
+            <th data-k="make">Make</th>
+            <th data-k="model">Model</th>
+            <th data-k="serial">Serial #</th>
+            <th data-k="sim">SIM #</th>
+            <th data-k="technician_id">Technician</th>
+            <th data-k="consumed">Consumed</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="pagination">
+        <button class="page-btn" id="prevPg">&lt;</button>
+        <button class="page-btn" id="nextPg">&gt;</button>
+      </div>
+    </div>
   </div>
 
-  <div class="table-container">
-    <table id="inventoryTable">
-      <thead>
-        <tr>
-          <th onclick="sortTable(0)">Date</th>
-          <th onclick="sortTable(1)">Item</th>
-          <th onclick="sortTable(2)">Make</th>
-          <th onclick="sortTable(3)">Model</th>
-          <th onclick="sortTable(4)">Serial Number</th>
-          <th onclick="sortTable(5)">SIM Number</th>
-          <th onclick="sortTable(6)">Technician</th>
-          <th onclick="sortTable(7)">Consumed</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <div class="pagination" id="pagination"></div>
-
+  <!-- central config + auth -->
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/auth.js"></script>
   <script>
-    // JS unchanged...
+    /* =========================
+       Config — update if needed
+       ========================= */
+    const TBL = Object.assign({
+      technicians: 'mzw1focsec0tekg',
+      service_order_inventory: 'm40n0bb2o41gfxp'
+    }, window.TBL || {});
+
+    // Map your actual column names
+    const FIELD = {
+      id: 'id',
+      date: 'date',
+      item: 'item',
+      make: 'make',
+      model: 'model',
+      serial: 'serial_number',
+      sim: 'sim_number',
+      technician_id: 'technician_id',
+      consumed: 'consumed' // bool/qty/text
+    };
+
+    /* =========================
+       NocoDB helpers
+       ========================= */
+    const NC = {
+      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
+      headers: () => ({
+        'accept':'application/json',
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${window.NC_TOKEN}`
+      }),
+      async list(tableId, { where, limit=1000, offset=0, sort }={}){
+        const qs = new URLSearchParams();
+        if(where) qs.set('where', JSON.stringify(where));
+        qs.set('limit', String(limit));
+        qs.set('offset', String(offset));
+        if(sort) qs.set('sort', JSON.stringify(sort));
+        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
+        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
+        return res.json(); // { list, count }
+      }
+    };
+
+    /* =========================
+       State
+       ========================= */
+    let raw = [];        // full dataset
+    let filtered = [];   // filtered dataset
+    let techs = [];      // [{id,name}]
+    let page = 0, pageSize = 12;
+    let sortKey = null, sortAsc = true;
+
+    const tbody = document.getElementById('tbody');
+
+    /* =========================
+       UI helpers
+       ========================= */
+    function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); }
+    function techName(id){ return techs.find(t=>String(t.id)===String(id))?.name || id || '—'; }
+
+    function setKPIs(data){
+      document.getElementById('kpiTotal').textContent = data.length;
+      document.getElementById('kpiItems').textContent = new Set(data.map(d=>d[FIELD.item]||`${d[FIELD.make]} ${d[FIELD.model]}`)).size;
+      document.getElementById('kpiTechs').textContent = new Set(data.map(d=>d[FIELD.technician_id])).size;
+    }
+
+    function render(){
+      // paginate
+      const start = page * pageSize;
+      const view = filtered.slice(start, start + pageSize);
+
+      if(!view.length){
+        tbody.innerHTML = `<tr><td colspan="8" style="color:#888;padding:14px">No data.</td></tr>`;
+      }else{
+        tbody.innerHTML = view.map(d=>`
+          <tr>
+            <td>${escapeHtml(d[FIELD.date]||'')}</td>
+            <td>${escapeHtml(d[FIELD.item]||'')}</td>
+            <td>${escapeHtml(d[FIELD.make]||'')}</td>
+            <td>${escapeHtml(d[FIELD.model]||'')}</td>
+            <td>${escapeHtml(d[FIELD.serial]||'')}</td>
+            <td>${escapeHtml(d[FIELD.sim]||'')}</td>
+            <td>${escapeHtml(techName(d[FIELD.technician_id]))}</td>
+            <td>${escapeHtml(d[FIELD.consumed]??'')}</td>
+          </tr>
+        `).join('');
+      }
+
+      // pager buttons
+      document.getElementById('prevPg').disabled = page===0;
+      document.getElementById('nextPg').disabled = (start + pageSize) >= filtered.length;
+
+      // KPIs for filtered
+      setKPIs(filtered);
+    }
+
+    function applyFilters(){
+      const tech = document.getElementById('techFilter').value;
+      const from = document.getElementById('fromDate').value;
+      const to   = document.getElementById('toDate').value;
+
+      filtered = raw.filter(d=>{
+        if(tech && String(d[FIELD.technician_id]) !== String(tech)) return false;
+        if(from && (d[FIELD.date]||'') < from) return false;
+        if(to   && (d[FIELD.date]||'') > to)   return false;
+        return true;
+      });
+
+      // sort again after filtering
+      if(sortKey){
+        filtered.sort((a,b)=>{
+          const av = a[sortKey] ?? '';
+          const bv = b[sortKey] ?? '';
+          return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+        });
+      }
+
+      page = 0;
+      render();
+    }
+
+    function exportCSV(){
+      const cols = ['Date','Item','Make','Model','SerialNumber','SIMNumber','Technician','Consumed'];
+      const rows = filtered.map(d=>[
+        d[FIELD.date]||'',
+        d[FIELD.item]||'',
+        d[FIELD.make]||'',
+        d[FIELD.model]||'',
+        d[FIELD.serial]||'',
+        d[FIELD.sim]||'',
+        techName(d[FIELD.technician_id]),
+        d[FIELD.consumed]??''
+      ]);
+      const csv = [cols, ...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'inventory.csv';
+      a.click();
+    }
+
+    function exportPDF(){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({orientation:'landscape'});
+      doc.setFontSize(16);
+      doc.text('Inventory Report', 14, 16);
+      const head = [['Date','Item','Make','Model','Serial #','SIM #','Technician','Consumed']];
+      const body = filtered.map(d=>[
+        d[FIELD.date]||'',
+        d[FIELD.item]||'',
+        d[FIELD.make]||'',
+        d[FIELD.model]||'',
+        d[FIELD.serial]||'',
+        d[FIELD.sim]||'',
+        techName(d[FIELD.technician_id]),
+        d[FIELD.consumed]??''
+      ]);
+      doc.autoTable({
+        startY: 22,
+        head, body,
+        styles:{ font:'helvetica', fontSize:8 },
+        headStyles:{ fillColor:[234,242,251], textColor:[0,86,179] },
+        theme:'grid'
+      });
+      doc.save('inventory.pdf');
+    }
+
+    /* =========================
+       Init
+       ========================= */
+    async function loadTechs(){
+      const res = await NC.list(TBL.technicians, { sort:[[ 'full_name','asc' ]] });
+      techs = (res.list||[]).map(r=>({
+        id: r.id ?? r.TechnicianID ?? r.technician_id,
+        name: r.full_name || r.FullName || r.name || `Tech ${r.id}`
+      }));
+      const sel = document.getElementById('techFilter');
+      sel.innerHTML = `<option value="">All</option>` + techs.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+    }
+
+    async function loadInventory(){
+      // pull all rows (adjust limit if needed or page server-side for large datasets)
+      const res = await NC.list(TBL.service_order_inventory, { limit: 5000, sort:[[ FIELD.date,'desc' ]] });
+      raw = res.list || [];
+      filtered = [...raw];
+      render();
+      setKPIs(raw);
+    }
+
+    // Sort handlers
+    document.querySelectorAll('thead th').forEach(th=>{
+      th.addEventListener('click', ()=>{
+        const k = th.dataset.k;
+        if(!k) return;
+        if(sortKey === k) sortAsc = !sortAsc; else { sortKey = k; sortAsc = true; }
+        filtered.sort((a,b)=>{
+          const av = a[k] ?? '';
+          const bv = b[k] ?? '';
+          return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+        });
+        page = 0;
+        render();
+      });
+    });
+
+    // Controls
+    document.getElementById('applyBtn').addEventListener('click', applyFilters);
+    document.getElementById('csvBtn').addEventListener('click', exportCSV);
+    document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+    document.getElementById('prevPg').addEventListener('click', ()=>{ if(page>0){ page--; render(); } });
+    document.getElementById('nextPg').addEventListener('click', ()=>{ if((page+1)*pageSize<filtered.length){ page++; render(); } });
+
+    (async function init(){
+      try{ Auth.requireRole && Auth.requireRole('planner'); }catch(_){}
+      if(!window.NC_BASE || !window.NC_TOKEN){ alert('Missing NC_BASE / NC_TOKEN in config.js'); return; }
+      await loadTechs();
+      await loadInventory();
+    })();
   </script>
 </body>
 </html>
