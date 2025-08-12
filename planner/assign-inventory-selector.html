@@ -2,218 +2,157 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Assign Inventory | Naveo FSM Planner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planner • Assign Inventory to SO/Vehicle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="../assets/js/noco.js"></script>
+  <script src="../assets/js/auth-lite.js"></script>
   <style>
-    :root {
-      --primary: #007bff;
-      --primary-dark: #0056b3;
-      --success: #28a745;
-      --danger: #dc3545;
-      --bg: #f5f7fa;
-      --card-bg: #fff;
-      --radius: 8px;
-      --spacing: 1rem;
-      --text: #333;
-      --border: #e0e0e0;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: var(--spacing);
-    }
-    h2 {
-      text-align: center;
-      color: var(--primary);
-      margin-bottom: var(--spacing);
-      font-size: 1.5rem;
-    }
-    form {
-      background: var(--card-bg);
-      padding: var(--spacing);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    .form-group {
-      margin-bottom: var(--spacing);
-    }
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-    }
-    input, select {
-      width: 100%;
-      padding: 0.6rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 1rem;
-    }
-    input:focus, select:focus { outline: none; border-color: var(--primary); }
-    .table-container {
-      overflow-x: auto;
-      margin-bottom: var(--spacing);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      font-size: 0.95rem;
-    }
-    th {
-      background: var(--primary);
-      color: #fff;
-      font-weight: 600;
-    }
-    tr:nth-child(even) td { background: #f9f9f9; }
-    .btn {
-      padding: 0.6rem 1.2rem;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.3s;
-      margin-right: 0.5rem;
-    }
-    .btn-add {
-      background: var(--primary);
-      color: #fff;
-    }
-    .btn-add:hover { background: var(--primary-dark); }
-    .btn-submit {
-      background: var(--success);
-      color: #fff;
-    }
-    .btn-submit:hover { background: #218838; }
-    .btn-danger {
-      background: var(--danger);
-      color: #fff;
-    }
-    .btn-danger:hover { background: #c82333; }
-    .debug {
-      margin-top: var(--spacing);
-      font-family: monospace;
-      background: #eee;
-      padding: 0.5rem;
-      border-radius: var(--radius);
-      max-height: 150px;
-      overflow: auto;
-    }
-    @media (max-width: 600px) {
-      table, th, td { font-size: 0.85rem; }
-      .btn { width: 100%; margin-bottom: 0.5rem; }
-      .btn-add { margin-bottom: var(--spacing); }
-    }
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
+    h1{font-size:18px;margin:0}
+    .wrap{max-width:980px;margin:16px auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    label{font-weight:600;font-size:.9rem} input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px}
+    .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn.secondary{background:#e9eef7;color:#111}
+    table{width:100%;border-collapse:collapse;margin-top:12px} thead th,tbody td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
   </style>
-  <script src="../assets/js/auth.js"></script>
-  <script>
-    const INVENTORY_MASTER_URL = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/Stock_Master';
-    const SERVICE_INV_URL      = 'https://sheetdb.io/api/v1/xg2dgvssxzvag/ServiceOrderInventory';
-    let inventoryMaster = [];
-    function log(msg) {
-      document.getElementById('debug').textContent += msg + '\n';
-    }
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (localStorage.getItem('userRole') !== 'planner') {
-        alert('Access denied'); location.href='../login.html'; return;
-      }
-      try {
-        const res = await fetch(INVENTORY_MASTER_URL);
-        inventoryMaster = await res.json();
-        log(`Loaded ${inventoryMaster.length} master items`);
-        addRow();
-      } catch (e) {
-        alert('Error loading inventory master:'+e);
-        log('ERR loadInv:'+e);
-      }
-    });
-    function addRow() {
-      const tbody = document.querySelector('#invTable tbody');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><select class="masterSelect"><option value="">-- select item --</option>$
-          {inventoryMaster.map(item=>
-            `<option value="${item.id}" data-make="${item.Make}" data-model="${item.Model}"
-              data-serial="${item.SerialNumber}" data-sim="${item.SIMNumber}">
-              ${item.Make} ${item.Model}</option>`).join('')}
-        </select></td>
-        <td><input class="inp-make"   type="text" readonly /></td>
-        <td><input class="inp-model"  type="text" readonly /></td>
-        <td><input class="inp-serial" type="text" readonly /></td>
-        <td><input class="inp-sim"    type="text" readonly /></td>
-        <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>`;
-      tbody.appendChild(tr);
-      const sel = tr.querySelector('.masterSelect');
-      sel.addEventListener('change', e => {
-        const opt = sel.selectedOptions[0];
-        tr.querySelector('.inp-make').value   = opt.dataset.make   || '';
-        tr.querySelector('.inp-model').value  = opt.dataset.model  || '';
-        tr.querySelector('.inp-serial').value = opt.dataset.serial || '';
-        tr.querySelector('.inp-sim').value    = opt.dataset.sim    || '';
-      });
-    }
-    function removeRow(btn) { btn.closest('tr').remove(); }
-    async function submitInventory(e) {
-      e.preventDefault();
-      const so_id = document.getElementById('soId').value.trim() || localStorage.getItem('currentSO');
-      if (!so_id) { alert('Service Order ID is required'); return; }
-      const rows = Array.from(document.querySelectorAll('#invTable tbody tr'));
-      const payload = rows.map(tr=>{
-        const sel = tr.querySelector('.masterSelect');
-        return { so_id, master_id: sel.value,
-          Make: tr.querySelector('.inp-make').value,
-          Model: tr.querySelector('.inp-model').value,
-          Serial: tr.querySelector('.inp-serial').value,
-          SIM: tr.querySelector('.inp-sim').value };
-      }).filter(r=>r.master_id);
-      if (!payload.length) { alert('Select at least one item.'); return; }
-      log('Posting '+payload.length+' items...');
-      try {
-        const res = await fetch(SERVICE_INV_URL, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ data: payload })
-        });
-        if (!res.ok) throw new Error(res.statusText);
-        alert('Inventory assigned successfully!');
-        document.querySelector('#invTable tbody').innerHTML=''; addRow();
-      } catch(err) {
-        alert('Error submitting:'+err);
-        log('ERR submit:'+err);
-      }
-    }
-  </script>
 </head>
 <body>
-  <h2>Assign Inventory to Service Order</h2>
-  <form onsubmit="submitInventory(event)">
-    <div class="form-group">
-      <label for="soId">Service Order ID</label>
-      <input id="soId" placeholder="Enter or use existing SO ID" />
+  <script>Auth.ensureRole(['planner']);</script>
+
+  <header>
+    <h1>Assign Inventory</h1>
+    <div class="row">
+      <a class="btn secondary" href="./planner-jobs.html">Back to Jobs</a>
     </div>
-    <div class="table-container">
-      <table id="invTable">
-        <thead>
-          <tr>
-            <th>Item</th><th>Make</th><th>Model</th><th>Serial#</th><th>SIM#</th><th>Action</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
+  </header>
+  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
+
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <label>Service Order</label>
+        <select id="so" onchange="onSOChange()"></select>
+      </div>
+      <div>
+        <label>Vehicle</label>
+        <select id="veh"></select>
+      </div>
+      <div class="grid" style="grid-column:1/-1">
+        <div>
+          <label>Search Inventory</label>
+          <div style="display:flex;gap:8px">
+            <input id="q" placeholder="Item name contains…">
+            <button class="btn secondary" onclick="searchInventory()">Search</button>
+          </div>
+        </div>
+        <div>
+          <label>Inventory Item</label>
+          <select id="inv"></select>
+        </div>
+      </div>
+      <div>
+        <label>Qty</label>
+        <input id="qty" type="number" value="1" min="1">
+      </div>
+      <div>
+        <label>Override Serial # (optional)</label>
+        <input id="sn" placeholder="SN override">
+      </div>
+      <div>
+        <label>Override SIM # (optional)</label>
+        <input id="sim" placeholder="SIM override">
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <button class="btn" onclick="assignInv()">Add Line</button>
+      <div id="msg" style="color:#0056b3"></div>
+    </div>
+
+    <div style="overflow:auto">
+      <table>
+        <thead><tr><th>Vehicle</th><th>Inventory Item</th><th>Qty</th><th>Serial</th><th>SIM</th><th></th></tr></thead>
+        <tbody id="rows"><tr><td colspan="6">—</td></tr></tbody>
       </table>
     </div>
-    <button type="button" class="btn btn-add" onclick="addRow()">＋ Add Another</button>
-    <button type="submit" class="btn btn-submit">✅ Submit Inventory</button>
-  </form>
-  <pre id="debug" class="debug"></pre>
+  </div>
+
+  <script>
+    const { T } = NC, api = NCAPI;
+    function setMsg(t){ document.getElementById('msg').textContent = t||''; }
+
+    async function loadSO(){
+      const res = await api.list(T.service_orders, 'limit=500&sort=-scheduled_at&select=id,so_id,technician_id,scheduled_at');
+      const html = res.list.map(r=> `<option value="${r.id}">${r.so_id||('SO #'+r.id)}</option>`).join('');
+      document.querySelector('#so').innerHTML = html;
+      await onSOChange();
+      await listSOInv();
+    }
+    async function onSOChange(){
+      const soId = +gv('#so');
+      if(!soId){ document.querySelector('#veh').innerHTML=''; return; }
+      const res = await api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${soId})&limit=500`);
+      document.querySelector('#veh').innerHTML = res.list.map(v=> `<option value="${v.id}">${v.vehicle_no}</option>`).join('');
+      await listSOInv();
+    }
+    async function searchInventory(){
+      const q = gv('#q').trim();
+      let cond = 'limit=200&sort=item_name';
+      if(q) cond += `&filter=(item_name,like,${encodeURIComponent('%'+q+'%')})`;
+      const res = await api.list(T.inventory, cond);
+      document.querySelector('#inv').innerHTML = res.list.map(i=> `<option value="${i.id}">${i.item_name} ${i.serial_number? '• SN:'+i.serial_number:''} ${i.sim_number? '• SIM:'+i.sim_number:''} (${i.status||'unknown'})</option>`).join('');
+    }
+    async function assignInv(){
+      try{
+        setMsg('');
+        const soId  = +gv('#so');
+        const vehId = +gv('#veh');
+        const invId = +gv('#inv');
+        const qty   = +gv('#qty') || 1;
+        const sn    = gv('#sn').trim();
+        const sim   = gv('#sim').trim();
+        if(!soId || !vehId || !invId) return setMsg('Pick SO, Vehicle, and Inventory');
+
+        const inv = await api.read(T.inventory, invId);
+        if((inv.status||'').toLowerCase() === 'unavailable') return setMsg('Item is not available');
+
+        await api.create(T.service_order_inventory, {
+          service_order_id: soId,
+          service_order_vehicle_id: vehId,
+          inventory_item_id: invId,
+          qty: qty,
+          serial_number: sn || inv.serial_number || null,
+          sim_number: sim || inv.sim_number || null
+        });
+        setMsg('Added.');
+        await listSOInv();
+      }catch(e){
+        console.error(e); setMsg('Error: '+e.message);
+      }
+    }
+    async function listSOInv(){
+      const soId = +gv('#so'); if(!soId) return;
+      const res = await api.list(T.service_order_inventory, `filter=(service_order_id,eq,${soId})&limit=1000`);
+      document.querySelector('#rows').innerHTML = res.list.map(r=>`
+        <tr>
+          <td>${r.service_order_vehicle_id||''}</td>
+          <td>${r.inventory_item_id||''}</td>
+          <td>${r.qty||''}</td>
+          <td>${r.serial_number||''}</td>
+          <td>${r.sim_number||''}</td>
+          <td><button onclick="delInv(${r.id})">Remove</button></td>
+        </tr>`).join('') || '<tr><td colspan="6">No lines</td></tr>';
+    }
+    async function delInv(id){
+      if(!confirm('Remove inventory line?')) return;
+      await api.del(T.service_order_inventory, id);
+      await listSOInv();
+    }
+    function gv(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
+
+    document.addEventListener('DOMContentLoaded', ()=> { loadSO(); searchInventory(); });
+  </script>
 </body>
 </html>
