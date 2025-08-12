@@ -1,77 +1,68 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FSM – Sign in</title>
-
-  <!-- Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
+  <meta charset="UTF-8" />
+  <title>Naveo FSM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Only need the light auth shim here -->
+  <script src="/assets/js/auth-lite.js"></script>
   <style>
-    :root{
-      --primary:#0056b3; --bg:#f7fafd; --card:#fff; --muted:#6c757d;
-      --danger:#dc3545; --input:#f4f8fb; --border:#d6e0ea;
-    }
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;background:var(--bg);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      color:#23272f;display:flex;align-items:center;justify-content:center;padding:24px;
-    }
-    .card{
-      width:100%;max-width:420px;background:var(--card);border-radius:12px;
-      box-shadow:0 4px 18px rgba(0,0,0,.08);padding:28px 24px;
-    }
-    h1{font-size:1.5rem;margin:0 0 18px;color:var(--primary);font-weight:700}
-    label{display:block;font-weight:600;color:var(--primary);margin:14px 0 6px}
-    input[type="email"],input[type="password"]{
-      width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;background:var(--input);
-      outline:none;transition:border .15s;
-    }
-    input:focus{border-color:var(--primary)}
-    .row{
-      display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;color:var(--muted);
-      font-size:.95rem;
-    }
-    .row a{color:var(--primary);text-decoration:none}
-    .row a:hover{text-decoration:underline}
-    .btn{
-      width:100%;padding:10px 22px;border-radius:6px;border:none;cursor:pointer;
-      background:var(--primary);color:#fff;font-weight:700;margin-top:10px;
-    }
-    .err{
-      margin-top:12px;font-size:.95rem;color:var(--danger);min-height:1.2em;
-    }
-    .foot-note{margin-top:8px;color:var(--muted);font-size:.85rem;text-align:center}
+    body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif}
+    .wrap{max-width:640px;margin:16vh auto;background:var(--card);border:1px solid var(--border);
+          border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.06);padding:24px;text-align:center}
+    h1{margin:0 0 8px;font-size:22px}
+    p{margin:0 0 14px;color:#6b7280}
+    .btn{display:inline-block;background:var(--primary);color:#fff;text-decoration:none;
+         padding:10px 16px;border-radius:10px;margin:4px}
+    .btn.secondary{background:#e9eef7;color:#111}
   </style>
 </head>
 <body>
-  <main class="card" aria-labelledby="title">
-    <h1 id="title">Sign in</h1>
+  <div class="wrap">
+    <h1>Naveo FSM</h1>
+    <p>Launching…</p>
+    <div style="margin-top:8px">
+      <!-- Fallback links in case JS redirect is blocked -->
+      <a class="btn" href="/access/role.html">Choose role</a>
+      <a class="btn secondary" href="/planner/planner-jobs.html">Planner</a>
+      <a class="btn secondary" href="/technician/home.html">Technician</a>
+    </div>
+  </div>
 
-    <form id="login-form" autocomplete="on">
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" placeholder="you@example.com" required />
+  <script>
+    // If you're hosting under a subpath (e.g., GitHub Pages /repo), set BASE_PATH = '/repo'
+    const BASE_PATH = ''; // '' when hosted at domain root
 
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" placeholder="••••••••" required />
+    const landing = {
+      planner: `${BASE_PATH}/planner/planner-jobs.html`,
+      technician: `${BASE_PATH}/technician/home.html`,
+      picker: `${BASE_PATH}/access/role.html`
+    };
 
-      <div class="row">
-        <label style="display:flex;gap:8px;align-items:center;color:#23272f;font-weight:500;">
-          <input id="remember" type="checkbox" /> Remember
-        </label>
-        <a href="#" aria-label="Forgot password">Forgot?</a>
-      </div>
-
-      <button class="btn" type="submit">Log in</button>
-      <div id="login-error" class="err" role="alert" aria-live="polite"></div>
-    </form>
-
-    <div class="foot-note">Use your Navo FSM credentials.</div>
-  </main>
-
-  <!-- Auth script: handles login against NocoDB and redirects to index.html -->
-  <script src="assets/js/auth.js"></script>
+    (function launch(){
+      try{
+        const role = (localStorage.getItem('fsm_role') || '').toLowerCase();
+        if(role === 'planner') {
+          window.location.replace(landing.planner);
+          return;
+        }
+        if(role === 'technician') {
+          // Basic sanity: require a selected technician id
+          const techId = localStorage.getItem('fsm_technician_id');
+          if(techId) {
+            window.location.replace(landing.technician);
+            return;
+          }
+        }
+        // No role or incomplete tech state → go pick a role
+        window.location.replace(landing.picker);
+      }catch(e){
+        // If something goes wrong, leave the fallback links visible
+        console.error('Launch error:', e);
+      }
+    })();
+  </script>
 </body>
 </html>
