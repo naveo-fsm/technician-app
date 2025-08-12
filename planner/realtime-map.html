@@ -1,124 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="../assets/js/auth.js"></script>
   <meta charset="UTF-8" />
-  <title>Planner – Live Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <title>Naveo FSM – Realtime Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- NocoDB client (uses your PAT & IDs) -->
+  <script src="../assets/js/noco.js"></script>
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
   <style>
-    :root {
-      --primary: #007bff;
-      --bg: #f5f5f5;
-      --radius: 8px;
-      --shadow: rgba(0,0,0,0.1);
+    :root{
+      --primary:#0056b3; --bg:#f5f7fb; --card:#fff; --border:#e5e7eb; --muted:#6b7280;
+      --job:#34c759;   /* green for jobs */
+      --tech:#2563eb;  /* blue for techs */
     }
-    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    .header {
-      background: var(--primary);
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.25rem;
-      box-shadow: 0 2px 4px var(--shadow);
-    }
-    #map { flex: 1; }
-    .controls {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: #fff;
-      padding: 0.5rem;
-      border-radius: var(--radius);
-      box-shadow: 0 2px 6px var(--shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      z-index: 1000;
-    }
-    .controls label {
-      font-size: 0.9rem;
-      color: #333;
-    }
-    .controls select {
-      padding: 0.4rem;
-      border-radius: var(--radius);
-      border: 1px solid #ccc;
-    }
-    .btn-refresh {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 0.4rem;
-      border-radius: var(--radius);
-      cursor: pointer;
-    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif;color:#111}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+    header h1{font-size:18px;margin:0}
+    .actions{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn.secondary{background:#e9eef7;color:#111}
+    #map{height:calc(100vh - 62px);width:100%}
+    .legend{position:absolute;right:12px;bottom:12px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.08);z-index:400}
+    .legend .row{display:flex;align-items:center;gap:8px;margin:4px 0}
+    .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+    .dot.job{background:var(--job)}
+    .dot.tech{background:var(--tech)}
+    .meta{color:var(--muted);font-size:.9rem}
   </style>
 </head>
 <body>
-  <div class="header">🗺️ Live Technician Map</div>
+  <header>
+    <h1>Planner • Realtime Map</h1>
+    <div class="actions">
+      <span class="meta" id="metaCounts">—</span>
+      <button id="btnRefresh" class="btn secondary">Refresh</button>
+      <button id="btnAuto" class="btn">Auto: On</button>
+    </div>
+  </header>
+
   <div id="map"></div>
 
-  <div class="controls">
-    <label>Technician:
-      <select id="techSelect"><option value="all">All</option></select>
-    </label>
-    <button class="btn-refresh" onclick="refreshLocations()">🔄 Refresh</button>
+  <div class="legend">
+    <div class="row"><span class="dot job"></span> Jobs (Assigned / In progress)</div>
+    <div class="row"><span class="dot tech"></span> Technicians (latest ping)</div>
   </div>
 
   <script>
-    let map = L.map('map').setView([0,0], 2);
+    const { T } = NC, api = NCAPI;
+
+    // --- Map init (center on Mauritius) ---
+    const DEFAULT_CENTER = L.latLng(-20.2000, 57.5000);
+    const DEFAULT_ZOOM = 10;
+
+    const map = L.map('map', {
+      zoomControl: true,
+      attributionControl: true
+    }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    let markers = [];
-    let technicians = [];
+    // Layers
+    const jobsLayer = L.layerGroup().addTo(map);
+    const techsLayer = L.layerGroup().addTo(map);
 
-    async function loadTechs() {
-      const res = await fetch('https://sheetdb.io/api/v1/xg2dgvssxzvag/Technicians');
-      technicians = await res.json();
-      const sel = document.getElementById('techSelect');
-      technicians.forEach(t => sel.add(new Option(t.FullName, t.TechnicianID)));
+    // Simple colored circle markers
+    function jobMarker(lat, lng, popupHtml){
+      return L.circleMarker([lat, lng], {
+        radius: 8, color: 'white', weight: 2, fillColor: getComputedStyle(document.documentElement)
+          .getPropertyValue('--job').trim(), fillOpacity: 0.9
+      }).bindPopup(popupHtml);
+    }
+    function techMarker(lat, lng, popupHtml){
+      return L.circleMarker([lat, lng], {
+        radius: 7, color: 'white', weight: 2, fillColor: getComputedStyle(document.documentElement)
+          .getPropertyValue('--tech').trim(), fillOpacity: 0.9
+      }).bindPopup(popupHtml);
     }
 
-    async function refreshLocations() {
-      // Clear existing markers
-      markers.forEach(m => map.removeLayer(m));
-      markers = [];
+    // Helpers
+    function fmt(dt){ try { return dt ? new Date(dt).toLocaleString() : ''; } catch(e){ return dt||''; } }
+    function isValidCoord(x){ return typeof x === 'number' && isFinite(x); }
 
-      // Fetch latest coords
-      const res = await fetch('https://sheetdb.io/api/v1/xg2dgvssxzvag/TechLocations');
-      const locations = await res.json();
-      const filter = document.getElementById('techSelect').value;
+    async function fetchJobs(){
+      // Only jobs with coordinates, in assigned or in_progress
+      const q = [
+        'limit=1000',
+        'select=id,so_id,technician_id,intervention_type_id,address,address_lat,address_lng,scheduled_at,status,priority'
+      ];
+      // NOTE: NocoDB "in" filter expects comma-separated values within same filter:
+      // filter=(status,in,assigned,in_progress)
+      q.push('filter=(status,in,assigned,in_progress)');
+      const res = await api.list(T.service_orders, q.join('&'));
+      const withCoords = res.list.filter(r => isValidCoord(r.address_lat) && isValidCoord(r.address_lng));
+      return withCoords;
+    }
 
-      locations.forEach(loc => {
-        if (filter !== 'all' && loc.TechnicianID !== filter) return;
-        const tech = technicians.find(t => t.TechnicianID === loc.TechnicianID);
-        const marker = L.marker([loc.Latitude, loc.Longitude]).addTo(map)
-          .bindPopup(`<strong>${tech?.FullName||loc.TechnicianID}</strong><br/>${loc.Timestamp}`);
-        markers.push(marker);
-      });
+    async function fetchLatestTechPings(hoursBack=3){
+      const since = new Date(Date.now() - hoursBack*60*60*1000).toISOString();
+      const res = await api.list(T.technician_locations, `filter=(recorded_at,gt,${since})&sort=-recorded_at&limit=5000`);
+      // Reduce to latest per technician
+      const latestByTech = {};
+      for(const row of res.list){
+        if(!latestByTech[row.technician_id]) latestByTech[row.technician_id] = row;
+      }
+      return Object.values(latestByTech);
+    }
 
-      if (markers.length) {
-        const group = L.featureGroup(markers);
-        map.fitBounds(group.getBounds().pad(0.2));
+    async function render(){
+      try{
+        document.getElementById('metaCounts').textContent = 'Loading…';
+
+        const [jobs, techPings] = await Promise.all([fetchJobs(), fetchLatestTechPings(3)]);
+        jobsLayer.clearLayers();
+        techsLayer.clearLayers();
+
+        // Jobs markers
+        for(const j of jobs){
+          const html = `
+            <div style="min-width:220px">
+              <div><b>${j.so_id || ('SO #' + j.id)}</b></div>
+              <div>Status: <b>${j.status||''}</b> • Priority: <b>${j.priority||''}</b></div>
+              <div>When: ${fmt(j.scheduled_at)}</div>
+              <div>Address: ${j.address || ''}</div>
+              <div style="margin-top:6px">
+                <a target="_blank" href="https://www.google.com/maps?q=${j.address_lat},${j.address_lng}">Open in Maps</a>
+              </div>
+            </div>`;
+          jobMarker(j.address_lat, j.address_lng, html).addTo(jobsLayer);
+        }
+
+        // Tech markers
+        for(const t of techPings){
+          if(!isValidCoord(t.lat) || !isValidCoord(t.lng)) continue;
+          const html = `
+            <div style="min-width:220px">
+              <div><b>Technician #${t.technician_id}</b></div>
+              <div>Last ping: ${fmt(t.recorded_at)}</div>
+              ${typeof t.accuracy_m !== 'undefined' ? `<div>Accuracy: ~${t.accuracy_m} m</div>`:''}
+            </div>`;
+          techMarker(t.lat, t.lng, html).addTo(techsLayer);
+        }
+
+        // Fit bounds if we have markers; otherwise stay on Mauritius
+        const all = L.featureGroup([jobsLayer, techsLayer]);
+        const bounds = all.getBounds();
+        if(bounds && bounds.isValid()){
+          map.fitBounds(bounds.pad(0.2), { animate: true, maxZoom: 14 });
+        } else {
+          map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+        }
+
+        // Meta counts
+        const missingGeo = (await api.list(T.service_orders, 'limit=1&filter=(status,in,assigned,in_progress)&filter=(address_lat,is,null)')).pageInfo?.totalRows ?? 0;
+        const msg = `${jobs.length} jobs on map • ${techPings.length} techs • ${missingGeo} jobs missing geo`;
+        document.getElementById('metaCounts').textContent = msg;
+
+      }catch(err){
+        console.error(err);
+        document.getElementById('metaCounts').textContent = 'Error loading map data';
+        alert('Map load error: ' + err.message);
       }
     }
 
-    // Init
-    loadTechs().then(refreshLocations);
-    // Auto-refresh every minute
-    setInterval(refreshLocations, 60000);
+    // Controls
+    document.getElementById('btnRefresh').onclick = render;
+
+    let auto = true;
+    let timer = null;
+    function setAuto(on){
+      auto = on;
+      document.getElementById('btnAuto').textContent = 'Auto: ' + (auto ? 'On' : 'Off');
+      if(timer) clearInterval(timer);
+      if(auto) timer = setInterval(render, 30000); // refresh every 30s
+    }
+    document.getElementById('btnAuto').onclick = ()=> setAuto(!auto);
+
+    // Startup
+    (async function init(){
+      setAuto(true);
+      await render();
+    })();
   </script>
 </body>
 </html>
