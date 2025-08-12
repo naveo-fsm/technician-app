@@ -1,411 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Admin • Intervention Types | Naveo FSM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-
-  <!-- Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
+  <meta charset="UTF-8" />
+  <title>Planner • Intervention & Checklist Master</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="../assets/js/noco.js"></script>
+  <script src="../assets/js/auth-lite.js"></script>
   <style>
-    :root{
-      --primary:#0056b3;
-      --secondary:#eaf2fb;
-      --success:#28a745;
-      --danger:#dc3545;
-      --muted:#6c757d;
-      --text:#23272f;
-      --bg:#f7fafd;
-      --card:#fff;
-      --table-bg:#fcfcfc;
-      --input-bg:#f4f8fb;
-      --border:#edf0f6;
-      --radius-card:12px;
-      --radius-el:6px;
-      --shadow:0 4px 18px rgba(0,0,0,.08);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      font-size:16px; color:var(--text); background:var(--bg);
-    }
-
-    /* Shell */
-    .wrap{max-width:1100px;margin:34px auto;padding:0 16px}
-    .card{
-      background:var(--card); border-radius:var(--radius-card); box-shadow:var(--shadow);
-      padding:32px;
-    }
-    h2{margin:0 0 8px; font-weight:700; font-size:1.5rem; color:var(--primary)}
-    .sub{color:var(--muted); margin:0 0 22px; font-size:.96rem}
-
-    /* Toolbar */
-    .toolbar{
-      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:18px;
-    }
-    .toolbar-left, .toolbar-right{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
-    .search{
-      position:relative; min-width:240px; flex:1 1 260px;
-    }
-    .search input{
-      width:100%; padding:10px 14px 10px 36px; background:var(--input-bg);
-      border:1px solid #d6e0ea; border-radius:var(--radius-el); outline:none;
-      transition:border .15s;
-    }
-    .search input:focus{border-color:var(--primary)}
-    .search svg{position:absolute; top:9px; left:10px; fill:var(--muted)}
-    .btn{
-      border:0; border-radius:var(--radius-el); padding:9px 22px; cursor:pointer;
-      font-weight:700;
-    }
-    .btn-primary{background:var(--primary); color:#fff}
-    .btn-muted{background:#e7ebf2; color:#223}
-    .btn-danger{background:var(--danger); color:#fff}
-    .btn:focus{outline:2px solid #9cc2f1; outline-offset:2px}
-
-    /* Table */
-    .table-wrap{
-      background:var(--table-bg); border:1px solid var(--border); border-radius:12px; overflow:hidden;
-    }
-    table{width:100%; border-collapse:separate; border-spacing:0}
-    thead th{
-      position:sticky; top:0; z-index:2; background:var(--secondary); color:var(--primary);
-      text-align:left; font-weight:700; padding:12px; border-bottom:1px solid var(--border);
-    }
-    tbody td{padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle}
-    tbody tr:hover{background:#f8fbff}
-    .actions{display:flex; gap:8px; align-items:center}
-
-    /* Badges */
-    .badge{display:inline-block; border-radius:999px; padding:4px 10px; font-size:.92rem; font-weight:700; color:#fff}
-    .badge-active{background:var(--success)}
-    .badge-inactive{background:var(--danger)}
-
-    /* Inputs / labels */
-    label{font-weight:700; color:var(--primary); font-size:.99rem; display:block; margin:8px 0 6px}
-    select,input[type="text"],textarea{
-      width:100%; padding:8px 14px; border:1px solid #d6e0ea; border-radius:var(--radius-el);
-      background:var(--input-bg); outline:none; transition:border .15s;
-    }
-    select:focus,input:focus,textarea:focus{border-color:var(--primary)}
-    .hint{color:var(--muted); font-size:.88rem}
-    .err{color:var(--danger); font-size:.95rem; margin-top:6px}
-
-    /* Modal */
-    .modal-backdrop{
-      position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; padding:16px;
-    }
-    .modal{background:#fff; width:100%; max-width:420px; border-radius:12px; box-shadow:var(--shadow); padding:28px 22px}
-    .modal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
-    .modal h3{margin:0; font-size:1.2rem; color:var(--primary)}
-    .close{background:none;border:0;color:var(--muted);font-size:1.3rem;cursor:pointer}
-    .modal .grid{display:grid; gap:12px}
-    .modal .row{display:flex; gap:12px}
-    .modal .row > *{flex:1 1 0}
-    .modal .footer{display:flex; gap:10px; justify-content:flex-end; margin-top:14px}
-
-    /* Pagination */
-    .pagination{display:flex; gap:8px; justify-content:flex-end; padding:10px 0}
-    .page-btn{background:var(--primary); color:#fff; border:0; border-radius:6px; padding:6px 10px; cursor:pointer}
-    .page-btn[disabled]{opacity:.5; cursor:not-allowed}
-
-    /* Responsive */
-    @media (max-width:720px){
-      .card{padding:12px}
-      .toolbar{gap:8px}
-      tbody td{padding:8px 6px}
-    }
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb;--muted:#6b7280}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
+    h1{font-size:18px;margin:0}
+    .container{padding:16px;display:grid;gap:16px;grid-template-columns:1fr 1fr}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
+    table{width:100%;border-collapse:collapse} thead th{padding:8px;border-bottom:1px solid var(--border);text-align:left;color:#374151}
+    tbody td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+    label{font-weight:600;font-size:.9rem} input,select,textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn.secondary{background:#e9eef7;color:#111}
+    @media(max-width:1020px){ .container{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card" role="region" aria-label="Intervention Type Master">
-      <h2>Intervention Type Master</h2>
-      <p class="sub">Create, update, and manage intervention types and their default checklists.</p>
+  <script>Auth.ensureRole(['planner']);</script>
 
-      <!-- Toolbar -->
-      <div class="toolbar" role="toolbar" aria-label="Actions">
-        <div class="toolbar-left">
-          <div class="search" role="search">
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 20l-5.6-5.6a7 7 0 10-1.4 1.4L20 21l1-1zM5 11a6 6 0 1112 0A6 6 0 015 11z"/></svg>
-            <input id="q" type="search" placeholder="Search intervention types…" aria-label="Search"/>
-          </div>
+  <header>
+    <h1>Intervention Types & Checklists</h1>
+    <nav class="row">
+      <a class="btn secondary" href="./planner.html">Home</a>
+      <a class="btn secondary" href="./planner-jobs.html">Jobs</a>
+    </nav>
+  </header>
+  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
+
+  <main class="container">
+    <!-- Intervention types -->
+    <section class="card">
+      <h2 style="margin:0 0 10px;font-size:16px">Intervention Types</h2>
+      <div class="row">
+        <div style="flex:1">
+          <label>Name</label>
+          <input id="it_name" placeholder="e.g. DVR Installation"/>
         </div>
-        <div class="toolbar-right">
-          <button class="btn btn-muted" id="refreshBtn" aria-label="Refresh list">Refresh</button>
-          <button class="btn btn-primary" id="addBtn" aria-label="Add intervention type">+ Add Type</button>
+        <div style="flex:1">
+          <label>SLA (minutes)</label>
+          <input id="it_sla" type="number" min="0" value="60"/>
         </div>
+        <div style="flex:1">
+          <label>Status</label>
+          <select id="it_status">
+            <option value="active" selected>active</option>
+            <option value="inactive">inactive</option>
+          </select>
+        </div>
+        <input id="it_id" type="hidden">
+      </div>
+      <div style="margin-top:8px">
+        <label>Description</label>
+        <textarea id="it_desc" rows="3" placeholder="Optional"></textarea>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="itCreate()">Create</button>
+        <button class="btn secondary" onclick="itSave()">Save</button>
+        <button class="btn secondary" onclick="clearITForm()">Clear</button>
       </div>
 
-      <!-- Table -->
-      <div class="table-wrap" role="table" aria-label="Intervention Types">
+      <div style="overflow:auto;margin-top:12px">
         <table>
-          <thead>
-            <tr>
-              <th style="width:110px">ID</th>
-              <th>Type</th>
-              <th>Default Checklist</th>
-              <th style="width:160px">Status</th>
-              <th style="width:170px">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="rows" aria-live="polite"></tbody>
+          <thead><tr><th>Name</th><th>Description</th><th>SLA</th><th>Status</th><th></th></tr></thead>
+          <tbody id="itTableBody"><tr><td colspan="5">Loading…</td></tr></tbody>
         </table>
       </div>
+    </section>
 
-      <div class="pagination">
-        <button class="page-btn" id="prev">‹</button>
-        <button class="page-btn" id="next">›</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <h3 id="modalTitle">Add Intervention Type</h3>
-        <button class="close" id="closeModal" aria-label="Close">✕</button>
-      </div>
-      <div class="grid">
-        <div>
-          <label for="typeName">Type name</label>
-          <input id="typeName" type="text" placeholder="e.g., New Installation" autocomplete="off"/>
-          <div class="err" id="typeErr" style="display:none"></div>
+    <!-- Checklist template for selected intervention -->
+    <section class="card">
+      <h2 style="margin:0 0 10px;font-size:16px" id="chkHeader">Checklist (select an intervention)</h2>
+      <div class="row">
+        <input id="chk_id" type="hidden">
+        <div style="flex:2">
+          <label>Item</label>
+          <input id="chk_item" placeholder="e.g. Mount camera securely"/>
         </div>
         <div>
-          <label for="checklistSel">Default checklist (optional)</label>
-          <select id="checklistSel" aria-label="Default checklist">
-            <option value="">— None —</option>
-          </select>
-          <div class="hint">Choose a checklist to attach by default when this intervention is scheduled.</div>
+          <label>Required</label>
+          <div class="row"><input id="chk_req" type="checkbox" style="width:auto"><span class="muted">Yes</span></div>
         </div>
-        <div class="row">
-          <div>
-            <label for="statusSel">Status</label>
-            <select id="statusSel">
-              <option value="Active" selected>Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-          <div>
-            <label for="notes">Notes (optional)</label>
-            <input id="notes" type="text" placeholder="Short description"/>
-          </div>
+        <div style="flex:1">
+          <label>Sort Order</label>
+          <input id="chk_sort" type="number" value="0"/>
         </div>
       </div>
-      <div class="footer">
-        <button class="btn btn-muted" id="cancelModal">Cancel</button>
-        <button class="btn btn-primary" id="saveModal">Save</button>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="chkCreate()">Add</button>
+        <button class="btn secondary" onclick="chkSave()">Save</button>
+        <button class="btn secondary" onclick="clearChkForm()">Clear</button>
       </div>
-    </div>
-  </div>
 
-  <!-- Config + Auth -->
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
+      <div style="overflow:auto;margin-top:12px">
+        <table>
+          <thead><tr><th>Sort</th><th>Item</th><th>Required</th><th></th></tr></thead>
+          <tbody id="chkTableBody"><tr><td colspan="4">—</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
   <script>
-    // ======= TABLE IDS (from config.js preferred; fallback to known IDs) =======
-    const TABLES = {
-      intervention_types: (window.TBL && window.TBL.intervention_types) || 'mb4yox88hd24r0h',
-      checklists: 'ma917pno6w5e1ed' // provided in your list
-    };
+    const { T } = NC, api = NCAPI;
 
-    // ======= NocoDB helper =======
-    const NC = {
-      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
-      headers: () => ({
-        'accept':'application/json',
-        'Content-Type':'application/json',
-        'Authorization': `Bearer ${window.NC_TOKEN}`
-      }),
-      async list(tableId, { where, limit=25, offset=0, sort }={}){
-        const qs = new URLSearchParams();
-        if(where) qs.set('where', JSON.stringify(where));
-        qs.set('limit', String(limit));
-        qs.set('offset', String(offset));
-        if(sort) qs.set('sort', JSON.stringify(sort));
-        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
-        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
-        return res.json(); // { list, count }
-      },
-      async create(tableId, data){
-        const res = await fetch(this.url(tableId,'records'), { method:'POST', headers:this.headers(), body:JSON.stringify(data) });
-        if(!res.ok) throw new Error(`Create ${tableId} ${res.status}`);
-        return res.json();
-      },
-      async update(tableId, id, data){
-        // PATCH records => body { "records": [ { "Id": id, ... } ] } also works,
-        // but simpler: /records/{recordId}
-        const res = await fetch(this.url(tableId, `records/${id}`), { method:'PATCH', headers:this.headers(), body:JSON.stringify(data) });
-        if(!res.ok) throw new Error(`Update ${tableId} ${res.status}`);
-        return res.json();
-      },
-      async remove(tableId, id){
-        const res = await fetch(this.url(tableId, `records/${id}`), { method:'DELETE', headers:this.headers() });
-        if(!res.ok) throw new Error(`Delete ${tableId} ${res.status}`);
-        return res.json();
-      }
-    };
-
-    // ======= State =======
-    let page = 0, PAGE_SIZE = 10;
-    let cacheChecklists = [];
-    let editingId = null;
-
-    // ======= UI helpers =======
-    const $ = sel => document.querySelector(sel);
-    const rowsEl = $('#rows');
-    const qEl = $('#q');
-
-    function badge(status){
-      const cls = status === 'Active' ? 'badge-active' : 'badge-inactive';
-      return `<span class="badge ${cls}" aria-label="${status} status">${status}</span>`;
+    async function itList(){
+      const res = await api.list(T.intervention_types, 'limit=1000&sort=intervention_name');
+      const tbody = document.querySelector('#itTableBody');
+      if(!tbody) return;
+      tbody.innerHTML = res.list.map(r=>`
+        <tr>
+          <td>${r.intervention_name||''}</td>
+          <td>${r.description||''}</td>
+          <td>${r.sla_minutes||''}</td>
+          <td>${r.status||''}</td>
+          <td>
+            <button onclick="itEdit(${r.id})">Edit</button>
+            <button onclick="itSelect(${r.id})">Checklists</button>
+            <button onclick="itDel(${r.id})">Del</button>
+          </td>
+        </tr>`).join('');
     }
 
-    function openModal(edit=null){
-      editingId = edit?.id || null;
-      $('#modalTitle').textContent = editingId ? 'Edit Intervention Type' : 'Add Intervention Type';
-      $('#typeName').value = edit?.type || '';
-      $('#statusSel').value = edit?.status || 'Active';
-      $('#notes').value = edit?.notes || '';
-      $('#typeErr').style.display='none';
-
-      // preselect checklist
-      const cid = edit?.default_checklist_id || '';
-      $('#checklistSel').value = cid ? String(cid) : '';
-
-      $('#modalBackdrop').style.display='flex';
-      $('#typeName').focus();
+    async function itCreate(){
+      const b = readITForm();
+      if(!b.intervention_name) return alert('Name required');
+      if(b.sla_minutes<0) return alert('SLA must be ≥ 0');
+      await api.create(T.intervention_types, b);
+      await itList(); clearITForm();
     }
-    function closeModal(){
-      $('#modalBackdrop').style.display='none';
-      editingId = null;
+    async function itEdit(id){
+      const r = await api.read(T.intervention_types, id);
+      fillITForm(r);
     }
-
-    // ======= Data loading =======
-    async function loadChecklists(){
-      const res = await NC.list(TABLES.checklists, { limit: 200, sort:[["name","asc"]] }).catch(()=>({list:[]}));
-      cacheChecklists = res.list || [];
-      const sel = $('#checklistSel');
-      sel.innerHTML = '<option value="">— None —</option>' + cacheChecklists.map(c=>`<option value="${c.id}">${escapeHtml(c.name||('Checklist '+c.id))}</option>`).join('');
+    async function itSave(){
+      const b = readITForm();
+      if(!b.id) return alert('No record selected');
+      await api.patch(T.intervention_types, b);
+      await itList(); clearITForm();
+    }
+    async function itDel(id){
+      if(!confirm('Delete intervention type?')) return;
+      await api.del(T.intervention_types, id);
+      await itList();
     }
 
-    async function load(pageIndex=0){
-      const term = qEl.value.trim();
-      const where = term ? [["type","like",`%${term}%`]] : [];
-      const res = await NC.list(TABLES.intervention_types, { where, limit: PAGE_SIZE, offset: pageIndex*PAGE_SIZE, sort:[["type","asc"]] });
-      renderRows(res.list || []);
-      // buttons
-      $('#prev').disabled = pageIndex<=0;
-      $('#next').disabled = (pageIndex+1)*PAGE_SIZE >= (res.count||0);
-    }
-
-    function renderRows(list){
-      if(!Array.isArray(list) || list.length===0){
-        rowsEl.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:18px">No records found.</td></tr>`;
-        return;
-      }
-      rowsEl.innerHTML = list.map(r=>{
-        const type = escapeHtml(r.type || '');
-        const check = displayChecklistName(r.default_checklist_id);
-        const st = escapeHtml(r.status || 'Active');
-        return `
-          <tr>
-            <td>${r.id}</td>
-            <td>${type}</td>
-            <td>${check}</td>
-            <td>${badge(st)}</td>
-            <td>
-              <div class="actions">
-                <button class="btn btn-muted" aria-label="Edit ${type}" onclick='editRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>Edit</button>
-                <button class="btn btn-danger" aria-label="Delete ${type}" onclick="deleteRecord('${r.id}','${type}')">Delete</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function displayChecklistName(id){
-      if(!id) return '<span style="color:var(--muted)">—</span>';
-      const c = cacheChecklists.find(x=>String(x.id)===String(id));
-      return c ? escapeHtml(c.name || `Checklist ${id}`) : `#${id}`;
-    }
-
-    // ======= CRUD =======
-    async function saveFromModal(){
-      const name = $('#typeName').value.trim();
-      const status = $('#statusSel').value || 'Active';
-      const notes = $('#notes').value.trim();
-      const checklist_id = $('#checklistSel').value || null;
-
-      if(!name){
-        $('#typeErr').textContent = 'Type name is required';
-        $('#typeErr').style.display='block';
-        $('#typeName').focus();
-        return;
-      }
-      const payload = {
-        type: name,
-        status,
-        notes,
-        default_checklist_id: checklist_id
+    function readITForm(){
+      return {
+        id: +val('#it_id') || undefined,
+        intervention_name: val('#it_name').trim(),
+        description: val('#it_desc').trim(),
+        sla_minutes: +val('#it_sla') || 0,
+        status: val('#it_status') || 'active'
       };
-      try{
-        if(editingId){
-          await NC.update(TABLES.intervention_types, editingId, payload);
-        }else{
-          await NC.create(TABLES.intervention_types, payload);
-        }
-        closeModal();
-        await load(page);
-      }catch(err){
-        alert('Save failed. Please check your API token & permissions.');
-        console.error(err);
-      }
+    }
+    function fillITForm(r){
+      set('#it_id', r.id);
+      set('#it_name', r.intervention_name||'');
+      set('#it_desc', r.description||'');
+      set('#it_sla', r.sla_minutes||0);
+      set('#it_status', r.status||'active');
+    }
+    function clearITForm(){ ['#it_id','#it_name','#it_desc','#it_sla','#it_status'].forEach(s=>set(s,'')); set('#it_status','active'); }
+
+    let currentIT = null;
+    async function itSelect(id){
+      currentIT = id;
+      document.getElementById('chkHeader').textContent = 'Checklist for IT #' + id;
+      await chkList();
+    }
+    async function chkList(){
+      if(!currentIT) return;
+      const res = await api.list(T.checklists, `filter=(intervention_type_id,eq,${currentIT})&sort=sort_order&limit=1000`);
+      const tbody = document.querySelector('#chkTableBody');
+      tbody.innerHTML = res.list.map(r=>`
+        <tr>
+          <td>${r.sort_order||''}</td>
+          <td>${r.checklist_item||''}</td>
+          <td>${r.is_required ? 'yes':'no'}</td>
+          <td>
+            <button onclick="chkEdit(${r.id})">Edit</button>
+            <button onclick="chkDel(${r.id})">Del</button>
+          </td>
+        </tr>`).join('');
+    }
+    function clearChkForm(){ ['#chk_id','#chk_item','#chk_sort'].forEach(x=>set(x,'')); document.querySelector('#chk_req').checked=false; }
+    async function chkCreate(){
+      if(!currentIT) return alert('Select an intervention type first');
+      const b = {
+        intervention_type_id: currentIT,
+        checklist_item: val('#chk_item').trim(),
+        is_required: document.querySelector('#chk_req').checked,
+        sort_order: +val('#chk_sort') || 0
+      };
+      if(!b.checklist_item) return alert('Item text required');
+      await api.create(T.checklists, b);
+      await chkList(); clearChkForm();
+    }
+    async function chkEdit(id){
+      const r = await api.read(T.checklists, id);
+      set('#chk_id', r.id);
+      set('#chk_item', r.checklist_item||'');
+      document.querySelector('#chk_req').checked = !!r.is_required;
+      set('#chk_sort', r.sort_order||0);
+    }
+    async function chkSave(){
+      const b = {
+        id: +val('#chk_id'),
+        checklist_item: val('#chk_item').trim(),
+        is_required: document.querySelector('#chk_req').checked,
+        sort_order: +val('#chk_sort') || 0
+      };
+      if(!b.id) return alert('No checklist row selected');
+      await api.patch(T.checklists, b);
+      await chkList(); clearChkForm();
+    }
+    async function chkDel(id){
+      if(!confirm('Delete checklist row?')) return;
+      await api.del(T.checklists, id);
+      await chkList();
     }
 
-    async function deleteRecord(id, label){
-      if(!confirm(`Delete "${label}"? This cannot be undone.`)) return;
-      try{
-        await NC.remove(TABLES.intervention_types, id);
-        await load(page);
-      }catch(err){
-        alert('Delete failed.'); console.error(err);
-      }
-    }
+    function val(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
+    function set(sel,v){ const e=document.querySelector(sel); if(e) e.value=v; }
 
-    // inline helpers needed by onclick in template
-    window.editRecord = openModal;
-    window.deleteRecord = deleteRecord;
-
-    // ======= Utils =======
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-    // ======= Events =======
-    $('#addBtn').addEventListener('click', ()=>openModal());
-    $('#closeModal').addEventListener('click', closeModal);
-    $('#cancelModal').addEventListener('click', closeModal);
-    $('#saveModal').addEventListener('click', saveFromModal);
-    $('#refreshBtn').addEventListener('click', ()=>load(page));
-    $('#prev').addEventListener('click', ()=>{ page=Math.max(0,page-1); load(page); });
-    $('#next').addEventListener('click', ()=>{ page=page+1; load(page); });
-    qEl.addEventListener('input', ()=>{ page=0; load(page); });
-
-    // ======= Init (with guard if you want only planners) =======
-    (function init(){
-      try{ Auth.requireRole && Auth.requireRole('planner'); }catch(_){}
-      if(!window.NC_BASE || !window.NC_TOKEN){
-        alert('Missing NC_BASE / NC_TOKEN. Add them in config.js');
-        return;
-      }
-      loadChecklists().then(()=>load(0));
-      if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
-    })();
+    document.addEventListener('DOMContentLoaded', itList);
   </script>
 </body>
 </html>
