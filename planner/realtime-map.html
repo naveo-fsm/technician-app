@@ -5,10 +5,9 @@
   <title>Naveo FSM – Realtime Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- NocoDB client (uses your PAT & IDs) -->
   <script src="../assets/js/noco.js"></script>
+  <script src="../assets/js/auth-lite.js"></script>
 
-  <!-- Leaflet -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -24,8 +23,7 @@
   <style>
     :root{
       --primary:#0056b3; --bg:#f5f7fb; --card:#fff; --border:#e5e7eb; --muted:#6b7280;
-      --job:#34c759;   /* green for jobs */
-      --tech:#2563eb;  /* blue for techs */
+      --job:#34c759; --tech:#2563eb;
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif;color:#111}
@@ -44,6 +42,8 @@
   </style>
 </head>
 <body>
+  <script>Auth.ensureRole(['planner']);</script>
+
   <header>
     <h1>Planner • Realtime Map</h1>
     <div class="actions">
@@ -52,6 +52,7 @@
       <button id="btnAuto" class="btn">Auto: On</button>
     </div>
   </header>
+  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
 
   <div id="map"></div>
 
@@ -100,23 +101,18 @@
     function isValidCoord(x){ return typeof x === 'number' && isFinite(x); }
 
     async function fetchJobs(){
-      // Only jobs with coordinates, in assigned or in_progress
       const q = [
         'limit=1000',
-        'select=id,so_id,technician_id,intervention_type_id,address,address_lat,address_lng,scheduled_at,status,priority'
+        'select=id,so_id,technician_id,intervention_type_id,address,address_lat,address_lng,scheduled_at,status,priority',
+        'filter=(status,in,assigned,in_progress)'
       ];
-      // NOTE: NocoDB "in" filter expects comma-separated values within same filter:
-      // filter=(status,in,assigned,in_progress)
-      q.push('filter=(status,in,assigned,in_progress)');
       const res = await api.list(T.service_orders, q.join('&'));
-      const withCoords = res.list.filter(r => isValidCoord(r.address_lat) && isValidCoord(r.address_lng));
-      return withCoords;
+      return res.list.filter(r => isValidCoord(r.address_lat) && isValidCoord(r.address_lng));
     }
 
     async function fetchLatestTechPings(hoursBack=3){
       const since = new Date(Date.now() - hoursBack*60*60*1000).toISOString();
       const res = await api.list(T.technician_locations, `filter=(recorded_at,gt,${since})&sort=-recorded_at&limit=5000`);
-      // Reduce to latest per technician
       const latestByTech = {};
       for(const row of res.list){
         if(!latestByTech[row.technician_id]) latestByTech[row.technician_id] = row;
@@ -132,7 +128,6 @@
         jobsLayer.clearLayers();
         techsLayer.clearLayers();
 
-        // Jobs markers
         for(const j of jobs){
           const html = `
             <div style="min-width:220px">
@@ -147,7 +142,6 @@
           jobMarker(j.address_lat, j.address_lng, html).addTo(jobsLayer);
         }
 
-        // Tech markers
         for(const t of techPings){
           if(!isValidCoord(t.lat) || !isValidCoord(t.lng)) continue;
           const html = `
@@ -159,7 +153,6 @@
           techMarker(t.lat, t.lng, html).addTo(techsLayer);
         }
 
-        // Fit bounds if we have markers; otherwise stay on Mauritius
         const all = L.featureGroup([jobsLayer, techsLayer]);
         const bounds = all.getBounds();
         if(bounds && bounds.isValid()){
@@ -168,7 +161,6 @@
           map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
         }
 
-        // Meta counts
         const missingGeo = (await api.list(T.service_orders, 'limit=1&filter=(status,in,assigned,in_progress)&filter=(address_lat,is,null)')).pageInfo?.totalRows ?? 0;
         const msg = `${jobs.length} jobs on map • ${techPings.length} techs • ${missingGeo} jobs missing geo`;
         document.getElementById('metaCounts').textContent = msg;
@@ -180,7 +172,6 @@
       }
     }
 
-    // Controls
     document.getElementById('btnRefresh').onclick = render;
 
     let auto = true;
@@ -189,11 +180,10 @@
       auto = on;
       document.getElementById('btnAuto').textContent = 'Auto: ' + (auto ? 'On' : 'Off');
       if(timer) clearInterval(timer);
-      if(auto) timer = setInterval(render, 30000); // refresh every 30s
+      if(auto) timer = setInterval(render, 30000);
     }
     document.getElementById('btnAuto').onclick = ()=> setAuto(!auto);
 
-    // Startup
     (async function init(){
       setAuto(true);
       await render();
