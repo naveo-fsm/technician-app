@@ -1,8 +1,8 @@
 // Minimal NocoDB client for the Planner & Technician apps
 
 window.NC = {
-  BASE_URL: 'https://app.nocodb.com/api/v2',   // <-- change only if your instance is self-hosted
-  TOKEN: '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh', // <-- your PAT
+  BASE_URL: 'https://app.nocodb.com/api/v2',   // change only if your instance is self-hosted
+  TOKEN: '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh', // your PAT
   T: {
     technicians: 'mzw1focsec0tekg',
     service_orders: 'm2dmcyfy30klv76',
