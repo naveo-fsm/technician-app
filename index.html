@@ -1,45 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
   <title>Naveo FSM</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#003366"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Only need the light auth shim here -->
+  <script src="/assets/js/auth-lite.js"></script>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f5f7fa;margin:0;display:grid;place-items:center;height:100vh}
-    .card{background:#fff;padding:1.25rem 1.5rem;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);min-width:320px;text-align:center}
-    h1{margin:.2rem 0;color:#003366}
-    p{color:#555;margin:.5rem 0 1rem}
-    a.btn{display:inline-block;background:#003366;color:#fff;text-decoration:none;padding:.6rem 1rem;border-radius:8px}
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif}
+    .wrap{max-width:640px;margin:16vh auto;background:var(--card);border:1px solid var(--border);
+          border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.06);padding:24px;text-align:center}
+    h1{margin:0 0 8px;font-size:22px}
+    p{margin:0 0 14px;color:#6b7280}
+    .btn{display:inline-block;background:var(--primary);color:#fff;text-decoration:none;
+         padding:10px 16px;border-radius:10px;margin:4px}
+    .btn.secondary{background:#e9eef7;color:#111}
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="wrap">
     <h1>Naveo FSM</h1>
-    <p id="status">Checking session…</p>
-    <a class="btn" href="login.html" id="loginBtn" style="display:none">Log in</a>
+    <p>Launching…</p>
+    <div style="margin-top:8px">
+      <!-- Fallback links in case JS redirect is blocked -->
+      <a class="btn" href="/access/role.html">Choose role</a>
+      <a class="btn secondary" href="/planner/planner-jobs.html">Planner</a>
+      <a class="btn secondary" href="/technician/home.html">Technician</a>
+    </div>
   </div>
 
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
   <script>
-    (async function(){
-      try {
-        const user = Auth.getSession();
-        if(!user){ document.getElementById('loginBtn').style.display='inline-block'; document.getElementById('status').textContent='Please log in.'; return; }
-        // Route by role
-        if(user.role === 'planner'){
-          location.replace('planner/index.html'); // optional planner app
-        }else{
-          location.replace('assigned-jobs.html'); // your technician list page
+    // If you're hosting under a subpath (e.g., GitHub Pages /repo), set BASE_PATH = '/repo'
+    const BASE_PATH = ''; // '' when hosted at domain root
+
+    const landing = {
+      planner: `${BASE_PATH}/planner/planner-jobs.html`,
+      technician: `${BASE_PATH}/technician/home.html`,
+      picker: `${BASE_PATH}/access/role.html`
+    };
+
+    (function launch(){
+      try{
+        const role = (localStorage.getItem('fsm_role') || '').toLowerCase();
+        if(role === 'planner') {
+          window.location.replace(landing.planner);
+          return;
         }
+        if(role === 'technician') {
+          // Basic sanity: require a selected technician id
+          const techId = localStorage.getItem('fsm_technician_id');
+          if(techId) {
+            window.location.replace(landing.technician);
+            return;
+          }
+        }
+        // No role or incomplete tech state → go pick a role
+        window.location.replace(landing.picker);
       }catch(e){
-        document.getElementById('status').textContent='Session invalid. Please log in.';
-        document.getElementById('loginBtn').style.display='inline-block';
+        // If something goes wrong, leave the fallback links visible
+        console.error('Launch error:', e);
       }
     })();
-    if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
   </script>
 </body>
 </html>
