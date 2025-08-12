@@ -1,606 +1,141 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>FSM – Dashboard</title>
-
-  <!-- Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Chart.js -->
+  <meta charset="UTF-8" />
+  <title>Naveo FSM – Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="../assets/js/noco.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
-    :root{
-      --primary:#0056b3; --bg:#f7fafd; --card:#fff; --muted:#6c757d;
-      --success:#28a745; --danger:#dc3545; --table:#fcfcfc; --thead:#eaf2fb;
-      --input:#f4f8fb; --border:#edf0f6; --text:#23272f;
-      --radius-card:12px; --radius:6px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;background:var(--bg);color:var(--text);
-      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    }
-
-    /* Top bar */
-    .topbar{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 18px;background:#fff;border-bottom:1px solid var(--border);
-      position:sticky;top:0;z-index:10;
-    }
-    .brand{font-weight:700;color:var(--primary)}
-    .tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .tab{padding:8px 12px;border-radius:6px;text-decoration:none;color:var(--text);
-      border:1px solid transparent;font-weight:600}
-    .tab.active,.tab:hover{background:var(--thead);border-color:var(--border);color:var(--primary)}
-    .avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid var(--border)}
-
-    .wrap{max-width:1220px;margin:18px auto;padding:0 16px}
-
-    .greet{
-      background:var(--card);border-radius:var(--radius-card);padding:22px 24px;
-      box-shadow:0 4px 18px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;
-      gap:14px;flex-wrap:wrap
-    }
-    h2{margin:0;color:var(--primary);font-size:1.5rem}
-
-    .kpis{display:grid;grid-template-columns:repeat(5,minmax(160px,1fr));gap:12px;margin:14px 0 18px}
-    .kpi{background:var(--card);border-radius:var(--radius-card);padding:18px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
-    .kpi h3{margin:0 0 6px;font-size:.95rem;color:var(--muted)}
-    .kpi .num{font-size:1.6rem;font-weight:700}
-
-    .card{background:var(--card);border-radius:var(--radius-card);padding:18px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
-    .card h3{margin:0 0 10px;color:var(--primary);font-size:1.1rem}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-    @media (max-width: 980px){ .grid,.grid-3{grid-template-columns:1fr} }
-
-    .table-wrap{overflow:auto;background:var(--card);border-radius:var(--radius-card);box-shadow:0 4px 18px rgba(0,0,0,.08)}
-    table{width:100%;border-collapse:separate;border-spacing:0;background:var(--table)}
-    thead th{position:sticky;top:0;background:var(--thead);text-align:left;color:var(--primary);
-      padding:10px 12px;border-bottom:1px solid var(--border)}
-    tbody td{padding:10px 12px;border-bottom:1px solid var(--border)}
-    .badge{padding:3px 8px;border-radius:999px;color:#fff;font-weight:700;font-size:.9rem;display:inline-block}
-    .b-pending{background:#ffc107;color:#333}.b-progress{background:#17a2b8}
-    .b-completed{background:var(--success)}.b-cancelled{background:var(--danger)}
-    .muted{color:var(--muted)}
-
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:14px 0}
-    .toolbar label{font-weight:600;color:var(--primary);font-size:.99rem}
-    .input{padding:8px 14px;background:var(--input);border:1px solid #d6e0ea;border-radius:6px}
-    .btn{padding:9px 22px;border-radius:6px;border:none;background:var(--primary);color:#fff;font-weight:700;cursor:pointer}
-    .btn.muted{background:#adb5bd}
-
-    .skeleton{background:linear-gradient(90deg,#f0f3f7,#e9eef5,#f0f3f7);background-size:200% 100%;animation:s 1.2s linear infinite}
-    @keyframes s{to{background-position:-200% 0}}
-    .err{color:var(--danger);margin-top:8px}
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
+    body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--card);box-shadow:0 4px 18px rgba(0,0,0,.06)}
+    h1{font-size:18px;margin:0}
+    .container{padding:16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 26px rgba(0,0,0,.05);padding:16px;margin-bottom:16px}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .kpi h3{margin:0 0 6px;font-size:12px;color:#6b7280}
+    .kpi div{font-size:28px;font-weight:700}
+    @media(max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr)} }
   </style>
 </head>
 <body>
-  <header class="topbar" role="navigation" aria-label="Primary">
-    <div class="brand">Naveo FSM</div>
-    <nav class="tabs">
-      <a class="tab active" href="dashboard.html">Dashboard</a>
-      <a class="tab" href="assigned-jobs.html">Jobs</a>
-      <a class="tab" href="history.html">History</a>
-      <a class="tab" href="reports.html">Reports</a>
-      <a class="tab" href="profile.html">Profile</a>
-      <a class="tab" href="logout.html" aria-label="Logout">Logout</a>
-    </nav>
-    <img id="nav-avatar" class="avatar" alt="User avatar" src="https://i.pravatar.cc/100?img=1">
+  <header>
+    <h1>Planner • Dashboard</h1>
+    <div></div>
   </header>
 
-  <main class="wrap">
-    <!-- Greeting -->
-    <section class="greet">
-      <div>
-        <h2 id="hello">Hello</h2>
-        <div class="muted" id="subhello">Here’s your latest field activity.</div>
-      </div>
-      <div class="toolbar" style="margin:0">
-        <button id="refreshBtn" class="btn">Refresh</button>
-      </div>
-    </section>
-
-    <!-- Filters -->
-    <section class="card toolbar">
-      <div>
-        <label for="from">From</label>
-        <input id="from" type="date" class="input">
-      </div>
-      <div>
-        <label for="to">To</label>
-        <input id="to" type="date" class="input">
-      </div>
-      <div>
-        <label for="statusSel">Status</label>
-        <select id="statusSel" class="input">
-          <option value="">All</option>
-          <option>Pending</option>
-          <option>In Progress</option>
-          <option>Completed</option>
-          <option>Cancelled</option>
-        </select>
-      </div>
-      <div style="flex:1;min-width:220px">
-        <label for="q">Search</label>
-        <input id="q" class="input" placeholder="SO ID / Vehicle / Contact">
-      </div>
-      <button id="applyFilters" class="btn">Apply</button>
-      <button id="exportCsv" class="btn muted">Export CSV</button>
-    </section>
-
-    <!-- KPIs -->
-    <section class="kpis" aria-label="Key performance indicators">
-      <div class="kpi"><h3>Total</h3><div class="num" id="kpi-total">0</div></div>
-      <div class="kpi"><h3>Pending</h3><div class="num" id="kpi-pending">0</div></div>
-      <div class="kpi"><h3>In Progress</h3><div class="num" id="kpi-progress">0</div></div>
-      <div class="kpi"><h3>Completed</h3><div class="num" id="kpi-completed">0</div></div>
-      <div class="kpi"><h3>FTF%</h3><div class="num" id="kpi-ftf">–</div></div>
-    </section>
-
-    <!-- Core charts -->
-    <section class="grid">
-      <div class="card">
-        <h3>Status mix</h3>
-        <canvas id="pie"></canvas>
-      </div>
-      <div class="card">
-        <h3>Jobs per day</h3>
-        <canvas id="line"></canvas>
+  <div class="container">
+    <section class="card">
+      <h2 style="margin:0 0 10px;font-size:16px;">Today’s KPIs</h2>
+      <div class="kpis">
+        <div class="kpi"><h3>Completed</h3><div id="kpiCompleted">0</div></div>
+        <div class="kpi"><h3>First-Time Fix</h3><div id="kpiFTF">0%</div></div>
+        <div class="kpi"><h3>Utilization</h3><div id="kpiUtil">0%</div></div>
+        <div class="kpi"><h3>In Progress</h3><div id="kpiInProg">0</div></div>
       </div>
     </section>
 
-    <!-- New analytics -->
-    <section class="grid-3" style="margin-top:16px">
-      <div class="card">
-        <h3>Technician utilization (jobs vs capacity)</h3>
-        <canvas id="utilChart"></canvas>
-      </div>
-      <div class="card">
-        <h3>Job types</h3>
-        <canvas id="typesChart"></canvas>
-      </div>
-      <div class="card">
-        <h3>Aging (open jobs)</h3>
-        <canvas id="agingChart"></canvas>
-      </div>
+    <section class="card">
+      <h3 style="margin:0 0 10px;">Jobs per Tech (Last 7 days)</h3>
+      <canvas id="jobsPerTech"></canvas>
     </section>
 
-    <section class="grid" style="margin-top:16px">
-      <div class="card">
-        <h3>Avg completion time (hrs)</h3>
-        <canvas id="durationChart"></canvas>
-      </div>
-      <div class="card">
-        <h3>Inventory consumption by job type</h3>
-        <canvas id="invChart"></canvas>
-      </div>
+    <section class="card">
+      <h3 style="margin:0 0 10px;">FTF Trend (Last 14 days)</h3>
+      <canvas id="ftfTrend"></canvas>
     </section>
+  </div>
 
-    <!-- Recent jobs -->
-    <h3 style="margin:18px 0 8px;color:var(--primary)">Recent jobs</h3>
-    <div class="table-wrap" role="region" aria-label="Recent jobs table">
-      <table>
-        <thead>
-          <tr>
-            <th>SO ID</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Vehicle / Contact</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-
-    <div id="error" class="err" aria-live="polite"></div>
-  </main>
-
-  <!-- session/auth helper -->
-  <script src="assets/js/auth.js"></script>
   <script>
-    // ================= NocoDB endpoints & field maps =================
-    const NC_BASE_URL = 'https://app.nocodb.com';
-    const TID_SO   = 'm2dmcyfy30klv76'; // service_orders
-    const TID_TECH = 'mzw1focsec0tekg'; // technicians
-    const TID_SO_INV = 'm40n0bb2o41gfxp'; // service_order_inventory
+    const { T } = NC, api = NCAPI, U = NCUTIL;
 
-    // Service Orders fields
-    const SO = {
-      id:     'SO_ID',     // or 'id'
-      date:   'Date',
-      status: 'Status',
-      techId: 'TechnicianID',
-      jobType:'JobTypeIDs', // first item used
-      created:'CreatedAt',  // for avg duration calc
-      doneAt: 'CompletedAt',// for avg duration & SLA
-      slaDue: 'SLA_Due',
-      vehicle:'VehicleNo',
-      contact:'ContactPerson',
-      returnVisit:'return_visit' // boolean or 'true'/'false'
-    };
+    function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+    function daysAgo(n){ const x = new Date(); x.setDate(x.getDate()-n); return x; }
 
-    // Technicians fields
-    const TECH = {
-      id: 'TechnicianID',
-      name: 'FullName',      // or 'name'
-      capacity: 'CapacityPerDay' // numeric; fallback supplied below
-    };
+    async function fetchToday() {
+      const from = startOfDay(new Date());
+      const to = new Date();
+      const qRange = `filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`;
 
-    // Service Order Inventory fields
-    const INV = {
-      soId: 'so_id',       // FK to service order
-      item: 'Item',        // item name
-      qty:  'Quantity',    // numeric
-      jobType: 'JobType'   // if present; fallback to order's type
-    };
+      const [completed, inProg, allCompleted, ftfCompleted, techs] = await Promise.all([
+        api.list(T.service_orders, `filter=(status,eq,completed)&${qRange}`),
+        api.list(T.service_orders, `filter=(status,eq,in_progress)`),
+        api.list(T.service_orders, `filter=(status,eq,completed)&${qRange}&select=id,technician_id`),
+        api.list(T.service_orders, `filter=(status,eq,completed)&filter=(return_visit_required,eq,false)&${qRange}&select=id`),
+        api.list(T.technicians, 'limit=1000&select=id,full_name,shift_minutes')
+      ]);
 
-    // ================= Helpers =================
-    const $ = sel => document.querySelector(sel);
-    let pieChart,lineChart,typesChart,agingChart,durationChart,utilChart,invChart;
+      document.getElementById('kpiCompleted').textContent = completed.list.length;
+      document.getElementById('kpiInProg').textContent = inProg.list.length;
 
-    function pat(){
-      const t = localStorage.getItem('NC_PAT') || '';
-      if(!t){ throw new Error('Missing NocoDB PAT. Log in again.'); }
-      return t;
+      const ftf = allCompleted.list.length ? Math.round((ftfCompleted.list.length / allCompleted.list.length) * 100) : 0;
+      document.getElementById('kpiFTF').textContent = ftf + '%';
+
+      // Simple utilization heuristic
+      const techById = Object.fromEntries(techs.list.map(t => [t.id, t]));
+      let totalCapacity = 0, totalJobs = 0;
+      const jobsByTech = {};
+      for (const so of allCompleted.list) {
+        jobsByTech[so.technician_id] = (jobsByTech[so.technician_id] || 0) + 1;
+      }
+      Object.keys(jobsByTech).forEach(id => {
+        const t = techById[id] || {};
+        const shiftMin = +t.shift_minutes || 480;   // default 8h
+        const avgJobMin = 60;                       // tune if you track true durations
+        totalCapacity += Math.max(1, Math.floor(shiftMin / avgJobMin));
+        totalJobs += jobsByTech[id];
+      });
+      const util = totalCapacity ? Math.round((totalJobs / totalCapacity) * 100) : 0;
+      document.getElementById('kpiUtil').textContent = util + '%';
     }
 
-    async function fetchTable(tableId, qs=''){
-      const url = `${NC_BASE_URL}/api/v2/tables/${tableId}/records${qs?`?${qs}`:''}`;
-      const res = await fetch(url, { headers:{ 'xc-token': pat() }});
-      if(!res.ok){ throw new Error(`NocoDB ${res.status}: ${await res.text()}`); }
-      const json = await res.json();
-      return Array.isArray(json.list) ? json.list : json;
-    }
+    async function chartJobsPerTech() {
+      const from = daysAgo(7), to = new Date();
+      const res = await api.list(T.service_orders, `filter=(completed_at,between,${U.iso(from)},${U.iso(to)})&filter=(status,eq,completed)&select=id,technician_id`);
+      const techs = await api.list(T.technicians, 'limit=1000&select=id,full_name');
+      const name = (id)=> (techs.list.find(t=>t.id===id)?.full_name) || ('Tech #'+id);
 
-    const toDate = v => v ? new Date(v) : null;
-    const get = (r,k) => r?.[k] ?? r?.[k?.toLowerCase?.()] ?? '';
-    const hoursBetween = (a,b) => (a && b) ? Math.max(0,(a-b)/(1000*60*60)) : 0;
-    const daysBetween = (a,b) => (a && b) ? Math.max(0,Math.round((a-b)/(1000*60*60*24))) : 0;
+      const counts = {};
+      res.list.forEach(so => counts[so.technician_id] = (counts[so.technician_id]||0)+1);
+      const labels = Object.keys(counts).map(id => name(+id));
+      const data = Object.values(counts);
 
-    function statusBadge(s){
-      const v = (s||'').toLowerCase();
-      if(v.includes('progress')) return `<span class="badge b-progress">In&nbsp;Progress</span>`;
-      if(v.includes('complete')) return `<span class="badge b-completed">Completed</span>`;
-      if(v.includes('cancel'))  return `<span class="badge b-cancelled">Cancelled</span>`;
-      return `<span class="badge b-pending">Pending</span>`;
-    }
-
-    // ================= Filters =================
-    function readFilters(){
-      const f = toDate($('#from').value);
-      const t = toDate($('#to').value);
-      const st = $('#statusSel').value.trim().toLowerCase();
-      const q = $('#q').value.trim().toLowerCase();
-      return {f,t,st,q};
-    }
-
-    function applyFilters(rows){
-      const {f,t,st,q} = readFilters();
-      return rows.filter(r=>{
-        const d = toDate(get(r, SO.date));
-        if (f && (!d || d < f)) return false;
-        if (t && (!d || d > t)) return false;
-        const s = String(get(r, SO.status)).toLowerCase();
-        if (st && !s.includes(st)) return false;
-        if (q) {
-          const hay = [get(r, SO.id), get(r, SO.vehicle), get(r, SO.contact)].join(' ').toLowerCase();
-          if (!hay.includes(q)) return false;
-        }
-        return true;
+      const ctx = document.getElementById('jobsPerTech').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Completed Jobs', data }] },
+        options: { responsive:true, plugins:{legend:{display:false}} }
       });
     }
 
-    // ================= Load & compute =================
-    let RAW = { orders:[], techs:[], inv:[] };
+    async function chartFtfTrend() {
+      const days = [...Array(14)].map((_,i)=> i).reverse();
+      const labels = days.map(d=> {
+        const x = daysAgo(d); return `${x.getMonth()+1}/${x.getDate()}`;
+      });
 
-    async function loadAll(){
-      const [orders, techs, inv] = await Promise.all([
-        fetchTable(TID_SO, 'limit=1000'),
-        fetchTable(TID_TECH, 'limit=500'),
-        fetchTable(TID_SO_INV, 'limit=2000')
-      ]);
-      RAW = { orders, techs, inv };
-      return RAW;
-    }
-
-    function fillKPIs(rows){
-      const total = rows.length;
-      const pending   = rows.filter(r=>/pending/i.test(get(r,SO.status))).length;
-      const progress  = rows.filter(r=>/progress/i.test(get(r,SO.status))).length;
-      const completed = rows.filter(r=>/complete/i.test(get(r,SO.status))).length;
-
-      // first-time fix rate over completed
-      const completedRows = rows.filter(r=>/complete/i.test(get(r,SO.status)));
-      let ftfPct = '–';
-      if (completedRows.length){
-        const ftf = completedRows.filter(r=>{
-          const v = get(r, SO.returnVisit);
-          return !(String(v).toLowerCase()==='true' || v===true || v===1);
-        }).length;
-        ftfPct = Math.round(100*ftf/completedRows.length) + '%';
+      const ftfPerc = [];
+      for(const d of days){
+        const day = daysAgo(d);
+        const from = startOfDay(day), to = new Date(from); to.setDate(to.getDate()+1);
+        const all = await api.list(T.service_orders, `filter=(status,eq,completed)&filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`);
+        const good = await api.list(T.service_orders, `filter=(status,eq,completed)&filter=(return_visit_required,eq,false)&filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`);
+        ftfPerc.push(all.list.length ? Math.round((good.list.length/all.list.length)*100) : 0);
       }
 
-      $('#kpi-total').textContent = total;
-      $('#kpi-pending').textContent = pending;
-      $('#kpi-progress').textContent = progress;
-      $('#kpi-completed').textContent = completed;
-      $('#kpi-ftf').textContent = ftfPct;
-    }
-
-    function gradient(ctx, from, to){
-      const g = ctx.createLinearGradient(0,0,0,280);
-      g.addColorStop(0, from);
-      g.addColorStop(1, to);
-      return g;
-    }
-
-    function drawCoreCharts(rows){
-      // Pie (status)
-      const counts = { Pending:0, 'In Progress':0, Completed:0, Cancelled:0 };
-      rows.forEach(r=>{
-        const s = (get(r,SO.status)||'').toLowerCase();
-        if(s.includes('pending')) counts['Pending']++;
-        else if(s.includes('progress')) counts['In Progress']++;
-        else if(s.includes('complete')) counts['Completed']++;
-        else if(s.includes('cancel')) counts['Cancelled']++;
-      });
-      const pctx = document.getElementById('pie').getContext('2d');
-      pieChart?.destroy();
-      pieChart = new Chart(pctx,{type:'pie',data:{
-        labels:Object.keys(counts),
-        datasets:[{ data:Object.values(counts),
-          backgroundColor:[
-            gradient(pctx,'#b9d6ff','#eaf2fb'),
-            gradient(pctx,'#7fd3e6','#eafafa'),
-            gradient(pctx,'#8ee8a1','#eafbee'),
-            gradient(pctx,'#f6a6a6','#fdeeee'),
-          ]}]},
-        options:{ plugins:{ legend:{ position:'bottom' } } }
-      });
-
-      // Line (jobs per day)
-      const map = {};
-      rows.forEach(r=>{
-        const d = String(get(r,SO.date)||'').slice(0,10);
-        if(!d) return; map[d]=(map[d]||0)+1;
-      });
-      const labels = Object.keys(map).sort();
-      const data = labels.map(d=>map[d]);
-      const lctx = document.getElementById('line').getContext('2d');
-      lineChart?.destroy();
-      lineChart = new Chart(lctx,{
-        type:'line',
-        data:{ labels, datasets:[{ label:'Jobs', data, tension:.25,
-          fill:true, backgroundColor:gradient(lctx,'rgba(0,86,179,.25)','rgba(0,86,179,0)'),
-          borderColor:'#0056b3', pointRadius:2 }]},
-        options:{ scales:{ y:{ beginAtZero:true } } }
+      const ctx = document.getElementById('ftfTrend').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ label:'FTF %', data: ftfPerc, tension:.3 }]},
+        options: { responsive:true, scales:{ y:{ suggestedMin:0, suggestedMax:100 }}}
       });
     }
 
-    function drawTypesChart(rows){
-      const bucket = {};
-      rows.forEach(r=>{
-        const jt = String(get(r,SO.jobType)||'Unknown').split(',')[0].trim() || 'Unknown';
-        bucket[jt] = (bucket[jt]||0)+1;
-      });
-      const labels = Object.keys(bucket).sort();
-      const data = labels.map(l=>bucket[l]);
-      const ctx = document.getElementById('typesChart').getContext('2d');
-      typesChart?.destroy();
-      typesChart = new Chart(ctx,{
-        type:'doughnut',
-        data:{ labels, datasets:[{ data, backgroundColor:labels.map((_,i)=>`hsl(${(i*47)%360} 75% 65% / .9)`)}]},
-        options:{ plugins:{ legend:{ position:'bottom' } } }
-      });
-    }
-
-    function drawAgingChart(rows){
-      const now = new Date();
-      const open = rows.filter(r=>{
-        const s = String(get(r,SO.status)).toLowerCase();
-        return !/complete|cancel/.test(s);
-      });
-      const buckets = { '0–1d':0, '1–3d':0, '3–7d':0, '>7d':0 };
-      open.forEach(r=>{
-        const d = toDate(get(r,SO.date)) || now;
-        const age = daysBetween(now, d);
-        if (age<=1) buckets['0–1d']++;
-        else if (age<=3) buckets['1–3d']++;
-        else if (age<=7) buckets['3–7d']++;
-        else buckets['>7d']++;
-      });
-      const ctx = document.getElementById('agingChart').getContext('2d');
-      agingChart?.destroy();
-      agingChart = new Chart(ctx,{ type:'bar',
-        data:{ labels:Object.keys(buckets), datasets:[{ label:'Open jobs', data:Object.values(buckets),
-          backgroundColor:gradient(ctx,'#ffd37a','#fff0c9') }]},
-        options:{ scales:{ y:{ beginAtZero:true } } }
-      });
-    }
-
-    function drawDurationChart(rows){
-      const done = rows.filter(r=>/complete/i.test(get(r,SO.status)));
-      const perDay = {};
-      done.forEach(r=>{
-        const created = toDate(get(r,SO.created));
-        const completed = toDate(get(r,SO.doneAt));
-        if(!created || !completed) return;
-        const day = String(get(r,SO.doneAt)||'').slice(0,10);
-        if(!day) return;
-        (perDay[day] ||= []).push(hoursBetween(completed, created));
-      });
-      const labels = Object.keys(perDay).sort();
-      const data = labels.map(d=>{
-        const arr = perDay[d]; return Math.round(10*arr.reduce((a,b)=>a+b,0)/arr.length)/10;
-      });
-      const ctx = document.getElementById('durationChart').getContext('2d');
-      durationChart?.destroy();
-      durationChart = new Chart(ctx,{
-        type:'line',
-        data:{ labels, datasets:[{ label:'Avg hrs', data, tension:.25,
-          borderColor:'#28a745', fill:true,
-          backgroundColor:gradient(ctx,'rgba(40,167,69,.22)','rgba(40,167,69,0)') }]},
-        options:{ scales:{ y:{ beginAtZero:true } } }
-      });
-    }
-
-    function drawUtilizationChart(rows, techs){
-      // capacity per tech per day (fallback 6 if missing)
-      const capMap = {};
-      techs.forEach(t=>{
-        const id = get(t,TECH.id);
-        const cap = Number(get(t,TECH.capacity)) || 6;
-        capMap[id] = cap;
-      });
-
-      // count jobs per tech per day (aggregate: mean across days)
-      const perTechDay = {};
-      rows.forEach(r=>{
-        const tech = get(r,SO.techId) || 'Unknown';
-        const day = String(get(r,SO.date)||'').slice(0,10);
-        if(!day) return;
-        const k = tech + '|' + day;
-        perTechDay[k] = (perTechDay[k]||0) + 1;
-      });
-
-      const perTech = {};
-      Object.entries(perTechDay).forEach(([k,v])=>{
-        const tech = k.split('|')[0];
-        (perTech[tech] ||= []).push(v);
-      });
-
-      const labels = Object.keys(perTech);
-      const avgJobs = labels.map(t => {
-        const arr = perTech[t]; return Math.round(10*arr.reduce((a,b)=>a+b,0)/arr.length)/10;
-      });
-      const cap = labels.map(t => capMap[t] || 6);
-
-      const ctx = document.getElementById('utilChart').getContext('2d');
-      utilChart?.destroy();
-      utilChart = new Chart(ctx,{
-        type:'bar',
-        data:{
-          labels,
-          datasets:[
-            { label:'Avg jobs/day', data:avgJobs, backgroundColor:gradient(ctx,'#8ab6ff','#eaf2fb') },
-            { label:'Capacity/day', type:'line', data:cap, borderColor:'#9556b3', pointRadius:2, tension:.2 }
-          ]
-        },
-        options:{ scales:{ y:{ beginAtZero:true } }, plugins:{ legend:{ position:'bottom' } } }
-      });
-    }
-
-    function drawInventoryChart(orders, soInv){
-      // Map SO_ID -> JobType (first token)
-      const typeBySO = {};
-      orders.forEach(o=>{
-        const id = get(o,SO.id);
-        const jt = String(get(o,SO.jobType)||'Unknown').split(',')[0].trim() || 'Unknown';
-        typeBySO[id] = jt;
-      });
-
-      // Sum qty per job type
-      const bucket = {};
-      soInv.forEach(r=>{
-        const so = get(r,INV.soId);
-        const jt = get(r,INV.jobType) || typeBySO[so] || 'Unknown';
-        const qty = Number(get(r,INV.qty)) || 0;
-        bucket[jt] = (bucket[jt]||0) + qty;
-      });
-
-      const labels = Object.keys(bucket).sort();
-      const data = labels.map(l=>bucket[l]);
-      const ctx = document.getElementById('invChart').getContext('2d');
-      invChart?.destroy();
-      invChart = new Chart(ctx,{
-        type:'bar',
-        data:{ labels, datasets:[{ label:'Qty used', data, backgroundColor:labels.map((_,i)=>`hsl(${(i*33)%360} 70% 60% / .9)`)}]},
-        options:{ scales:{ y:{ beginAtZero:true } }, plugins:{ legend:{ display:false } } }
-      });
-    }
-
-    function fillTable(rows){
-      const tbody = $('#rows'); tbody.innerHTML='';
-      rows.slice(0,20).forEach(r=>{
-        const id = get(r,SO.id) || r.id || '';
-        const date = get(r,SO.date);
-        const stat = get(r,SO.status);
-        const ext = get(r,SO.vehicle) || get(r,SO.contact) || '';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${id||'-'}</td><td>${date||'-'}</td><td>${statusBadge(stat)}</td><td class="muted">${ext||'-'}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function setLoading(on){
-      const b = $('#refreshBtn');
-      b.disabled = on;
-      b.textContent = on ? 'Refreshing…' : 'Refresh';
-      b.classList.toggle('skeleton', on);
-    }
-
-    function exportCSV(rows){
-      const headers = ['SO ID','Date','Status','Type','Vehicle/Contact'];
-      const data = rows.map(r=>[
-        get(r,SO.id), get(r,SO.date), get(r,SO.status), get(r,SO.jobType), get(r,SO.vehicle)||get(r,SO.contact)||''
-      ]);
-      const csv = [headers, ...data].map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
-      const blob = new Blob([csv], {type:'text/csv'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download='jobs.csv'; a.click();
-      URL.revokeObjectURL(a.href);
-    }
-
-    // ================= Boot =================
-    let ALL = {orders:[], techs:[], inv:[]};
-    let VIEW = [];
-
-    async function loadDashboard(){
-      setLoading(true); $('#error').textContent='';
-      try{
-        if (!ALL.orders.length) ALL = await loadAll();
-
-        // filters
-        const filtered = applyFilters(ALL.orders);
-        VIEW = filtered;
-
-        // KPIs + core charts + table
-        fillKPIs(filtered);
-        drawCoreCharts(filtered);
-        fillTable(filtered);
-
-        // new analytics
-        drawTypesChart(filtered);
-        drawAgingChart(filtered);
-        drawDurationChart(filtered);
-        drawUtilizationChart(filtered, ALL.techs);
-        drawInventoryChart(filtered, ALL.inv);
-      }catch(err){
-        console.error(err);
-        $('#error').textContent = err.message || String(err);
-      }finally{
-        setLoading(false);
-      }
-    }
-
-    // Greet & wire
-    (async function (){
-      try{
-        const sess = window.Auth?.current?.();
-        const who = (sess?.name || sess?.email || 'User');
-        $('#hello').textContent = `Hello, ${who}`;
-      }catch{}
-      await loadDashboard();
-      $('#refreshBtn').addEventListener('click', async ()=>{
-        ALL = {orders:[], techs:[], inv:[]}; // force reload
-        await loadDashboard();
-      });
-      $('#applyFilters').addEventListener('click', loadDashboard);
-      $('#exportCsv').addEventListener('click', ()=>exportCSV(VIEW));
+    (async function init(){
+      await fetchToday();
+      await chartJobsPerTech();
+      await chartFtfTrend();
     })();
   </script>
 </body>
