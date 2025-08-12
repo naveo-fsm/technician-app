@@ -2,218 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Naveo FSM – Planner Jobs</title>
+  <title>Planner • Jobs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="../assets/js/noco.js"></script>
   <script src="../assets/js/auth-lite.js"></script>
   <style>
-    :root{
-      --primary:#0056b3; --bg:#f5f7fb; --card:#ffffff; --text:#222; --muted:#6b7280; --border:#e5e7eb; --chip:#eef5ff;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Poppins, Arial, sans-serif}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--card);box-shadow:0 4px 18px rgba(0,0,0,.06);position:sticky;top:0;z-index:5}
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb;--muted:#6b7280}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
     h1{font-size:18px;margin:0}
-    .container{padding:16px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 26px rgba(0,0,0,.05);padding:16px;margin-bottom:16px}
-    table{width:100%;border-collapse:collapse}
-    thead th{font-size:.85rem;text-align:left;color:#374151;border-bottom:1px solid var(--border);padding:10px}
-    tbody td{border-bottom:1px solid var(--border);padding:10px;vertical-align:top}
+    .wrap{max-width:1180px;margin:16px auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    label{font-weight:600;font-size:.9rem}
+    input,select{padding:10px;border:1px solid var(--border);border-radius:10px}
     .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn.link{background:#e9eef7;color:#111}
-    .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--chip)}
-    #jobDrawer{display:none;position:fixed;right:0;top:0;bottom:0;width:520px;background:#fff;box-shadow:-12px 0 30px rgba(0,0,0,.18);padding:16px;overflow:auto;z-index:20}
-    #drawerTabs{display:flex;gap:8px;margin:8px 0 12px}
-    #drawerTabs button{border:1px solid var(--border);background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
-    #drawerTabs button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn.secondary{background:#e9eef7;color:#111}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    thead th, tbody td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+    .badge{padding:2px 8px;border-radius:999px;background:#eef5ff}
   </style>
 </head>
 <body>
   <script>Auth.ensureRole(['planner']);</script>
 
   <header>
-    <h1>Planner • Service Orders</h1>
-    <div>
-      <button id="refreshJobs" class="btn link">Refresh</button>
-    </div>
+    <h1>Jobs</h1>
+    <nav class="row">
+      <a class="btn secondary" href="./planner.html">Home</a>
+      <a class="btn secondary" href="./assign-job-enhanced.html">Assign SO</a>
+      <a class="btn secondary" href="./assign-inventory-selector.html">Assign Inventory</a>
+    </nav>
   </header>
   <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
 
-  <div class="container">
-    <section class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <h2 style="margin:0;font-size:16px;">Service Orders</h2>
-        <a href="./assign-job-enhanced.html" class="btn">Assign New</a>
+  <div class="wrap">
+    <div class="row">
+      <div><label>Status</label><br/>
+        <select id="f_status">
+          <option value="">(any)</option>
+          <option>assigned</option>
+          <option>in_progress</option>
+          <option>completed</option>
+          <option>cancelled</option>
+        </select>
       </div>
-      <div style="overflow:auto;">
-        <table id="jobsTable">
-          <thead>
-            <tr>
-              <th>SO</th>
-              <th>Technician</th>
-              <th>Intervention</th>
-              <th>Scheduled</th>
-              <th>Status</th>
-              <th>Priority</th>
-              <th>Vehicles</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="jobsTbody"><tr><td colspan="8">Loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+      <div><label>Technician (id)</label><br/><input id="f_tech" placeholder="e.g. 12"/></div>
+      <div><label>From</label><br/><input id="f_from" type="date"/></div>
+      <div><label>To</label><br/><input id="f_to" type="date"/></div>
+      <div style="align-self:end"><button class="btn" onclick="loadJobs()">Filter</button></div>
+      <div style="align-self:end"><button class="btn secondary" onclick="resetFilters()">Reset</button></div>
+    </div>
 
-  <div id="jobDrawer">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h3 id="drawerTitle" style="margin:0;">SO Detail</h3>
-      <button id="closeDrawer" class="btn link">Close</button>
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>SO</th><th>Scheduled</th><th>Status</th><th>Technician</th>
+            <th>Address</th><th>Vehicles</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="jobsBody"><tr><td colspan="7">Loading…</td></tr></tbody>
+      </table>
     </div>
-    <div id="drawerMeta" style="color:var(--muted);margin-top:4px;"></div>
-    <div id="drawerTabs">
-      <button data-tab="overview" class="active">Overview</button>
-      <button data-tab="vehicles">Vehicles</button>
-      <button data-tab="checklist">Checklist</button>
-      <button data-tab="inventory">Inventory</button>
-      <button data-tab="history">Status History</button>
-    </div>
-    <div id="tabContent"></div>
   </div>
 
   <script>
     const { T } = NC, api = NCAPI, U = NCUTIL;
-    let TECHS = {}, TYPES = {};
 
-    function techName(id){ const t = TECHS[id]; return t?.full_name || t?.email_address || ('Tech #'+id); }
-    function typeName(id){ return TYPES[id]?.intervention_name || ('Type #'+id); }
-
-    async function loadLookups(){
-      const [techs, types] = await Promise.all([
-        api.list(T.technicians, 'limit=1000'),
-        api.list(T.intervention_types, 'limit=1000')
-      ]);
-      TECHS = Object.fromEntries(techs.list.map(r => [r.id, r]));
-      TYPES = Object.fromEntries(types.list.map(r => [r.id, r]));
+    function resetFilters(){
+      ['#f_status','#f_tech','#f_from','#f_to'].forEach(s=>{ const el=document.querySelector(s); if(el) el.value=''; });
+      loadJobs();
     }
 
-    async function vehiclesCount(soId){
-      const c = await api.count(T.service_order_vehicles, `filter=(service_order_id,eq,${soId})`);
-      return c.count ?? 0;
-    }
+    async function loadJobs(){
+      let qs = 'limit=1000&sort=scheduled_at';
+      const st = v('#f_status'); const tech = +v('#f_tech')||null;
+      const from = document.querySelector('#f_from').value;
+      const to   = document.querySelector('#f_to').value;
 
-    async function renderJobs(){
-      const res = await api.list(T.service_orders, 'limit=100&sort=-scheduled_at');
-      const rows = await Promise.all(res.list.map(async so => {
-        const vCount = await vehiclesCount(so.id);
-        return `
-          <tr>
-            <td>${so.so_id || so.id}</td>
-            <td>${techName(so.technician_id)}</td>
-            <td>${typeName(so.intervention_type_id)}</td>
-            <td>${U.fmt(so.scheduled_at)}</td>
-            <td><span class="badge">${so.status || ''}</span></td>
-            <td>${so.priority || ''}</td>
-            <td style="text-align:center">${vCount}</td>
-            <td><button class="btn" onclick="openDrawer(${so.id})">View</button></td>
-          </tr>
-        `;
-      }));
-      document.getElementById('jobsTbody').innerHTML = rows.join('') || '<tr><td colspan="8">No records.</td></tr>';
-    }
+      if(st) qs += `&filter=(status,eq,${st})`;
+      if(tech) qs += `&filter=(technician_id,eq,${tech})`;
+      if(from && to) qs += `&filter=(scheduled_at,between,${new Date(from).toISOString()},${new Date(to).toISOString()})`;
 
-    async function openDrawer(soId){
-      const [so, vehicles, chRows, invRows, hist] = await Promise.all([
-        api.read(T.service_orders, soId),
-        api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${soId})&limit=500`),
-        api.list(T.service_order_checklist, `filter=(service_order_id,eq,${soId})&limit=10000`),
-        api.list(T.service_order_inventory, `filter=(service_order_id,eq,${soId})&limit=10000`),
-        api.list(T.service_order_status_history, `filter=(service_order_id,eq,${soId})&sort=-changed_at&limit=1000`)
+      const [soRes, vehRes, techRes] = await Promise.all([
+        api.list(T.service_orders, qs),
+        api.list(T.service_order_vehicles, 'limit=10000&select=id,service_order_id'),
+        api.list(T.technicians, 'limit=2000&select=id,full_name')
       ]);
 
-      const drawer = document.getElementById('jobDrawer');
-      drawer.style.display = 'block';
-      document.getElementById('drawerTitle').textContent = `SO ${so.so_id || so.id}`;
-      document.getElementById('drawerMeta').textContent = `${typeName(so.intervention_type_id)} • ${techName(so.technician_id)} • ${U.fmt(so.scheduled_at)}`;
+      const vehCount = {};
+      vehRes.list.forEach(v => vehCount[v.service_order_id] = (vehCount[v.service_order_id]||0)+1);
+      const techMap = Object.fromEntries(techRes.list.map(t=>[t.id, t.full_name||('Tech #'+t.id)]));
 
-      const tabs = Array.from(document.querySelectorAll('#drawerTabs button'));
-      tabs.forEach(b => b.classList.remove('active'));
-      tabs[0].classList.add('active');
-
-      const mapVehNo = (id)=> (vehicles.list.find(v=>v.id===id)?.vehicle_no) || '(unscoped)';
-
-      function renderTab(name){
-        const el = document.getElementById('tabContent');
-        if(name==='overview'){
-          el.innerHTML = `
-            <div class="card" style="padding:12px;">
-              <div><b>Technician:</b> ${techName(so.technician_id)}</div>
-              <div><b>Intervention:</b> ${typeName(so.intervention_type_id)}</div>
-              <div><b>Scheduled:</b> ${U.fmt(so.scheduled_at)}</div>
-              <div><b>Status:</b> ${so.status||''} • <b>Priority:</b> ${so.priority||''}</div>
-              <div><b>Address:</b> ${so.address || ''}</div>
-              <div><b>Geo:</b> ${so.address_lat ?? ''}, ${so.address_lng ?? ''}</div>
-              <div><b>Notes:</b> ${so.notes || ''}</div>
-            </div>`;
-        }
-        if(name==='vehicles'){
-          el.innerHTML = vehicles.list.length
-            ? `<ul>${vehicles.list.map(v=> `<li>${v.vehicle_no}</li>`).join('')}</ul>`
-            : '<i>No vehicles.</i>';
-        }
-        if(name==='checklist'){
-          const byVeh = {};
-          for(const row of chRows.list){
-            const key = row.service_order_vehicle_id || 'no-veh';
-            byVeh[key] = byVeh[key] || { total:0, done:0 };
-            byVeh[key].total++;
-            if((row.status||'').toLowerCase()==='done') byVeh[key].done++;
-          }
-          el.innerHTML = Object.keys(byVeh).map(id=>{
-            const m = byVeh[id]; const pct = m.total? Math.round((m.done/m.total)*100) : 0;
-            return `<div class="card" style="margin:6px 0;padding:10px;"><b>${mapVehNo(+id)}</b>: ${m.done}/${m.total} (${pct}%)</div>`;
-          }).join('') || '<i>No checklist items recorded yet.</i>';
-        }
-        if(name==='inventory'){
-          el.innerHTML = `
-            <table style="width:100%;border-collapse:collapse">
-              <thead><tr><th>Vehicle</th><th>Item ID</th><th>Qty</th><th>Serial</th><th>SIM</th></tr></thead>
-              <tbody>
-                ${invRows.list.map(l=>`
-                  <tr>
-                    <td>${mapVehNo(l.service_order_vehicle_id)}</td>
-                    <td>${l.inventory_item_id||''}</td>
-                    <td>${l.qty||''}</td>
-                    <td>${l.serial_number||''}</td>
-                    <td>${l.sim_number||''}</td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>`;
-        }
-        if(name==='history'){
-          el.innerHTML = hist.list.length
-            ? `<ul>${hist.list.map(h=> `<li><b>${U.fmt(h.changed_at)}</b> – ${h.status || ''}</li>`).join('')}</ul>`
-            : '<i>No status events.</i>';
-        }
-      }
-
-      renderTab('overview');
-      document.querySelectorAll('#drawerTabs button').forEach(btn=>{
-        btn.onclick = ()=> {
-          document.querySelectorAll('#drawerTabs button').forEach(b=>b.classList.remove('active'));
-          btn.classList.add('active');
-          renderTab(btn.dataset.tab);
-        };
-      });
+      const rows = soRes.list.map(r => `
+        <tr>
+          <td>${r.so_id || ('SO #'+r.id)}</td>
+          <td>${r.scheduled_at ? new Date(r.scheduled_at).toLocaleString() : '—'}</td>
+          <td><span class="badge">${r.status||''}</span></td>
+          <td>${techMap[r.technician_id]||''}</td>
+          <td>${r.address||''}</td>
+          <td>${vehCount[r.id]||0}</td>
+          <td>
+            <a class="btn secondary" href="./assign-inventory-selector.html">Inventory</a>
+            <a class="btn secondary" href="./assign-job-enhanced.html?edit=${r.id}">Edit</a>
+          </td>
+        </tr>
+      `).join('');
+      document.getElementById('jobsBody').innerHTML = rows || '<tr><td colspan="7">No jobs</td></tr>';
     }
 
-    document.getElementById('closeDrawer').onclick = () => (document.getElementById('jobDrawer').style.display='none');
-    document.getElementById('refreshJobs').onclick = renderJobs;
-
-    (async function init(){
-      await loadLookups();
-      await renderJobs();
-    })();
+    function v(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
+    document.addEventListener('DOMContentLoaded', loadJobs);
   </script>
 </body>
 </html>
