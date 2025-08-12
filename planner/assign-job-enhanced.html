@@ -2,174 +2,365 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Assign Service Order – Naveo FSM</title>
+  <title>Planner • Assign Service Order</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- GH Pages–safe relative includes -->
   <script src="../assets/js/noco.js"></script>
   <script src="../assets/js/auth-lite.js"></script>
+
   <style>
-    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
-    body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif}
-    .wrap{max-width:960px;margin:24px auto;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.06);padding:20px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    :root{
+      --primary:#0056b3; --bg:#f5f7fb; --card:#fff; --border:#e5e7eb; --muted:#6b7280;
+      --sideW:240px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif;color:#0f172a}
+    a{color:inherit}
+
+    .layout{display:grid;grid-template-columns:var(--sideW) 1fr;min-height:100vh}
+    aside{background:#fff;border-right:1px solid var(--border);padding:14px;position:sticky;top:0;height:100vh}
+    .brand{font-weight:700;margin:4px 0 12px}
+    .side-link{display:block;padding:10px 12px;border-radius:10px;text-decoration:none;border:1px solid transparent}
+    .side-link:hover{background:#eef5ff;border-color:#dbeafe}
+    .side-link.active{background:#e9eef7;border:1px solid var(--border)}
+    .side-foot{position:absolute;bottom:12px;left:14px;right:14px;font-size:12px;color:#64748b}
+
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
+    h1{font-size:20px;margin:0}
+    .wrap{padding:16px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px;max-width:1120px;margin:0 auto}
+
     label{font-weight:600;font-size:.9rem}
-    input,select,textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px}
+    input,select,textarea{width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff}
+    textarea{resize:vertical}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
     .btn.secondary{background:#e9eef7;color:#111}
-    .veh-row{display:flex;gap:8px;align-items:center}
-    .chip{background:#eef5ff;border-radius:999px;padding:6px 10px;display:inline-flex;gap:8px;align-items:center;margin:4px}
-    .row{margin-top:10px}
+    .btn.ghost{background:#fff;border:1px solid var(--border);color:#111}
+    .muted{color:var(--muted)}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+    .danger{color:#b91c1c}
+    .ok{color:#065f46}
+
+    .topbar{display:flex;gap:8px;align-items:center}
+    .menuToggle{display:none}
+    @media(max-width:980px){
+      .layout{grid-template-columns:1fr}
+      aside{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .2s ease;z-index:20;width:80%;max-width:320px}
+      aside.open{transform:none}
+      .menuToggle{display:inline-block}
+    }
   </style>
 </head>
 <body>
   <script>Auth.ensureRole(['planner']);</script>
-  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('h2'));</script>
 
-  <div class="wrap">
-    <h2 style="margin:0 0 10px">Assign Service Order</h2>
+  <div class="layout">
+    <!-- SIDE MENU -->
+    <aside id="sidebar">
+      <div class="brand">Naveo FSM</div>
+      <a class="side-link" href="./planner.html">Home</a>
+      <a class="side-link active" href="./assign-job-enhanced.html">Assign SO</a>
+      <a class="side-link" href="./planner-jobs.html">Jobs</a>
+      <a class="side-link" href="./assign-inventory-selector.html">Assign Inventory</a>
+      <a class="side-link" href="./planner-inventory.html">Inventory Usage</a>
+      <a class="side-link" href="./admin-intervention-master.html">Interventions</a>
+      <a class="side-link" href="./admin-tech-master.html">Technicians</a>
+      <a class="side-link" href="./realtime-map.html">Live Map</a>
+      <a class="side-link" href="./reports.html">Reports</a>
+      <div class="side-foot">Use the “Switch Role” button in the header to change user.</div>
+    </aside>
 
-    <div class="grid">
-      <div>
-        <label>SO ID</label>
-        <div style="display:flex;gap:8px">
-          <input id="so_id" placeholder="SO-2025-0001" />
-          <button class="btn secondary" id="genSO">Generate</button>
+    <div>
+      <header>
+        <div class="topbar">
+          <button class="btn ghost menuToggle" onclick="toggleSide()">☰</button>
+          <h1>Assign Service Order</h1>
         </div>
-      </div>
-      <div>
-        <label>Technician</label>
-        <select id="technician_id"></select>
-      </div>
+        <!-- role badge injected here -->
+      </header>
+      <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
 
-      <div>
-        <label>Intervention Type</label>
-        <select id="intervention_type_id"></select>
-      </div>
-      <div>
-        <label>Priority</label>
-        <select id="priority">
-          <option value="low">low</option>
-          <option value="normal" selected>normal</option>
-          <option value="high">high</option>
-          <option value="urgent">urgent</option>
-        </select>
-      </div>
+      <div class="wrap">
+        <section class="card">
+          <!-- TOP FIELDS -->
+          <div class="grid">
+            <div>
+              <label>SO ID</label>
+              <div class="row">
+                <input id="so_id" placeholder="SO-YYYYMMDD-hhmmss" />
+                <button class="btn secondary" onclick="genSOID()">Generate</button>
+              </div>
+            </div>
+            <div>
+              <label>Technician</label>
+              <select id="technician_id"></select>
+            </div>
+          </div>
 
-      <div>
-        <label>Scheduled At</label>
-        <input id="scheduled_at" type="datetime-local"/>
-      </div>
-      <div></div>
+          <div class="grid">
+            <div>
+              <label>Intervention Type (default for SO)</label>
+              <select id="intervention_type_id"></select>
+            </div>
+            <div>
+              <label>Priority</label>
+              <select id="priority"><option>low</option><option selected>normal</option><option>high</option></select>
+            </div>
+          </div>
 
-      <div>
-        <label>Address</label>
-        <input id="address" placeholder="Street, City"/>
-      </div>
-      <div class="grid">
-        <div>
-          <label>Latitude</label>
-          <input id="address_lat" type="number" step="0.000001" placeholder="-20.160000"/>
-        </div>
-        <div>
-          <label>Longitude</label>
-          <input id="address_lng" type="number" step="0.000001" placeholder="57.501000"/>
-        </div>
-      </div>
+          <div class="grid">
+            <div>
+              <label>Scheduled At</label>
+              <input id="scheduled_at" type="datetime-local"/>
+            </div>
+            <div>
+              <label>Status</label>
+              <select id="status"><option>assigned</option><option>in_progress</option><option>completed</option></select>
+            </div>
+          </div>
 
-      <div style="grid-column:1/-1">
-        <label>Notes</label>
-        <textarea id="notes" rows="3" placeholder="Optional"></textarea>
-      </div>
-    </div>
+          <div class="grid-3">
+            <div style="grid-column:1 / span 3">
+              <label>Address</label>
+              <input id="address" placeholder="Street, City, Country" />
+            </div>
+            <div>
+              <label>Latitude</label>
+              <input id="lat" placeholder="-20.160000" />
+            </div>
+            <div>
+              <label>Longitude</label>
+              <input id="lng" placeholder="57.501000" />
+            </div>
+            <div style="align-self:end">
+              <button class="btn secondary" onclick="geocode()">Geocode</button>
+            </div>
+          </div>
 
-    <div class="row">
-      <h3 style="margin:8px 0">Vehicles</h3>
-      <div class="veh-row">
-        <input id="vehInput" placeholder="e.g. 1234 MR 20"/>
-        <button class="btn secondary" id="addVeh">Add Vehicle</button>
-      </div>
-      <div id="vehList" style="display:flex;flex-wrap:wrap;margin-top:6px;"></div>
-    </div>
+          <div style="margin-top:10px">
+            <label>Notes</label>
+            <textarea id="notes" rows="3" placeholder="Optional"></textarea>
+          </div>
 
-    <div class="row" style="display:flex;gap:8px;align-items:center">
-      <button class="btn" id="saveSO">Assign</button>
-      <a href="./planner-jobs.html" class="btn secondary">Back to Jobs</a>
-      <div id="msg" style="color:#0056b3"></div>
+          <hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
+
+          <!-- VEHICLES / PER-VEHICLE INTERVENTION -->
+          <h3 style="margin:0 0 8px">Vehicles</h3>
+          <div class="grid">
+            <div>
+              <label>Vehicle number</label>
+              <input id="veh_no" placeholder="e.g. 1234 MR 20" />
+            </div>
+            <div>
+              <label>Intervention Type for this vehicle</label>
+              <select id="veh_it"></select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" onclick="addVehicle()">Add Vehicle</button>
+            <span class="muted">Each row below is a vehicle + its intervention.</span>
+          </div>
+
+          <div style="overflow:auto">
+            <table>
+              <thead><tr><th>#</th><th>Vehicle</th><th>Intervention</th><th></th></tr></thead>
+              <tbody id="vehTable"><tr><td colspan="4" class="muted">No vehicles yet</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="row" style="margin-top:14px">
+            <button class="btn" onclick="saveSO()">Assign</button>
+            <a class="btn secondary" href="./planner-jobs.html">Back to Jobs</a>
+            <span id="msg" class="muted"></span>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 
   <script>
     const { T } = NC, api = NCAPI;
-    const veh = [];
-    function setMsg(t){ document.getElementById('msg').textContent = t; }
+
+    // Sidebar toggle (mobile)
+    function toggleSide(){ document.getElementById('sidebar').classList.toggle('open'); }
+
+    // Helpers
+    function v(s){ const e=document.querySelector(s); return e? e.value : ''; }
+    function s(slc,val){ const e=document.querySelector(slc); if(e) e.value=val; }
+    function setMsg(t, ok){ const el=document.getElementById('msg'); if(!el) return; el.textContent=t||''; el.className = ok ? 'ok' : 'danger'; }
+
+    // Vehicle working set
+    let VEH_LINES = []; // { vehicle_no, intervention_type_id, intervention_name }
 
     function renderVeh(){
-      const box = document.getElementById('vehList');
-      box.innerHTML = veh.map((v,i)=>`<span class="chip">${v}<button class="btn secondary" style="padding:2px 8px" onclick="removeVeh(${i})">×</button></span>`).join('');
+      const tb = document.getElementById('vehTable');
+      if(!VEH_LINES.length){ tb.innerHTML = '<tr><td colspan="4" class="muted">No vehicles yet</td></tr>'; return; }
+      tb.innerHTML = VEH_LINES.map((x,idx)=>`
+        <tr>
+          <td>${idx+1}</td>
+          <td>${x.vehicle_no}</td>
+          <td>${x.intervention_name || x.intervention_type_id}</td>
+          <td>
+            <button class="btn secondary" onclick="editVeh(${idx})">Edit</button>
+            <button class="btn ghost" onclick="delVeh(${idx})">Remove</button>
+          </td>
+        </tr>
+      `).join('');
     }
-    window.removeVeh = (i)=>{ veh.splice(i,1); renderVeh(); };
+    function addVehicle(){
+      const vehicle_no = v('#veh_no').trim();
+      const itId = +v('#veh_it') || null;
+      const itName = document.querySelector('#veh_it').selectedOptions[0]?.text || '';
+      if(!vehicle_no) return setMsg('Vehicle is required');
+      if(!itId) return setMsg('Intervention for vehicle is required');
+      VEH_LINES.push({ vehicle_no, intervention_type_id: itId, intervention_name: itName });
+      s('#veh_no',''); renderVeh(); setMsg('', true);
+    }
+    function editVeh(i){
+      const row = VEH_LINES[i]; if(!row) return;
+      s('#veh_no', row.vehicle_no); s('#veh_it', row.intervention_type_id);
+      VEH_LINES.splice(i,1); renderVeh();
+    }
+    function delVeh(i){ VEH_LINES.splice(i,1); renderVeh(); }
 
-    document.getElementById('addVeh').onclick = ()=>{
-      const v = document.getElementById('vehInput').value.trim();
-      if(!v) return;
-      if(veh.includes(v)) return setMsg('Vehicle already added.');
-      veh.push(v); document.getElementById('vehInput').value=''; renderVeh();
-    };
+    // SO ID generator
+    function genSOID(){
+      const d = new Date();
+      const pad = n=> String(n).padStart(2,'0');
+      const id = `SO-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+      s('#so_id', id);
+    }
 
-    document.getElementById('genSO').onclick = ()=>{
-      const ts = new Date();
-      const id = `SO-${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,'0')}${String(ts.getDate()).padStart(2,'0')}-${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}${String(ts.getSeconds()).padStart(2,'0')}`;
-      document.getElementById('so_id').value = id;
-    };
+    // Address → Lat/Lng (Nominatim)
+    async function geocode(){
+      const addr = v('#address').trim();
+      if(!addr) return setMsg('Enter an address to geocode');
+      try{
+        setMsg('Geocoding…', true);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        if(data && data[0]){
+          s('#lat', Number(data[0].lat).toFixed(6));
+          s('#lng', Number(data[0].lon).toFixed(6));
+          setMsg('Address geocoded', true);
+        }else{
+          setMsg('No match for that address');
+        }
+      }catch(e){
+        console.error(e); setMsg('Geocoding error');
+      }
+    }
+    // Also geocode on blur
+    document.addEventListener('DOMContentLoaded', ()=> {
+      const a = document.getElementById('address');
+      if(a){ a.addEventListener('blur', ()=> { if(!v('#lat') || !v('#lng')) geocode(); }); }
+    });
 
-    async function loadDropdowns(){
-      const [techs, types] = await Promise.all([
-        api.list(T.technicians, 'limit=1000&sort=full_name'),
+    // Preload dropdowns + edit mode
+    async function preload(){
+      const [techs, its] = await Promise.all([
+        api.list(T.technicians, 'limit=2000&sort=full_name'),
         api.list(T.intervention_types, 'limit=1000&sort=intervention_name')
       ]);
-      const techSel = document.getElementById('technician_id');
-      const typeSel = document.getElementById('intervention_type_id');
-      techSel.innerHTML = techs.list.map(t=> `<option value="${t.id}">${t.full_name || t.email_address || ('Tech #'+t.id)}</option>`).join('');
-      typeSel.innerHTML = types.list.map(t=> `<option value="${t.id}">${t.intervention_name}</option>`).join('');
+      document.querySelector('#technician_id').innerHTML =
+        '<option value="">(choose technician)</option>' +
+        techs.list.map(t=>`<option value="${t.id}">${t.full_name||('Tech #'+t.id)}</option>`).join('');
+
+      const itOpts = its.list.map(i=>`<option value="${i.id}">${i.intervention_name}</option>`).join('');
+      document.querySelector('#intervention_type_id').innerHTML = itOpts;
+      document.querySelector('#veh_it').innerHTML = itOpts;
+
+      // Edit mode support (?edit=ID)
+      const p = new URLSearchParams(location.search);
+      const edit = +p.get('edit');
+      if(edit){ await loadForEdit(edit); }
     }
 
-    document.getElementById('saveSO').onclick = async ()=>{
+    async function loadForEdit(id){
+      const r = await api.read(T.service_orders, id);
+      s('#so_id', r.so_id||'');
+      s('#technician_id', r.technician_id||'');
+      s('#intervention_type_id', r.intervention_type_id||'');
+      s('#priority', r.priority||'normal');
+      s('#status', r.status||'assigned');
+      s('#scheduled_at', r.scheduled_at ? toLocalInput(r.scheduled_at) : '');
+      s('#address', r.address||'');
+      s('#lat', r.address_lat || '');
+      s('#lng', r.address_lng || '');
+      s('#notes', r.notes||'');
+
+      const veh = await api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${id})&limit=1000`);
+      VEH_LINES = veh.list.map(v => ({
+        vehicle_no: v.vehicle_no,
+        intervention_type_id: v.intervention_type_id || (r.intervention_type_id || null),
+        intervention_name: '' // will be hydrated below
+      }));
+
+      // hydrate intervention names
+      const its = await api.list(T.intervention_types, 'limit=1000&select=id,intervention_name');
+      const map = Object.fromEntries(its.list.map(i=>[i.id,i.intervention_name]));
+      VEH_LINES = VEH_LINES.map(x=>({ ...x, intervention_name: map[x.intervention_type_id] || '' }));
+      renderVeh();
+
+      document.getElementById('msg').textContent = 'Editing SO #' + (r.so_id||r.id);
+      document.querySelector('.btn').textContent = 'Update';
+      document.querySelector('.btn').setAttribute('data-edit', id);
+    }
+
+    function toLocalInput(iso){ const d = new Date(iso); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+
+    async function saveSO(){
+      const editId = +document.querySelector('.btn').getAttribute('data-edit') || null;
+
+      const techId = +v('#technician_id') || null;
+      if(!techId){ setMsg('Technician is required'); return; }
+
+      const body = {
+        so_id: v('#so_id') || null,
+        technician_id: techId,
+        intervention_type_id: +v('#intervention_type_id') || null,
+        priority: v('#priority') || 'normal',
+        status: v('#status') || 'assigned',
+        scheduled_at: v('#scheduled_at') ? new Date(v('#scheduled_at')).toISOString() : null,
+        address: v('#address') || null,
+        address_lat: v('#lat') ? parseFloat(v('#lat')) : null,
+        address_lng: v('#lng') ? parseFloat(v('#lng')) : null,
+        notes: v('#notes') || null
+      };
+
       try{
-        setMsg('');
-        const so_id = document.getElementById('so_id').value.trim();
-        const technician_id = +document.getElementById('technician_id').value;
-        const intervention_type_id = +document.getElementById('intervention_type_id').value;
-        const scheduled_at = document.getElementById('scheduled_at').value ? new Date(document.getElementById('scheduled_at').value).toISOString() : null;
-        const priority = document.getElementById('priority').value;
-        const address = document.getElementById('address').value;
-        const address_lat_raw = document.getElementById('address_lat').value;
-        const address_lng_raw = document.getElementById('address_lng').value;
-        const address_lat = address_lat_raw === '' ? null : parseFloat(address_lat_raw);
-        const address_lng = address_lng_raw === '' ? null : parseFloat(address_lng_raw);
-        const notes = document.getElementById('notes').value;
+        let so;
+        if(editId){
+          body.id = editId;
+          so = await api.patch(T.service_orders, body);
+          // remove existing vehicle rows, recreate from VEH_LINES
+          const existing = await api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${editId})&limit=1000`);
+          for(const row of existing.list){ await api.del(T.service_order_vehicles, row.id); }
+        }else{
+          so = await api.create(T.service_orders, body);
+        }
 
-        if(!so_id) return setMsg('SO ID is required');
-        if(!technician_id) return setMsg('Technician is required');
-        if(!intervention_type_id) return setMsg('Intervention type is required');
-        if(!scheduled_at) return setMsg('Scheduled time is required');
-        if(veh.length===0) return setMsg('Add at least one vehicle');
+        for(const line of VEH_LINES){
+          await api.create(T.service_order_vehicles, {
+            service_order_id: so.id,
+            vehicle_no: line.vehicle_no,
+            intervention_type_id: line.intervention_type_id  // ⬅ requires column in DB
+          });
+        }
 
-        const so = await api.create(T.service_orders, {
-          so_id, technician_id, intervention_type_id, scheduled_at, priority,
-          address, address_lat, address_lng, notes, status:'assigned'
-        });
-
-        await Promise.all(veh.map(v => api.create(T.service_order_vehicles, {
-          service_order_id: so.id, vehicle_no: v
-        })));
-
-        setMsg(`✅ Assigned ${so.so_id || so.id} with ${veh.length} vehicle(s).`);
-        setTimeout(()=> window.location.href='./planner-jobs.html', 700);
+        setMsg(`Saved SO ${so.so_id||so.id}`, true);
       }catch(e){
-        console.error(e); setMsg('Error: '+ e.message);
+        console.error(e); setMsg('Error: ' + (e.message || 'Failed'));
       }
-    };
+    }
 
-    (async function init(){ await loadDropdowns(); })();
+    document.addEventListener('DOMContentLoaded', preload);
   </script>
 </body>
 </html>
