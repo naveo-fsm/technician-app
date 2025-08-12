@@ -1,182 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Naveo FSM • Planner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-
-  <!-- Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
+  <meta charset="UTF-8" />
+  <title>Planner • Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="../assets/js/noco.js"></script>
+  <script src="../assets/js/auth-lite.js"></script>
   <style>
-    :root{
-      --primary:#0056b3; --secondary:#eaf2fb; --muted:#6c757d;
-      --text:#23272f; --bg:#f7fafd; --card:#fff; --border:#edf0f6;
-      --radius-card:12px; --radius-el:6px; --shadow:0 4px 18px rgba(0,0,0,.08);
-      --sidebar-w:260px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;background:var(--bg);color:var(--text);
-      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:16px;
-      display:flex;min-height:100vh;
-    }
-    /* Sidebar */
-    .sidebar{
-      width:var(--sidebar-w);background:#fff;border-right:1px solid var(--border);
-      display:flex;flex-direction:column;gap:10px;padding:22px 16px;
-      position:fixed;inset:0 auto 0 0;z-index:3;box-shadow:var(--shadow);
-      transform:translateX(0);transition:transform .25s ease;
-    }
-    .brand{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-    .brand h1{font-size:1.05rem;color:var(--primary);margin:0;font-weight:800}
-    .hamburger{display:none;background:var(--secondary);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
-    nav{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-    .link{
-      display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
-      color:#16324a;text-decoration:none;font-weight:600;border:1px solid transparent;
-    }
-    .link:hover{background:var(--secondary)}
-    .link[aria-current="page"]{background:var(--secondary);border-color:#d7e5f7;color:var(--primary)}
-    .icon{width:18px;height:18px;display:inline-block}
-    .group-title{margin:10px 4px 4px;color:var(--muted);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-    .sep{height:1px;background:var(--border);margin:8px 0}
-    .bottom{margin-top:auto;display:flex;flex-direction:column;gap:8px}
-    .btn{border:0;border-radius:var(--radius-el);padding:9px 12px;cursor:pointer;font-weight:700}
-    .btn-muted{background:#e7ebf2}
-    .logout{background:#fff;border:1px solid var(--border);color:#b32020}
-
-    /* Main */
-    .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0}
-    .topbar{
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;
-    }
-    .title{font-size:1rem;color:var(--primary);font-weight:700}
-    .frame-wrap{flex:1;padding:16px}
-    iframe{
-      width:100%;height:calc(100vh - 84px);border:1px solid var(--border);
-      border-radius:12px;background:#fff;box-shadow:var(--shadow)
-    }
-
-    /* Mobile */
-    @media (max-width: 900px){
-      .sidebar{transform:translateX(-100%)}
-      .sidebar.open{transform:translateX(0)}
-      .hamburger{display:inline-block}
-      .main{margin-left:0}
-      iframe{height:calc(100vh - 70px)}
-    }
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
+    h1{font-size:18px;margin:0}
+    .container{padding:16px;display:grid;gap:16px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .kpi{padding:14px;border:1px solid var(--border);border-radius:12px}
+    .kpi h3{margin:0 0 6px;font-size:12px;color:#6b7280} .kpi div{font-size:28px;font-weight:700}
+    .links{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    a.btn{display:block;text-align:center;padding:12px;border-radius:10px;background:#e9eef7;color:#111;text-decoration:none;border:1px solid var(--border)}
+    @media(max-width:960px){ .kpis,.links{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar" aria-label="Planner navigation">
-    <div class="brand">
-      <h1>Naveo Planner</h1>
-      <button class="hamburger" id="closeNav" aria-label="Close menu">✕</button>
-    </div>
+  <script>Auth.ensureRole(['planner']);</script>
 
-    <nav id="nav">
-      <div class="group-title">Planner</div>
-      <a href="#" class="link" data-page="planner-dashboard.html" aria-current="page">
-        <span class="icon">📊</span><span>Dashboard</span>
-      </a>
-      <a href="#" class="link" data-page="planner-jobs.html">
-        <span class="icon">📋</span><span>Service Orders</span>
-      </a>
-      <a href="#" class="link" data-page="planner-inventory.html">
-        <span class="icon">📦</span><span>Inventory</span>
-      </a>
-      <a href="#" class="link" data-page="realtime-map.html">
-        <span class="icon">🗺</span><span>Routes</span>
-      </a>
-      <a href="#" class="link" data-page="assign-job-enhanced.html">
-        <span class="icon">📝</span><span>Assign Job</span>
-      </a>
-      <a href="#" class="link" data-page="history.html">
-        <span class="icon">📜</span><span>History</span>
-      </a>
-      <a href="#" class="link" data-page="reports.html">
-        <span class="icon">📑</span><span>Reports</span>
-      </a>
+  <header>
+    <h1>Planner Hub</h1>
+    <div></div>
+  </header>
+  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
 
-      <div class="sep"></div>
-      <div class="group-title">Admin</div>
-      <a href="#" class="link" data-page="admin-intervention-master.html">
-        <span class="icon">🧩</span><span>Intervention Types</span>
-      </a>
-      <a href="#" class="link" data-page="admin-tech-master.html">
-        <span class="icon">👷</span><span>Technicians</span>
-      </a>
-      <a href="#" class="link" data-page="assign-inventory-selector.html">
-        <span class="icon">🧰</span><span>Assign Inventory</span>
-      </a>
-    </nav>
+  <main class="container">
+    <section class="card">
+      <h2 style="margin:0 0 10px;font-size:16px;">Today</h2>
+      <div class="kpis">
+        <div class="kpi"><h3>Assigned</h3><div id="c_ass">0</div></div>
+        <div class="kpi"><h3>In Progress</h3><div id="c_prog">0</div></div>
+        <div class="kpi"><h3>Completed</h3><div id="c_comp">0</div></div>
+      </div>
+    </section>
 
-    <div class="sep"></div>
-    <div class="bottom">
-      <button class="btn btn-muted" id="openDocs" type="button" title="Open README in new tab">Help / README</button>
-      <button class="btn logout" id="logoutBtn" type="button">Logout</button>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="main">
-    <div class="topbar">
-      <div class="title" id="pageTitle">Dashboard</div>
-      <button class="hamburger" id="openNav" aria-label="Open menu">☰</button>
-    </div>
-    <div class="frame-wrap">
-      <!-- default page -->
-      <iframe id="frameView" title="Planner content frame" src="planner-dashboard.html" referrerpolicy="no-referrer"></iframe>
-    </div>
+    <section class="card">
+      <h2 style="margin:0 0 10px;font-size:16px;">Quick Links</h2>
+      <div class="links">
+        <a class="btn" href="./planner-jobs.html">Jobs</a>
+        <a class="btn" href="./assign-job-enhanced.html">Assign SO</a>
+        <a class="btn" href="./dashboard.html">Dashboard</a>
+        <a class="btn" href="./realtime-map.html">Live Map</a>
+        <a class="btn" href="./assign-inventory-selector.html">Assign Inventory</a>
+        <a class="btn" href="./planner-inventory.html">Inventory Usage</a>
+        <a class="btn" href="./admin-intervention-master.html">Interventions/Checklists</a>
+        <a class="btn" href="./admin-tech-master.html">Technicians</a>
+        <a class="btn" href="./history.html">Status History</a>
+        <a class="btn" href="./reports.html">Reports</a>
+      </div>
+    </section>
   </main>
 
-  <!-- Config + Auth -->
-  <script src="../assets/js/config.js"></script>
-  <script src="../assets/js/auth.js"></script>
   <script>
-    try { Auth.requireRole && Auth.requireRole('planner'); } catch (e) {}
-
-    const frame = document.getElementById('frameView');
-    const pageTitle = document.getElementById('pageTitle');
-    const sidebar = document.getElementById('sidebar');
-
-    document.getElementById('nav').addEventListener('click', (e)=>{
-      const a = e.target.closest('a.link');
-      if(!a) return;
-      e.preventDefault();
-      const page = a.dataset.page;
-      if(!page) return;
-
-      frame.src = page;
-      pageTitle.textContent = a.textContent.trim();
-      document.querySelectorAll('.link').forEach(n=>n.removeAttribute('aria-current'));
-      a.setAttribute('aria-current','page');
-      sidebar.classList.remove('open');
-    });
-
-    document.getElementById('openNav').addEventListener('click', ()=> sidebar.classList.add('open'));
-    document.getElementById('closeNav').addEventListener('click', ()=> sidebar.classList.remove('open'));
-
-    document.getElementById('openDocs').addEventListener('click', ()=>{
-      window.open('../README.html', '_blank', 'noopener');
-    });
-
-    document.getElementById('logoutBtn').addEventListener('click', ()=>{
-      try { Auth.logout && Auth.logout(); } catch(e){}
-      localStorage.removeItem('NC_TOKEN');
-      window.location.href = '../index.html';
-    });
-
-    (function bootFromQuery(){
-      const p = new URL(location.href).searchParams.get('page');
-      if(!p) return;
-      const link = document.querySelector(`.link[data-page="${p}"]`);
-      if(link){ link.click(); }
-    })();
+    const { T } = NC, api = NCAPI, U = NCUTIL;
+    async function hubCounts(){
+      const today = new Date(); const from = new Date(today); from.setHours(0,0,0,0);
+      const to = new Date(today); to.setHours(23,59,59,999);
+      const q = (st)=> `filter=(status,eq,${st})&filter=(scheduled_at,between,${U.iso(from)},${U.iso(to)})&limit=1`;
+      const [ass, prog, comp] = await Promise.all([
+        api.list(T.service_orders, q('assigned')),
+        api.list(T.service_orders, q('in_progress')),
+        api.list(T.service_orders, q('completed')),
+      ]);
+      set('#c_ass', ass.pageInfo?.totalRows ?? ass.list.length);
+      set('#c_prog', prog.pageInfo?.totalRows ?? prog.list.length);
+      set('#c_comp', comp.pageInfo?.totalRows ?? comp.list.length);
+    }
+    function set(sel, v){ const e=document.querySelector(sel); if(e) e.textContent=v; }
+    document.addEventListener('DOMContentLoaded', hubCounts);
   </script>
 </body>
 </html>
