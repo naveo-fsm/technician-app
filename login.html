@@ -2,15 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Naveo FSM</title>
+  <title>Naveo FSM – Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <!-- Only need the light auth shim here -->
-  <script src="/assets/js/auth-lite.js"></script>
   <style>
     :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif}
-    .wrap{max-width:640px;margin:16vh auto;background:var(--card);border:1px solid var(--border);
+    .wrap{max-width:560px;margin:16vh auto;background:var(--card);border:1px solid var(--border);
           border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.06);padding:24px;text-align:center}
     h1{margin:0 0 8px;font-size:22px}
     p{margin:0 0 14px;color:#6b7280}
@@ -22,9 +20,9 @@
 <body>
   <div class="wrap">
     <h1>Naveo FSM</h1>
-    <p>Launching…</p>
+    <p>Login is disabled. Redirecting to role selection…</p>
     <div style="margin-top:8px">
-      <!-- Fallback links in case JS redirect is blocked -->
+      <!-- Fallback links in case redirect is blocked -->
       <a class="btn" href="/access/role.html">Choose role</a>
       <a class="btn secondary" href="/planner/planner-jobs.html">Planner</a>
       <a class="btn secondary" href="/technician/home.html">Technician</a>
@@ -32,37 +30,11 @@
   </div>
 
   <script>
-    // If you're hosting under a subpath (e.g., GitHub Pages /repo), set BASE_PATH = '/repo'
+    // If you host under a subpath (e.g., GitHub Pages /repo), set BASE_PATH to '/repo'
     const BASE_PATH = ''; // '' when hosted at domain root
-
-    const landing = {
-      planner: `${BASE_PATH}/planner/planner-jobs.html`,
-      technician: `${BASE_PATH}/technician/home.html`,
-      picker: `${BASE_PATH}/access/role.html`
-    };
-
-    (function launch(){
-      try{
-        const role = (localStorage.getItem('fsm_role') || '').toLowerCase();
-        if(role === 'planner') {
-          window.location.replace(landing.planner);
-          return;
-        }
-        if(role === 'technician') {
-          // Basic sanity: require a selected technician id
-          const techId = localStorage.getItem('fsm_technician_id');
-          if(techId) {
-            window.location.replace(landing.technician);
-            return;
-          }
-        }
-        // No role or incomplete tech state → go pick a role
-        window.location.replace(landing.picker);
-      }catch(e){
-        // If something goes wrong, leave the fallback links visible
-        console.error('Launch error:', e);
-      }
-    })();
+    const target = `${BASE_PATH}/access/role.html`;
+    // quick redirect (keep fallback links visible if something fails)
+    setTimeout(() => { try { window.location.replace(target); } catch(e) {} }, 100);
   </script>
 </body>
 </html>
