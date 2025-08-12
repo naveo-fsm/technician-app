@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Naveo FSM – Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="assets/js/auth-lite.js"></script>
   <style>
     :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
     *{box-sizing:border-box}
@@ -22,18 +23,16 @@
     <h1>Naveo FSM</h1>
     <p>Login is disabled. Redirecting to role selection…</p>
     <div style="margin-top:8px">
-      <!-- Fallback links in case redirect is blocked -->
-      <a class="btn" href="/access/role.html">Choose role</a>
-      <a class="btn secondary" href="/planner/planner-jobs.html">Planner</a>
-      <a class="btn secondary" href="/technician/home.html">Technician</a>
+      <a class="btn" id="roleLink" href="#">Choose role</a>
+      <a class="btn secondary" href="planner/planner-jobs.html">Planner</a>
+      <a class="btn secondary" href="technician/home.html">Technician</a>
     </div>
   </div>
 
   <script>
-    // If you host under a subpath (e.g., GitHub Pages /repo), set BASE_PATH to '/repo'
-    const BASE_PATH = ''; // '' when hosted at domain root
+    const BASE_PATH = Auth.BASE_PATH || '';
     const target = `${BASE_PATH}/access/role.html`;
-    // quick redirect (keep fallback links visible if something fails)
+    document.getElementById('roleLink').href = target;
     setTimeout(() => { try { window.location.replace(target); } catch(e) {} }, 100);
   </script>
 </body>
