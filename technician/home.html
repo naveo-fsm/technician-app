@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Naveo FSM – Technician</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- NocoDB + Auth (already contain your PAT and role shim) -->
+  <script src="../assets/js/noco.js"></script>
+  <script src="../assets/js/auth-lite.js"></script>
+
+  <style>
+    :root{
+      --primary:#0056b3; --bg:#f5f7fb; --card:#fff; --border:#e5e7eb; --text:#111; --muted:#6b7280; --chip:#eef5ff;
+      --ok:#16a34a; --warn:#d97706; --bad:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif;color:var(--text)}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+    h1{margin:0;font-size:18px}
+    .container{padding:14px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 26px rgba(0,0,0,.05);padding:14px;margin-bottom:12px}
+    .btn{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:10px 14px;cursor:pointer}
+    .btn.secondary{background:#e9eef7;color:#111}
+    .btn.ghost{background:#fff;color:#111;border:1px solid var(--border)}
+    .list{display:grid;gap:10px}
+    .so{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:12px;padding:12px}
+    .meta{color:var(--muted);font-size:.9rem}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--chip);font-size:.8rem}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    /* Drawer */
+    #drawer{display:none;position:fixed;left:0;right:0;bottom:0;top:0;background:rgba(0,0,0,.15);z-index:30}
+    #panel{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top-left-radius:16px;border-top-right-radius:16px;max-height:90vh;overflow:auto}
+    .panel-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+    .panel-body{padding:12px 16px}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+    .tab{border:1px solid var(--border);background:#fff;padding:6px 10px;border-radius:999px;cursor:pointer}
+    .tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    /* Checklist */
+    .checklist{display:grid;gap:8px}
+    .item{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:8px}
+    .tick{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .tick.done{background:#e7fbe9;border-color:#9ae6a3}
+    .tick span{font-weight:800}
+    .itm-text{flex:1}
+    .req{color:#fff;background:var(--bad);border-radius:6px;padding:0 6px;font-size:.7rem;margin-left:6px}
+    .veh-chip{background:#eef5ff;border-radius:999px;padding:6px 10px;margin:2px;display:inline-flex;gap:8px;align-items:center}
+    .warn{color:var(--warn)}
+    .ok{color:var(--ok)}
+  </style>
+</head>
+<body>
+  <script>Auth.ensureRole(['technician'], '/access/role.html');</script>
+
+  <header>
+    <h1>Technician • Home</h1>
+    <div class="row">
+      <button id="refresh" class="btn secondary">Refresh</button>
+    </div>
+  </header>
+  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
+
+  <div class="container">
+    <section class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div class="meta" id="hello">—</div>
+          <h2 style="margin:4px 0 0;font-size:16px;">Today’s Jobs</h2>
+          <div class="meta">Assigned & In-Progress</div>
+        </div>
+        <div>
+          <button class="btn ghost" id="todayBtn">Today</button>
+        </div>
+      </div>
+      <div id="jobs" class="list" style="margin-top:8px;"><div class="meta">Loading…</div></div>
+    </section>
+  </div>
+
+  <!-- Drawer -->
+  <div id="drawer">
+    <div id="panel">
+      <div class="panel-head">
+        <div>
+          <div id="soTitle" style="font-weight:700">SO —</div>
+          <div id="soMeta" class="meta">—</div>
+        </div>
+        <div class="row">
+          <button id="closeDrawer" class="btn secondary">Close</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <div id="soStatusLine" class="meta">—</div>
+            <div id="soAddress" class="meta">—</div>
+          </div>
+          <div>
+            <button id="primaryAction" class="btn">Start</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div style="font-weight:600;margin-bottom:6px;">Vehicles</div>
+          <div id="vehTabs" class="tabs"></div>
+        </div>
+
+        <div style="margin-top:8px;">
+          <div class="row" style="justify-content:space-between;align-items:center;">
+            <div style="font-weight:600;">Checklist</div>
+            <div id="vehCoverage" class="meta">—</div>
+          </div>
+          <div id="checklistBox" class="checklist" style="margin-top:6px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { T } = NC, api = NCAPI;
+    const tech = Auth.getTech();
+    if(!tech?.id){ window.location.replace('/access/role.html'); }
+
+    // State
+    let SOs = [];               // jobs list
+    let currentSO = null;       // active job object
+    let vehicles = [];          // vehicles for current SO
+    let template = [];          // checklist template for current SO intervention
+    let answersAll = [];        // all answers rows for current SO
+    let ansMap = {};            // by vehicle -> checklist_id -> row
+    let activeVehId = null;     // current vehicle id in tabs
+
+    // Utils
+    function fmt(dt){ try { return dt ? new Date(dt).toLocaleString() : ''; } catch(e){ return dt || ''; } }
+    function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+    function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); return x; }
+
+    // Greeting
+    document.getElementById('hello').textContent = `Hi ${tech.name||('Tech #'+tech.id)}!`;
+
+    // Fetch jobs for this technician (assigned or in_progress; default: today window if scheduled_at exists)
+    async function loadJobs(todayOnly=true){
+      const filters = [
+        `filter=(technician_id,eq,${tech.id})`,
+        `filter=(status,in,assigned,in_progress)`,
+        `sort=scheduled_at`
+      ];
+      if(todayOnly){
+        const from = startOfDay(new Date()).toISOString();
+        const to = endOfDay(new Date()).toISOString();
+        // Keep jobs without scheduled_at too (Noco doesn't support OR gracefully in one call)
+        const res1 = await api.list(T.service_orders, filters.concat([`filter=(scheduled_at,between,${from},${to})`]).join('&'));
+        const res2 = await api.list(T.service_orders, [`filter=(technician_id,eq,${tech.id})`,`filter=(status,in,assigned,in_progress)`,`filter=(scheduled_at,is,null)`,'sort=scheduled_at'].join('&'));
+        return [...res1.list, ...res2.list];
+      } else {
+        const res = await api.list(T.service_orders, filters.join('&'));
+        return res.list;
+      }
+    }
+
+    function soCard(so){
+      const btn = `<button class="btn" onclick="openSO(${so.id})">Open</button>`;
+      return `
+        <div class="so">
+          <div>
+            <div><b>${so.so_id || ('SO #'+so.id)}</b> <span class="badge">${so.status||''}</span></div>
+            <div class="meta">When: ${fmt(so.scheduled_at) || '—'}</div>
+            <div class="meta">Address: ${so.address || '—'}</div>
+          </div>
+          <div class="row">
+            ${btn}
+          </div>
+        </div>`;
+    }
+
+    async function renderJobs(){
+      document.getElementById('jobs').innerHTML = '<div class="meta">Loading…</div>';
+      SOs = await loadJobs(true);
+      if(!SOs.length){
+        document.getElementById('jobs').innerHTML = '<div class="meta">No jobs for today.</div>';
+        return;
+      }
+      document.getElementById('jobs').innerHTML = SOs.map(soCard).join('');
+    }
+
+    // Drawer open
+    window.openSO = async (soId)=>{
+      // Pull job + vehicles + template + all answers
+      const [so, vrows, tmpl, allAns] = await Promise.all([
+        api.read(T.service_orders, soId),
+        api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${soId})&limit=200`),
+        (async ()=>{
+          const tmp = await api.list(T.checklists, `filter=(intervention_type_id,eq,${SOs.find(s=>s.id===soId)?.intervention_type_id || so.intervention_type_id})&limit=1000&sort=sort_order`);
+          return tmp.list;
+        })(),
+        api.list(T.service_order_checklist, `filter=(service_order_id,eq,${soId})&limit=10000`)
+      ]);
+
+      currentSO = so;
+      vehicles = vrows.list;
+      template = tmpl;
+      answersAll = allAns.list;
+      buildAnswerMap();
+
+      document.getElementById('soTitle').textContent = `SO ${so.so_id || so.id}`;
+      document.getElementById('soMeta').textContent   = `Scheduled: ${fmt(so.scheduled_at) || '—'}`;
+      document.getElementById('soStatusLine').textContent = `Status: ${so.status || '—'} • Priority: ${so.priority || '—'}`;
+      document.getElementById('soAddress').textContent = so.address ? `📍 ${so.address}` : '';
+
+      // Primary button
+      updatePrimaryButton();
+
+      // Vehicle tabs
+      renderVehTabs();
+
+      // Open drawer
+      document.getElementById('drawer').style.display = 'block';
+      // default to first vehicle (or unscoped)
+      if(vehicles.length){ switchVeh(vehicles[0].id); } else { renderChecklist(null); }
+    };
+
+    function buildAnswerMap(){
+      // ansMap[vehId][checklist_id] = answerRow
+      ansMap = {};
+      for(const a of answersAll){
+        const k = a.service_order_vehicle_id || 'no-veh';
+        ansMap[k] = ansMap[k] || {};
+        ansMap[k][a.checklist_id] = a;
+      }
+    }
+
+    function renderVehTabs(){
+      const box = document.getElementById('vehTabs');
+      if(!vehicles.length){ box.innerHTML = '<i class="meta">No vehicles attached.</i>'; return; }
+      box.innerHTML = vehicles.map(v=>`<button class="tab ${v.id===activeVehId?'active':''}" onclick="switchVeh(${v.id})">${v.vehicle_no}</button>`).join('');
+    }
+
+    window.switchVeh = (vehId)=>{
+      activeVehId = vehId;
+      document.querySelectorAll('#vehTabs .tab').forEach(b=> b.classList.toggle('active', +b.textContent.replace(/\D/g,'') === vehId));
+      renderChecklist(vehId);
+    };
+
+    function coverageForVeh(vehId){
+      const a = ansMap[vehId] || {};
+      const total = template.length;
+      const done = template.filter(it => (a[it.id]?.status||'').toLowerCase() === 'done').length;
+      return {done, total, pct: total ? Math.round(done/total*100) : 0};
+    }
+
+    function renderChecklist(vehId){
+      // header coverage
+      const cov = coverageForVeh(vehId || 'no-veh');
+      document.getElementById('vehCoverage').textContent = `${cov.done}/${cov.total} (${cov.pct}%)`;
+
+      const box = document.getElementById('checklistBox');
+      if(!template.length){ box.innerHTML = '<div class="meta">No checklist template for this job.</div>'; return; }
+
+      const a = ansMap[vehId || 'no-veh'] || {};
+      box.innerHTML = template.map(it=>{
+        const isDone = (a[it.id]?.status || '').toLowerCase() === 'done';
+        const tick = `<div class="tick ${isDone?'done':''}" onclick="toggleItem(${it.id}, ${vehId||'null'})"><span>${isDone?'✓':''}</span></div>`;
+        return `
+          <div class="item">
+            ${tick}
+            <div class="itm-text">${it.checklist_item} ${it.is_required ? '<span class="req">req</span>':''}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // Toggle checklist item
+    window.toggleItem = async (checklistId, vehId)=>{
+      try{
+        const vehKey = vehId || 'no-veh';
+        const current = (ansMap[vehKey]||{})[checklistId];
+        const nextStatus = current && (current.status||'').toLowerCase()==='done' ? 'pending' : 'done';
+
+        if(current){
+          const res = await api.patch(T.service_order_checklist, { id: current.id, status: nextStatus });
+          // update local
+          current.status = nextStatus;
+        }else{
+          const payload = {
+            service_order_id: currentSO.id,
+            checklist_id: checklistId,
+            service_order_vehicle_id: vehId || null,
+            status: nextStatus
+          };
+          const created = await api.create(T.service_order_checklist, payload);
+          ansMap[vehKey] = ansMap[vehKey] || {};
+          ansMap[vehKey][checklistId] = created;
+          answersAll.push(created);
+        }
+        renderChecklist(vehId);
+      }catch(e){
+        alert('Checklist update failed: ' + e.message);
+        console.error(e);
+      }
+    };
+
+    // Primary action (Start / Complete)
+    function updatePrimaryButton(){
+      const btn = document.getElementById('primaryAction');
+      const st = (currentSO.status||'').toLowerCase();
+      if(st === 'assigned'){
+        btn.textContent = 'Start Job';
+        btn.onclick = startJob;
+        btn.disabled = false;
+      } else if(st === 'in_progress'){
+        btn.textContent = 'Complete Job';
+        btn.onclick = completeJob;
+        btn.disabled = false;
+      } else {
+        btn.textContent = 'Completed';
+        btn.disabled = true;
+      }
+    }
+
+    async function postStatusHistory(status){
+      try{
+        await api.create(T.service_order_status_history, {
+          service_order_id: currentSO.id,
+          status: status,
+          changed_at: new Date().toISOString()
+          // users: optional
+        });
+      }catch(e){ /* non-blocking */ console.warn('status history write failed', e.message); }
+    }
+
+    async function startJob(){
+      try{
+        const now = new Date().toISOString();
+        await api.patch(T.service_orders, { id: currentSO.id, status: 'in_progress', actual_start: now });
+        await postStatusHistory('in_progress');
+        currentSO.status = 'in_progress';
+        currentSO.actual_start = now;
+        document.getElementById('soStatusLine').textContent = `Status: in_progress • Priority: ${currentSO.priority||'—'}`;
+        updatePrimaryButton();
+      }catch(e){
+        alert('Could not start job: '+ e.message);
+      }
+    }
+
+    function allRequiredDone(){
+      if(!vehicles.length) return true; // no vehicles, no blocking
+      // For each vehicle, all required items must be done
+      for(const v of vehicles){
+        const a = ansMap[v.id] || {};
+        for(const it of template){
+          if(it.is_required && ((a[it.id]?.status||'').toLowerCase() !== 'done')){
+            return { ok:false, vehicle:v, item:it };
+          }
+        }
+      }
+      return { ok:true };
+    }
+
+    async function completeJob(){
+      const check = allRequiredDone();
+      if(!check.ok){
+        alert(`Required checklist not complete for vehicle ${check.vehicle.vehicle_no}: "${check.item.checklist_item}"`);
+        return;
+      }
+      try{
+        const now = new Date().toISOString();
+        await api.patch(T.service_orders, { id: currentSO.id, status: 'completed', completed_at: now });
+        await postStatusHistory('completed');
+        currentSO.status = 'completed';
+        currentSO.completed_at = now;
+        document.getElementById('soStatusLine').textContent = `Status: completed • Priority: ${currentSO.priority||'—'}`;
+        updatePrimaryButton();
+        // Update list
+        await renderJobs();
+      }catch(e){
+        alert('Could not complete job: '+ e.message);
+      }
+    }
+
+    // Close drawer
+    document.getElementById('closeDrawer').onclick = ()=> (document.getElementById('drawer').style.display='none');
+
+    // Buttons
+    document.getElementById('refresh').onclick = renderJobs;
+    document.getElementById('todayBtn').onclick = renderJobs;
+
+    // Init
+    (async function init(){
+      await renderJobs();
+    })();
+  </script>
+</body>
+</html>
