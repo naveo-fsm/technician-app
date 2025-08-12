@@ -4,8 +4,18 @@
   <meta charset="UTF-8" />
   <title>Naveo FSM</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <!-- Only need the light auth shim here -->
+
+  <!-- PWA bits -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0056b3">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Role shim (no real auth) -->
   <script src="/assets/js/auth-lite.js"></script>
+
   <style>
     :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
     *{box-sizing:border-box}
@@ -24,7 +34,7 @@
     <h1>Naveo FSM</h1>
     <p>Launching…</p>
     <div style="margin-top:8px">
-      <!-- Fallback links in case JS redirect is blocked -->
+      <!-- Fallback links if JS/redirect is blocked -->
       <a class="btn" href="/access/role.html">Choose role</a>
       <a class="btn secondary" href="/planner/planner-jobs.html">Planner</a>
       <a class="btn secondary" href="/technician/home.html">Technician</a>
@@ -32,7 +42,7 @@
   </div>
 
   <script>
-    // If you're hosting under a subpath (e.g., GitHub Pages /repo), set BASE_PATH = '/repo'
+    // If you host under a subpath (e.g., GitHub Pages /repo), set BASE_PATH = '/repo'
     const BASE_PATH = ''; // '' when hosted at domain root
 
     const landing = {
@@ -41,6 +51,7 @@
       picker: `${BASE_PATH}/access/role.html`
     };
 
+    // Smart launcher: send user to their app based on saved role
     (function launch(){
       try{
         const role = (localStorage.getItem('fsm_role') || '').toLowerCase();
@@ -49,20 +60,19 @@
           return;
         }
         if(role === 'technician') {
-          // Basic sanity: require a selected technician id
           const techId = localStorage.getItem('fsm_technician_id');
-          if(techId) {
-            window.location.replace(landing.technician);
-            return;
-          }
+          if(techId) { window.location.replace(landing.technician); return; }
         }
-        // No role or incomplete tech state → go pick a role
         window.location.replace(landing.picker);
       }catch(e){
-        // If something goes wrong, leave the fallback links visible
         console.error('Launch error:', e);
       }
     })();
+
+    // Register service worker (for install/offline), if present
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(`${BASE_PATH}/sw.js`).catch(console.error);
+    }
   </script>
 </body>
 </html>
