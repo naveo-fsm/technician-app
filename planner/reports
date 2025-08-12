@@ -1,707 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>Planner • Reports | Naveo FSM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-
-  <!-- Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- jsPDF + autotable for PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
+  <meta charset="UTF-8" />
+  <title>Planner • Reports</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="../assets/js/noco.js"></script>
+  <script src="../assets/js/auth-lite.js"></script>
   <style>
-    :root{
-      --primary:#0056b3;--secondary:#eaf2fb;--success:#28a745;--danger:#dc3545;--muted:#6c757d;
-      --text:#23272f;--bg:#f7fafd;--card:#fff;--table-bg:#fcfcfc;--input-bg:#f4f8fb;--border:#edf0f6;
-      --radius-card:12px;--radius-el:6px;--shadow:0 4px 18px rgba(0,0,0,.08);
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:16px}
-    .wrap{max-width:1260px;margin:34px auto;padding:0 16px}
-    h2{margin:0 0 6px;font-size:1.5rem;color:var(--primary);font-weight:700}
-    .sub{margin:0 0 18px;color:var(--muted);font-size:.96rem}
-
-    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:12px 0 18px}
-    label{display:block;margin:0 0 6px;font-weight:700;color:var(--primary);font-size:.99rem}
-    select,input[type="date"],input[type="text"],input[type="number"]{
-      padding:8px 14px;background:var(--input-bg);border:1px solid #d6e0ea;border-radius:var(--radius-el);outline:none
-    }
-    select:focus,input:focus{border-color:var(--primary)}
-    .btn{border:0;border-radius:var(--radius-el);padding:9px 22px;cursor:pointer;font-weight:700}
-    .btn-primary{background:var(--primary);color:#fff}
-    .btn-muted{background:#e7ebf2}
-    .btn-danger{background:var(--danger);color:#fff}
-    .chip{padding:7px 12px;border:1px solid var(--border);border-radius:18px;background:#fff;cursor:pointer}
-    .chip.active{background:var(--secondary);border-color:#d7e5f7;color:var(--primary);font-weight:700}
-
-    .kpis{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-bottom:12px}
-    @media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}}
-    .kpi{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow);cursor:pointer}
-    .kpi h3{margin:0 0 6px;font-size:.95rem;color:var(--muted);font-weight:600}
-    .kpi .num{font-size:1.4rem;font-weight:700;color:var(--primary)}
-
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    @media(max-width:1100px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:24px;border:1px solid var(--border)}
-    .card h3{margin:0 0 10px;color:var(--primary);font-size:1.1rem}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .row>*{flex:1 1 220px}
-    .row.compact>*{flex:0 0 auto}
-
-    .table-card{background:var(--table-bg);border:1px solid var(--border);border-radius:var(--radius-card);overflow:auto}
-    table{width:100%;border-collapse:separate;border-spacing:0}
-    thead th{position:sticky;top:0;background:var(--secondary);color:var(--primary);padding:12px;border-bottom:1px solid var(--border);text-align:left}
-    tbody td{padding:10px 12px;border-bottom:1px solid var(--border)}
-    .hi{background:rgba(40,167,69,.1)} /* conditional highlight */
-
-    canvas{background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px}
-
-    /* Modal */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10}
-    .modal.open{display:flex}
-    .modal-card{background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);width:min(920px,96vw);max-height:80vh;display:flex;flex-direction:column}
-    .modal-hd{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--border)}
-    .modal-ct{padding:12px;overflow:auto}
-    .xbtn{background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted)}
+    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb;--muted:#6b7280}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
+    h1{font-size:18px;margin:0}
+    .wrap{max-width:1100px;margin:16px auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    label{font-weight:600;font-size:.9rem}
+    input,select{padding:10px;border:1px solid var(--border);border-radius:10px}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+    .kpi{padding:14px;border:1px solid var(--border);border-radius:12px}
+    .kpi h3{margin:0 0 6px;font-size:12px;color:#6b7280} .kpi div{font-size:24px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:12px} thead th,tbody td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+    .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn.secondary{background:#e9eef7;color:#111}
   </style>
 </head>
 <body>
+  <script>Auth.ensureRole(['planner']);</script>
+
+  <header>
+    <h1>Reports</h1>
+    <nav class="row">
+      <a class="btn secondary" href="./planner.html">Home</a>
+    </nav>
+  </header>
+  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
+
   <div class="wrap">
-    <h2>📑 Reports</h2>
-    <p class="sub">Preset dashboards + a builder for ad-hoc summaries. Click KPIs or bars to drill down. Save report presets and share via URL.</p>
-
-    <!-- Global filters -->
-    <div class="toolbar">
-      <div><label for="gfFrom">From</label><input type="date" id="gfFrom"></div>
-      <div><label for="gfTo">To</label><input type="date" id="gfTo"></div>
-      <div>
-        <label>Status</label>
-        <div class="row compact" id="statusChips" aria-label="Status quick filters">
-          <button class="chip" data-status="">All</button>
-          <button class="chip" data-status="Assigned">Assigned</button>
-          <button class="chip" data-status="In Progress">In&nbsp;Progress</button>
-          <button class="chip" data-status="Completed">Completed</button>
-          <button class="chip" data-status="Cancelled">Cancelled</button>
-        </div>
+    <div class="row">
+      <div><label>From</label><br><input id="r_from" type="date"></div>
+      <div><label>To</label><br><input id="r_to" type="date"></div>
+      <div><label>Technician (id)</label><br><input id="r_tech" placeholder="e.g. 12"></div>
+      <div><label>Intervention Type (id)</label><br><input id="r_it" placeholder="e.g. 5"></div>
+      <div><label>Status</label><br>
+        <select id="r_status"><option value="">(any)</option><option>assigned</option><option>in_progress</option><option>completed</option></select>
       </div>
-      <div style="min-width:220px">
-        <label for="gfTech">Technician</label>
-        <select id="gfTech"><option value="">All</option></select>
-      </div>
-      <div class="row compact">
-        <button class="btn btn-primary" id="gfApply">Apply</button>
-        <button class="btn btn-muted" id="gfReset">Reset</button>
-      </div>
+      <div style="align-self:end"><button class="btn" onclick="runReport()">Run</button></div>
+      <div style="align-self:end"><button class="btn secondary" onclick="exportCSV()">Export CSV</button></div>
     </div>
 
-    <!-- KPIs -->
-    <div class="kpis" id="kpiBox">
-      <div class="kpi" data-status=""><h3>Total Orders</h3><div class="num" id="kpiOrders">0</div></div>
-      <div class="kpi" data-status="Completed"><h3>Completed</h3><div class="num" id="kpiCompleted">0</div></div>
-      <div class="kpi" data-status="In Progress"><h3>In Progress</h3><div class="num" id="kpiProgress">0</div></div>
-      <div class="kpi" data-role="techs"><h3>Technicians</h3><div class="num" id="kpiTechs">0</div></div>
+    <div class="kpis">
+      <div class="kpi"><h3>Total Jobs</h3><div id="k_total">0</div></div>
+      <div class="kpi"><h3>First-Time Fix</h3><div id="k_ftf">0%</div></div>
+      <div class="kpi"><h3>Avg Start Δ</h3><div id="k_delta">0 min</div></div>
     </div>
 
-    <!-- Presets -->
-    <div class="grid">
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h3>Jobs by Status over Time</h3>
-          <div class="row compact">
-            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="ps1MA">Moving Avg</label>
-            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="ps1Cmp">Compare Prev</label>
-            <button class="btn btn-muted" id="ps1Png">PNG</button>
-            <button class="btn btn-muted" id="ps1Run">Run</button>
-          </div>
-        </div>
-        <canvas id="chartStatusTime" height="220" aria-label="Jobs over time"></canvas>
-        <div class="table-card" style="margin-top:10px">
-          <table>
-            <thead><tr><th>Date</th><th>Assigned</th><th>In Progress</th><th>Completed</th><th>Cancelled</th></tr></thead>
-            <tbody id="ps1Body"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h3>Jobs per Technician</h3>
-          <div class="row compact">
-            <button class="btn btn-muted" id="ps2Png">PNG</button>
-            <button class="btn btn-muted" id="ps2Csv">CSV</button>
-            <button class="btn btn-muted" id="ps2Run">Run</button>
-          </div>
-        </div>
-        <canvas id="chartJobsTech" height="220" aria-label="Jobs per technician"></canvas>
-        <div class="table-card" style="margin-top:10px">
-          <table>
-            <thead><tr><th>Technician</th><th>Jobs</th></tr></thead>
-            <tbody id="ps2Body"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h3>Inventory Usage by Technician</h3>
-          <div class="row compact">
-            <button class="btn btn-muted" id="ps3Png">PNG</button>
-            <button class="btn btn-muted" id="ps3Run">Run</button>
-          </div>
-        </div>
-        <canvas id="chartInvTech" height="220" aria-label="Inventory used by technician"></canvas>
-        <div class="table-card" style="margin-top:10px">
-          <table>
-            <thead><tr><th>Technician</th><th>Items Used</th></tr></thead>
-            <tbody id="ps3Body"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Report Builder -->
-      <div class="card" style="grid-column:1/-1">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h3>Report Builder</h3>
-          <div class="row compact">
-            <select id="presetSel" title="Saved presets"></select>
-            <button class="btn btn-muted" id="presetSave">Save</button>
-            <button class="btn btn-muted" id="presetDelete">Delete</button>
-            <button class="btn btn-muted" id="presetShare">Share Link</button>
-          </div>
-        </div>
-
-        <div class="row" style="margin-bottom:8px">
-          <div>
-            <label for="rbTable">Table</label>
-            <select id="rbTable">
-              <option value="orders">Service Orders</option>
-              <option value="soinv">Service Order Inventory</option>
-            </select>
-          </div>
-          <div><label for="rbFrom">From</label><input type="date" id="rbFrom"/></div>
-          <div><label for="rbTo">To</label><input type="date" id="rbTo"/></div>
-          <div>
-            <label for="rbGroup">Group by</label>
-            <select id="rbGroup"></select>
-          </div>
-          <div>
-            <label for="rbBreak">Breakdown (optional)</label>
-            <select id="rbBreak"></select>
-          </div>
-          <div>
-            <label for="rbAgg">Aggregate</label>
-            <select id="rbAgg"><option value="count">Count</option><option value="sum">Sum</option></select>
-          </div>
-          <div>
-            <label for="rbField">Numeric field (for Sum)</label>
-            <select id="rbField"></select>
-          </div>
-          <div class="row compact">
-            <button class="btn btn-primary" id="rbRun">Run</button>
-            <button class="btn btn-muted" id="rbCsv">CSV</button>
-            <button class="btn btn-muted" id="rbPdf">PDF</button>
-          </div>
-        </div>
-
-        <canvas id="rbChart" height="260" aria-label="Custom report chart" style="margin-bottom:12px"></canvas>
-
-        <div class="table-card">
-          <table>
-            <thead><tr id="rbHead"></tr></thead>
-            <tbody id="rbBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <h3 style="margin:14px 0 6px">Per Technician</h3>
+    <table id="exportTable">
+      <thead><tr><th>Technician ID</th><th>Jobs</th></tr></thead>
+      <tbody id="r_table"><tr><td colspan="2">—</td></tr></tbody>
+    </table>
   </div>
 
-  <!-- Drilldown modal -->
-  <div class="modal" id="ddModal" role="dialog" aria-modal="true" aria-labelledby="ddTitle">
-    <div class="modal-card">
-      <div class="modal-hd">
-        <strong id="ddTitle">Records</strong>
-        <button class="xbtn" id="ddClose">Close</button>
-      </div>
-      <div class="modal-ct">
-        <div class="table-card">
-          <table>
-            <thead><tr id="ddHead"></tr></thead>
-            <tbody id="ddBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Config + Auth -->
-  <script src="../assets/js/config.js"></script>
-  <script src="../assets/js/auth.js"></script>
   <script>
-    try { Auth.requireRole && Auth.requireRole('planner'); } catch (e) {}
+    const { T } = NC, api = NCAPI, U = NCUTIL;
 
-    /* ======= Table Ids (from your setup) ======= */
-    const TBL = Object.assign({
-      technicians: 'mzw1focsec0tekg',
-      service_orders: 'm2dmcyfy30klv76',
-      service_order_inventory: 'm40n0bb2o41gfxp'
-    }, window.TBL || {});
+    async function runReport(){
+      const from = new Date(document.querySelector('#r_from').value);
+      const to   = new Date(document.querySelector('#r_to').value);
+      const tech = +val('#r_tech') || null;
+      const it   = +val('#r_it') || null;
+      const st   = val('#r_status');
 
-    /* ======= Field Maps (adjust if your column names differ) ======= */
-    const ORD = { id:'id', so_id:'so_id', technician_id:'technician_id', date:'date', time:'time', status:'status', priority:'priority', remarks:'remarks', contact:'contact_person', phone:'contact_phone', vehicles:'vehicles' };
-    const SOV = { id:'id', date:'date', item:'item', make:'make', model:'model', serial:'serial_number', sim:'sim_number', technician_id:'technician_id', consumed:'consumed', qty:'qty', so_id:'so_id' };
-    const TECH = { id:'id', name:'full_name' };
-
-    /* ======= NocoDB Helpers ======= */
-    const NC = {
-      url: (tableId, part='records') => `${window.NC_BASE}/tables/${tableId}/${part}`,
-      headers: () => ({ 'accept':'application/json','Content-Type':'application/json','Authorization':`Bearer ${window.NC_TOKEN}` }),
-      async list(tableId, { where, limit=5000, offset=0, sort }={}){
-        const qs = new URLSearchParams();
-        if(where) qs.set('where', JSON.stringify(where));
-        qs.set('limit', String(limit));
-        qs.set('offset', String(offset));
-        if(sort) qs.set('sort', JSON.stringify(sort));
-        const res = await fetch(`${this.url(tableId,'records')}?${qs}`, { headers:this.headers() });
-        if(!res.ok) throw new Error(`List ${tableId} ${res.status}`);
-        return res.json(); // { list, count }
+      let qs = '';
+      if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
+        qs += `filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`;
+      } else {
+        qs += 'limit=5000';
       }
-    };
+      if(st) qs += `&filter=(status,eq,${st})`;
+      if(tech) qs += `&filter=(technician_id,eq,${tech})`;
+      if(it) qs += `&filter=(intervention_type_id,eq,${it})`;
 
-    /* ======= State ======= */
-    let orders = []; let soInv = []; let techs = [];
-    let c1, c2, c3, cr; // charts
-    let gf = { from:'', to:'', status:'', tech:'' };
+      const res = await api.list(T.service_orders, qs);
+      const rows = res.list || [];
 
-    function fmt(d){ return d==null?'':String(d); }
-    function techName(id){ return techs.find(t=>String(t.id)===String(id))?.name || id || '—'; }
-    function setKPIs(){
-      const o = applyGlobalFilters(orders);
-      document.getElementById('kpiOrders').textContent = o.length;
-      document.getElementById('kpiCompleted').textContent = o.filter(x=>x[ORD.status]==='Completed').length;
-      document.getElementById('kpiProgress').textContent  = o.filter(x=>x[ORD.status]==='In Progress').length;
-      document.getElementById('kpiTechs').textContent = new Set(o.map(x=>x[ORD.technician_id])).size;
+      const total = rows.length;
+      const ftf = rows.filter(r => (r.status||'')==='completed' && (r.return_visit_required===false || r.return_visit_required==='false')).length;
+      const ftfPct = total ? Math.round(ftf/total*100) : 0;
+
+      const withTimes = rows.filter(r=> r.scheduled_at && (r.actual_start || r.completed_at));
+      const avgStartDeltaMin = Math.round(withTimes.reduce((a,r)=> a + ((new Date(r.actual_start||r.completed_at) - new Date(r.scheduled_at))/60000), 0) / Math.max(1, withTimes.length));
+
+      set('#k_total', total); set('#k_ftf', ftfPct + '%'); set('#k_delta', (isFinite(avgStartDeltaMin)?avgStartDeltaMin:0) + ' min');
+
+      const perTech = {};
+      for(const r of rows){ perTech[r.technician_id] = (perTech[r.technician_id]||0)+1; }
+      document.querySelector('#r_table').innerHTML = Object.entries(perTech).map(([techId,count])=>`
+        <tr><td>${techId}</td><td>${count}</td></tr>
+      `).join('') || '<tr><td colspan="2">No rows</td></tr>';
     }
 
-    /* ======= Global filters ======= */
-    function applyGlobalFilters(list){
-      return list.filter(r=>{
-        if(gf.from && r[ORD.date] && r[ORD.date] < gf.from) return false;
-        if(gf.to   && r[ORD.date] && r[ORD.date] > gf.to) return false;
-        if(gf.status && r[ORD.status] !== gf.status) return false;
-        if(gf.tech && String(r[ORD.technician_id]) !== gf.tech) return false;
-        return true;
-      });
-    }
-    function wireGlobalFilters(){
-      const chips = document.querySelectorAll('#statusChips .chip');
-      chips.forEach(ch=>{
-        ch.addEventListener('click', ()=>{
-          chips.forEach(c=>c.classList.remove('active'));
-          ch.classList.add('active');
-          gf.status = ch.dataset.status || '';
-        });
-      });
-      document.getElementById('gfApply').onclick = ()=>{
-        gf.from = document.getElementById('gfFrom').value;
-        gf.to   = document.getElementById('gfTo').value;
-        gf.tech = document.getElementById('gfTech').value;
-        refreshAll();
-      };
-      document.getElementById('gfReset').onclick = ()=>{
-        document.getElementById('gfFrom').value = document.getElementById('rbFrom').value;
-        document.getElementById('gfTo').value   = document.getElementById('rbTo').value;
-        document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active'));
-        document.querySelector('#statusChips .chip[data-status=""]').classList.add('active');
-        document.getElementById('gfTech').value = '';
-        gf = { from: document.getElementById('gfFrom').value, to: document.getElementById('gfTo').value, status:'', tech:'' };
-        refreshAll();
-      };
-
-      // KPI click = apply status filter
-      document.querySelectorAll('.kpi').forEach(k=>{
-        k.addEventListener('click', ()=>{
-          const st = k.dataset.status || '';
-          gf.status = st;
-          document.querySelectorAll('#statusChips .chip').forEach(c=>{
-            c.classList.toggle('active', c.dataset.status === st);
-          });
-          refreshAll();
-        });
-      });
+    function exportCSV(){
+      const table = document.querySelector('#exportTable');
+      if(!table) return alert('No table to export');
+      const rows = [...table.querySelectorAll('tr')].map(tr => [...tr.children].map(td => `"${(td.textContent||'').replace(/"/g,'""')}"`).join(','));
+      const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'report.csv'; a.click();
     }
 
-    /* ======= Utility ======= */
-    function movingAverage(arr, w=3){ const out=[]; for(let i=0;i<arr.length;i++){ const a=Math.max(0,i-w+1); const s=arr.slice(a,i+1); out.push(s.reduce((p,c)=>p+c,0)/s.length) } return out; }
-    function exportChartPNG(canvasId, name){ const a=document.createElement('a'); a.download=name||'chart.png'; a.href=document.getElementById(canvasId).toDataURL('image/png'); a.click(); }
-    function tableToCSV(headSel, bodySel, file='table.csv'){
-      const head=[...document.querySelectorAll(headSel+' th')].map(x=>x.textContent.trim());
-      const rows=[...document.querySelectorAll(bodySel+' tr')].map(tr=>[...tr.children].map(td=>td.textContent));
-      const csv=[head,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-      const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file; a.click();
-    }
+    function val(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
+    function set(sel,v){ const e=document.querySelector(sel); if(e) e.textContent=v; }
 
-    /* ======= Preset 1: Status over time (with optional MA & Compare) ======= */
-    function runPreset1(){
-      const list = applyGlobalFilters(orders);
-      const days = [...new Set(list.map(o=>o[ORD.date]).filter(Boolean))].sort();
-      const statuses = ['Assigned','In Progress','Completed','Cancelled'];
-      const mat = days.map(d=>{
-        const row = statuses.map(s=> list.filter(o=>o[ORD.date]===d && o[ORD.status]===s).length );
-        return [d, ...row];
-      });
-
-      // table render + conditional hi for max per day
-      const body = document.getElementById('ps1Body'); body.innerHTML='';
-      mat.forEach(r=>{
-        const max = Math.max(...r.slice(1));
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${r[0]}</td>` + r.slice(1).map(v=>`<td class="${v===max && max>0?'hi':''}">${v}</td>`).join('');
-        body.append(tr);
-      });
-
-      // dataset
-      let datasets = statuses.map((s,idx)=>{
-        const data = mat.map(row=>row[idx+1]);
-        let label = s;
-        let ds = { label, data, tension:.2 };
-        if(document.getElementById('ps1MA').checked){
-          ds.data = movingAverage(data, 3);
-          ds.label += ' (MA)';
-        }
-        return ds;
-      });
-
-      // Compare prev period (same length back)
-      if(document.getElementById('ps1Cmp').checked && days.length>1){
-        const from = days[0], to = days[days.length-1];
-        const fromD = new Date(from); const toD = new Date(to);
-        const span = Math.round((toD - fromD)/86400000)+1;
-        const prevFrom = new Date(fromD); prevFrom.setDate(prevFrom.getDate()-span);
-        const prevTo = new Date(toD); prevTo.setDate(prevTo.getDate()-span);
-
-        const inPrev = o=> o[ORD.date] && o[ORD.date]>=prevFrom.toISOString().slice(0,10) && o[ORD.date]<=prevTo.toISOString().slice(0,10);
-        const listPrev = orders.filter(inPrev);
-        const prevDays = [...new Set(listPrev.map(o=>o[ORD.date]).filter(Boolean))].sort();
-        const prevMat = days.map((_,i)=>{
-          const d = prevDays[i] || prevDays[prevDays.length-1];
-          const row = statuses.map(s=> listPrev.filter(o=>o[ORD.date]===d && o[ORD.status]===s).length );
-          return row;
-        });
-        statuses.forEach((s,idx)=>{
-          const data = prevMat.map(r=>r[idx]);
-          datasets.push({ label:`${s} (Prev)`, data, tension:.2, borderDash:[6,4] });
-        });
-      }
-
-      if(c1) c1.destroy();
-      const ctx = document.getElementById('chartStatusTime');
-      c1 = new Chart(ctx, { type:'line', data:{ labels:days, datasets:datasets }, options:{
-        onClick:(evt, els)=>{
-          if(!els.length) return;
-          const i = els[0].index; // day index
-          const day = days[i];
-          openDrilldown(`Jobs on ${day}`, list.filter(o=>o[ORD.date]===day));
-        },
-        plugins:{ legend:{ position:'bottom' } }
-      }});
-    }
-
-    /* ======= Preset 2: Jobs per technician ======= */
-    function runPreset2(){
-      const list = applyGlobalFilters(orders);
-      const map = {};
-      list.forEach(o=>{
-        const name = techName(o[ORD.technician_id]);
-        map[name] = (map[name]||0)+1;
-      });
-      const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]);
-      const labels = rows.map(r=>r[0]); const data = rows.map(r=>r[1]);
-
-      document.getElementById('ps2Body').innerHTML = rows.map(([n,c])=>`<tr><td>${n}</td><td>${c}</td></tr>`).join('');
-
-      if(c2) c2.destroy();
-      c2 = new Chart(document.getElementById('chartJobsTech'), { type:'bar',
-        data:{ labels, datasets:[{ label:'Jobs', data }] },
-        options:{
-          onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; const name=labels[i]; openDrilldown(`Jobs • ${name}`, list.filter(o=>techName(o[ORD.technician_id])===name)); },
-          plugins:{ legend:{ display:false } },
-          scales:{ y:{ beginAtZero:true } }
-        }
-      });
-    }
-
-    /* ======= Preset 3: Inventory usage by technician ======= */
-    function runPreset3(){
-      const from = gf.from, to = gf.to;
-      const ok = r=>(!from||r[SOV.date]>=from)&&(!to||r[SOV.date]<=to);
-      const list = soInv.filter(ok);
-      const map = {};
-      list.forEach(r=>{
-        const name = techName(r[SOV.technician_id]);
-        const qty = Number(r[SOV.qty] ?? 1);
-        map[name] = (map[name]||0) + (isNaN(qty)?1:qty);
-      });
-      const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]);
-      const labels = rows.map(r=>r[0]); const data = rows.map(r=>r[1]);
-      document.getElementById('ps3Body').innerHTML = rows.map(([n,c])=>`<tr><td>${n}</td><td>${c}</td></tr>`).join('');
-
-      if(c3) c3.destroy();
-      c3 = new Chart(document.getElementById('chartInvTech'), { type:'bar',
-        data:{ labels, datasets:[{ label:'Items Used', data }] },
-        options:{
-          onClick:(evt, els)=>{ if(!els.length) return; const i=els[0].index; const name=labels[i]; openDrilldown(`Inventory • ${name}`, list.filter(r=>techName(r[SOV.technician_id])===name)); },
-          plugins:{ legend:{ display:false } },
-          scales:{ y:{ beginAtZero:true } }
-        }
-      });
-    }
-
-    /* ======= Drilldown Modal ======= */
-    function openDrilldown(title, records){
-      const head = document.getElementById('ddHead'); const body=document.getElementById('ddBody');
-      document.getElementById('ddTitle').textContent = title;
-      // choose columns intelligently (orders vs soInv)
-      const cols = new Set();
-      records.slice(0,30).forEach(r=>Object.keys(r).forEach(k=>cols.add(k)));
-      const columns = Array.from(cols).filter(k=>['_ct','_ut','_cr'].indexOf(k)<0).slice(0,7); // keep it tidy
-      head.innerHTML = columns.map(c=>`<th>${c}</th>`).join('');
-      body.innerHTML = records.map(r=>`<tr>${columns.map(c=>`<td>${escapeHtml(r[c])}</td>`).join('')}</tr>`).join('');
-      document.getElementById('ddModal').classList.add('open');
-    }
-    document.getElementById('ddClose').onclick = ()=> document.getElementById('ddModal').classList.remove('open');
-
-    /* ======= Report Builder (pivot-like) ======= */
-    const BUILDER = {
-      orders: {
-        label:'Service Orders',
-        dateField: ORD.date,
-        groupable: [
-          {key: ORD.status, label:'Status'},
-          {key: ORD.technician_id, label:'Technician'},
-          {key: ORD.priority, label:'Priority'},
-          {key: ORD.date, label:'Date'}
-        ],
-        breakable: [
-          {key: ORD.status, label:'Status'},
-          {key: ORD.technician_id, label:'Technician'},
-          {key: ORD.priority, label:'Priority'}
-        ],
-        numeric: [] // add if you create numeric columns to sum
-      },
-      soinv: {
-        label:'Service Order Inventory',
-        dateField: SOV.date,
-        groupable: [
-          {key: SOV.technician_id, label:'Technician'},
-          {key: SOV.item, label:'Item'},
-          {key: SOV.make, label:'Make'},
-          {key: SOV.model, label:'Model'},
-          {key: SOV.date, label:'Date'}
-        ],
-        breakable: [
-          {key: SOV.item, label:'Item'},
-          {key: SOV.make, label:'Make'},
-          {key: SOV.model, label:'Model'},
-          {key: SOV.technician_id, label:'Technician'}
-        ],
-        numeric: [
-          {key: SOV.qty, label:'Quantity'}
-        ]
-      }
-    };
-
-    function populateBuilderControls(){
-      const tableKey = document.getElementById('rbTable').value;
-      const cfg = BUILDER[tableKey];
-      const groupSel = document.getElementById('rbGroup');
-      const breakSel = document.getElementById('rbBreak');
-      const fieldSel = document.getElementById('rbField');
-      groupSel.innerHTML = cfg.groupable.map(f=>`<option value="${f.key}">${f.label}</option>`).join('');
-      breakSel.innerHTML = `<option value="">—</option>` + cfg.breakable.map(f=>`<option value="${f.key}">${f.label}</option>`).join('');
-      fieldSel.innerHTML = `<option value="">—</option>` + cfg.numeric.map(f=>`<option value="${f.key}">${f.label}</option>`).join('');
-    }
-
-    function runBuilder(){
-      const tableKey = document.getElementById('rbTable').value;
-      const from = document.getElementById('rbFrom').value;
-      const to   = document.getElementById('rbTo').value;
-      const groupField = document.getElementById('rbGroup').value;
-      const breakField = document.getElementById('rbBreak').value || null;
-      const agg = document.getElementById('rbAgg').value;
-      const numField = document.getElementById('rbField').value || null;
-
-      const cfg = BUILDER[tableKey];
-      const dataset = (tableKey==='orders' ? applyGlobalFilters(orders) : soInv).filter(r=>{
-        return (!from || r[cfg.dateField]>=from) && (!to || r[cfg.dateField]<=to);
-      });
-
-      // build matrix map
-      const rows = {};
-      const cols = new Set();
-      dataset.forEach(r=>{
-        let g = r[groupField]; if(groupField===ORD.technician_id || groupField===SOV.technician_id) g = techName(g);
-        let b = breakField ? r[breakField] : null; if(breakField && (breakField===ORD.technician_id || breakField===SOV.technician_id)) b = techName(b);
-        g = g || '—'; b = b || (breakField? '—':'');
-        const key = g;
-        if(!rows[key]) rows[key] = {};
-        const col = breakField ? b : 'value';
-        cols.add(col);
-        if(!rows[key][col]) rows[key][col] = {count:0,sum:0};
-        rows[key][col].count++;
-        rows[key][col].sum += Number(r[numField]) || 0;
-      });
-
-      const colArr = Array.from(cols);
-      const head = document.getElementById('rbHead');
-      const body = document.getElementById('rbBody');
-      head.innerHTML = `<th>${tableKey==='orders' ? 'Group' : 'Group'}</th>` + colArr.map(c=>`<th>${escapeHtml(c)}</th>`).join('') + `<th>Total</th>`;
-
-      // rows render + highlight max cells
-      body.innerHTML = '';
-      Object.entries(rows).forEach(([g,colsMap])=>{
-        const tds=[]; let rowTotal=0; let maxVal=0; const vals=[];
-        colArr.forEach(c=>{
-          const cell = colsMap[c]; const v = cell ? (agg==='sum'? cell.sum : cell.count) : 0;
-          vals.push(v); rowTotal += v; if(v>maxVal) maxVal=v;
-        });
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(g)}</td>` + vals.map(v=>`<td class="${v===maxVal && maxVal>0?'hi':''}">${v}</td>`).join('') + `<td>${rowTotal}</td>`;
-        body.append(tr);
-      });
-
-      // chart
-      if(cr) cr.destroy();
-      const labels = Object.keys(rows);
-      const datasets = (breakField ? colArr : ['value']).map((c,i)=>{
-        return { label: breakField ? c : (agg==='sum'?'Sum':'Count'),
-                 data: labels.map(g => {
-                   const cell = rows[g][c]; return cell ? (agg==='sum'? cell.sum : cell.count) : 0;
-                 }) };
-      });
-      cr = new Chart(document.getElementById('rbChart'), { type:'bar', data:{ labels, datasets }, options:{ plugins:{ legend:{ position:'bottom' } }, scales:{ y:{ beginAtZero:true } } } });
-    }
-
-    function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); }
-
-    /* ======= Export Builder Table ======= */
-    function exportBuilderCSV(){ tableToCSV('#rbHead','#rbBody','report.csv'); }
-    function exportBuilderPDF(){
-      const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation:'landscape'});
-      doc.setFontSize(16); doc.text('Custom Report', 14, 16);
-      const head = [[...document.querySelectorAll('#rbHead th')].map(th=>th.textContent.trim())];
-      const body = [...document.querySelectorAll('#rbBody tr')].map(tr=>[...tr.children].map(td=>td.textContent));
-      doc.autoTable({ startY:22, head, body, styles:{ font:'helvetica', fontSize:8 }, headStyles:{ fillColor:[234,242,251], textColor:[0,86,179] }, theme:'grid' });
-      doc.save('report.pdf');
-    }
-
-    /* ======= Preset exports ======= */
-    document.getElementById('ps1Png').onclick = ()=> exportChartPNG('chartStatusTime','status-over-time.png');
-    document.getElementById('ps2Png').onclick = ()=> exportChartPNG('chartJobsTech','jobs-per-tech.png');
-    document.getElementById('ps2Csv').onclick = ()=> tableToCSV('#ps2Body','#+unused','jobs-per-tech.csv'); // using #ps2Body only
-    document.getElementById('ps3Png').onclick = ()=> exportChartPNG('chartInvTech','inventory-per-tech.png');
-
-    /* ======= Saved presets (localStorage + deep link) ======= */
-    const PRESETS_KEY = 'naveo_reports_presets';
-    function loadPresets(){ return JSON.parse(localStorage.getItem(PRESETS_KEY)||'[]'); }
-    function savePresets(arr){ localStorage.setItem(PRESETS_KEY, JSON.stringify(arr)); fillPresetSel(arr); }
-    function fillPresetSel(arr){ const sel=document.getElementById('presetSel'); sel.innerHTML = `<option value="">— Presets —</option>` + arr.map((p,i)=>`<option value="${i}">${escapeHtml(p.name)}</option>`).join(''); }
-    function currentBuilderState(){
-      return {
-        table: document.getElementById('rbTable').value,
-        from:  document.getElementById('rbFrom').value,
-        to:    document.getElementById('rbTo').value,
-        group: document.getElementById('rbGroup').value,
-        brk:   document.getElementById('rbBreak').value,
-        agg:   document.getElementById('rbAgg').value,
-        field: document.getElementById('rbField').value
-      };
-    }
-    function applyBuilderState(s){
-      if(!s) return;
-      document.getElementById('rbTable').value = s.table||'orders';
-      populateBuilderControls();
-      document.getElementById('rbFrom').value  = s.from||'';
-      document.getElementById('rbTo').value    = s.to||'';
-      document.getElementById('rbGroup').value = s.group||document.getElementById('rbGroup').value;
-      document.getElementById('rbBreak').value = s.brk||'';
-      document.getElementById('rbAgg').value   = s.agg||'count';
-      document.getElementById('rbField').value = s.field||'';
-    }
-
-    document.getElementById('presetSave').onclick = ()=>{
-      const name = prompt('Name for this preset:'); if(!name) return;
-      const list = loadPresets(); list.push({ name, state: currentBuilderState() }); savePresets(list);
-      alert('Preset saved.');
-    };
-    document.getElementById('presetDelete').onclick = ()=>{
-      const sel = document.getElementById('presetSel'); const idx = sel.value ? Number(sel.value) : -1;
-      if(idx<0) return alert('Select a preset first.');
-      const list = loadPresets(); list.splice(idx,1); savePresets(list); sel.value='';
-    };
-    document.getElementById('presetSel').onchange = ()=>{
-      const idx = Number(document.getElementById('presetSel').value);
-      const p = loadPresets()[idx]; if(!p) return;
-      applyBuilderState(p.state); runBuilder();
-    };
-    document.getElementById('presetShare').onclick = ()=>{
-      const state = currentBuilderState();
-      const url = new URL(location.href); url.searchParams.set('rb', btoa(JSON.stringify(state)));
-      navigator.clipboard.writeText(url.toString()).then(()=>alert('Shareable link copied!'));
-    };
-
-    /* ======= Load Data ======= */
-    async function loadTechs(){
-      const res = await NC.list(TBL.technicians, { sort:[[ TECH.name,'asc' ]] });
-      techs = (res.list||[]).map(r=>({ id: r[TECH.id] ?? r.id, name: r[TECH.name] || r.FullName || r.name || `Tech ${r.id}` }));
-      const sel=document.getElementById('gfTech');
-      techs.forEach(t=> sel.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`);
-    }
-    async function loadOrders(){
-      const res = await NC.list(TBL.service_orders, { limit:5000, sort:[[ ORD.date,'asc' ]] });
-      orders = res.list || [];
-    }
-    async function loadSOInv(){
-      const res = await NC.list(TBL.service_order_inventory, { limit:5000, sort:[[ SOV.date,'asc' ]] });
-      soInv = res.list || [];
-    }
-
-    function refreshAll(){
-      setKPIs();
-      runPreset1(); runPreset2(); runPreset3();
-      runBuilder();
-    }
-
-    /* ======= Bootstrap ======= */
-    (async function init(){
-      if(!window.NC_BASE || !window.NC_TOKEN){ alert('Missing NC_BASE / NC_TOKEN in config.js'); return; }
-      await Promise.all([loadTechs(), loadOrders(), loadSOInv()]);
-
-      // default dates (last 30 days)
-      const today = new Date(); const d0 = new Date(today); d0.setDate(today.getDate()-30);
-      const from = d0.toISOString().slice(0,10), to = today.toISOString().slice(0,10);
-      for(const id of ['gfFrom','rbFrom']) document.getElementById(id).value = from;
-      for(const id of ['gfTo','rbTo']) document.getElementById(id).value = to;
-      document.querySelector('#statusChips .chip[data-status=""]').classList.add('active');
-
-      // presets dropdown
-      fillPresetSel(loadPresets());
-
-      // deep-link preset
-      const rb = new URL(location.href).searchParams.get('rb');
-      if(rb){ try{ applyBuilderState(JSON.parse(atob(rb))); }catch(_){} }
-
-      // wiring
-      wireGlobalFilters();
-      populateBuilderControls();
-
-      refreshAll();
-    })().catch(err=>{ console.error(err); alert('Failed to load reports.'); });
+    document.addEventListener('DOMContentLoaded', runReport);
   </script>
 </body>
 </html>
