@@ -1,10 +1,18 @@
+// Base-path aware service worker for GH Pages (user site or /<repo> project site).
+const SCOPE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '');
+const p = (x) => `${SCOPE_PATH}${x}`;
+
 const CACHE = 'naveo-fsm-v1';
 const ASSETS = [
-  '/', '/index.html', '/login.html', '/logout.html', '/access/role.html',
-  '/assets/js/noco.js', '/assets/js/auth-lite.js',
-  '/planner/planner-jobs.html', '/planner/assign-job-enhanced.html', '/planner/dashboard.html', '/planner/realtime-map.html',
-  '/technician/home.html',
-  '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-192.png', '/icons/maskable-512.png'
+  p('/'), p('/index.html'), p('/login.html'), p('/logout.html'), p('/access/role.html'),
+  p('/assets/js/noco.js'), p('/assets/js/auth-lite.js'),
+  p('/planner/planner-jobs.html'), p('/planner/assign-job-enhanced.html'),
+  p('/planner/dashboard.html'), p('/planner/realtime-map.html'),
+  p('/planner/admin-intervention-master.html'), p('/planner/admin-tech-master.html'),
+  p('/planner/assign-inventory-selector.html'), p('/planner/planner-inventory.html'),
+  p('/planner/history.html'), p('/planner/reports.html'),
+  p('/technician/home.html'),
+  p('/icons/icon-192.png'), p('/icons/icon-512.png'), p('/icons/maskable-192.png'), p('/icons/maskable-512.png')
 ];
 
 self.addEventListener('install', (e) => {
@@ -27,7 +35,7 @@ self.addEventListener('fetch', (e) => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(req, copy));
       return res;
-    }).catch(() => caches.match(req).then(r => r || caches.match('/index.html'))));
+    }).catch(() => caches.match(req).then(r => r || caches.match(p('/index.html')))));
   } else {
     e.respondWith(
       caches.match(req).then(r => r || fetch(req).then(res => {
