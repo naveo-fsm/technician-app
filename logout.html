@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Naveo FSM – Logout</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="/assets/js/auth-lite.js"></script>
+  <script src="assets/js/auth-lite.js"></script>
   <style>
     :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
     *{box-sizing:border-box}
@@ -23,41 +23,23 @@
     <h1>Naveo FSM</h1>
     <p>Signing you out…</p>
     <div style="margin-top:8px">
-      <!-- Fallback links if redirect is blocked -->
-      <a class="btn" href="/access/role.html">Choose role</a>
-      <a class="btn secondary" href="/index.html">Home</a>
+      <a class="btn" id="roleLink" href="#">Choose role</a>
+      <a class="btn secondary" href="index.html">Home</a>
     </div>
   </div>
 
   <script>
-    // If hosted under a subpath (e.g., /repo), set BASE_PATH = '/repo'
-    const BASE_PATH = ''; // '' when hosted at domain root
-
-    // Read optional ?next=/some/page to override the default redirect
+    const BASE_PATH = Auth.BASE_PATH || '';
     const params = new URLSearchParams(location.search);
     const next = params.get('next');
-
-    try {
-      // Clear role + technician selection
-      if (window.Auth && Auth.clear) {
-        Auth.clear();
-      } else {
-        // Fallback: clear the keys directly if auth-lite.js changes
-        localStorage.removeItem('fsm_role');
-        localStorage.removeItem('fsm_technician_id');
-        localStorage.removeItem('fsm_technician_name');
-      }
-    } catch (e) {}
-
-    // Default target → role picker
-    const target = next
-      ? next
-      : `${BASE_PATH}/access/role.html`;
-
-    // Give the UI a tick to render, then go
-    setTimeout(() => {
-      try { window.location.replace(target); } catch (e) { window.location.href = target; }
-    }, 150);
+    (function(){
+      try { if (window.Auth && Auth.clear) Auth.clear(); } catch(e){}
+      const target = next ? next : `${BASE_PATH}/access/role.html`;
+      document.getElementById('roleLink').href = target;
+      setTimeout(() => {
+        try { window.location.replace(target); } catch(e) { window.location.href = target; }
+      }, 150);
+    })();
   </script>
 </body>
 </html>
