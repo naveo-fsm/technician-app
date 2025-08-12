@@ -5,6 +5,7 @@
   <title>Naveo FSM – Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="../assets/js/noco.js"></script>
+  <script src="../assets/js/auth-lite.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
@@ -20,10 +21,13 @@
   </style>
 </head>
 <body>
+  <script>Auth.ensureRole(['planner']);</script>
+
   <header>
     <h1>Planner • Dashboard</h1>
     <div></div>
   </header>
+  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
 
   <div class="container">
     <section class="card">
