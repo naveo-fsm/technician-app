@@ -54,6 +54,12 @@
       aside.open{transform:none}
       .menuToggle{display:inline-block}
     }
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:50}
+    .modal{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.2);padding:16px;max-width:520px;width:92%}
+    .modal h3{margin:0 0 8px}
+    .modal .row{justify-content:flex-end}
   </style>
 </head>
 <body>
@@ -87,13 +93,13 @@
 
       <div class="wrap">
         <section class="card">
-          <!-- TOP FIELDS -->
+          <!-- CLIENT & TECH -->
           <div class="grid">
             <div>
-              <label>SO ID</label>
+              <label>Client</label>
               <div class="row">
-                <input id="so_id" placeholder="SO-YYYYMMDD-hhmmss" />
-                <button class="btn secondary" onclick="genSOID()">Generate</button>
+                <select id="client_id" onchange="onClientChange()"></select>
+                <button class="btn secondary" onclick="openClientModal()">New Client</button>
               </div>
             </div>
             <div>
@@ -102,10 +108,14 @@
             </div>
           </div>
 
-          <div class="grid">
+          <!-- SO ID + PRIORITY -->
+          <div class="grid" style="margin-top:8px">
             <div>
-              <label>Intervention Type (default for SO)</label>
-              <select id="intervention_type_id"></select>
+              <label>SO ID</label>
+              <div class="row">
+                <input id="so_id" placeholder="SO-YYYYMMDD-hhmmss" />
+                <button class="btn secondary" onclick="genSOID()">Generate</button>
+              </div>
             </div>
             <div>
               <label>Priority</label>
@@ -113,32 +123,31 @@
             </div>
           </div>
 
+          <!-- STATUS + SCHEDULE -->
           <div class="grid">
-            <div>
-              <label>Scheduled At</label>
-              <input id="scheduled_at" type="datetime-local"/>
-            </div>
             <div>
               <label>Status</label>
               <select id="status"><option>assigned</option><option>in_progress</option><option>completed</option></select>
             </div>
+            <div>
+              <label>Scheduled At</label>
+              <input id="scheduled_at" type="datetime-local"/>
+            </div>
           </div>
 
+          <!-- ADDRESS (auto from client) + CONTACT -->
           <div class="grid-3">
             <div style="grid-column:1 / span 3">
               <label>Address</label>
-              <input id="address" placeholder="Street, City, Country" />
+              <input id="address" placeholder="Client address" />
             </div>
             <div>
-              <label>Latitude</label>
-              <input id="lat" placeholder="-20.160000" />
+              <label>Contact Person</label>
+              <input id="contact_person" placeholder="Client contact person"/>
             </div>
             <div>
-              <label>Longitude</label>
-              <input id="lng" placeholder="57.501000" />
-            </div>
-            <div style="align-self:end">
-              <button class="btn secondary" onclick="geocode()">Geocode</button>
+              <label>Contact Phone</label>
+              <input id="contact_phone" placeholder="+230…" />
             </div>
           </div>
 
@@ -149,7 +158,7 @@
 
           <hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 
-          <!-- VEHICLES / PER-VEHICLE INTERVENTION -->
+          <!-- VEHICLES / REQUIRED PER-VEHICLE INTERVENTION -->
           <h3 style="margin:0 0 8px">Vehicles</h3>
           <div class="grid">
             <div>
@@ -157,7 +166,7 @@
               <input id="veh_no" placeholder="e.g. 1234 MR 20" />
             </div>
             <div>
-              <label>Intervention Type for this vehicle</label>
+              <label>Intervention Type (required)</label>
               <select id="veh_it"></select>
             </div>
           </div>
@@ -183,6 +192,36 @@
     </div>
   </div>
 
+  <!-- New Client Modal -->
+  <div class="modal-backdrop" id="clientModal">
+    <div class="modal">
+      <h3>New Client</h3>
+      <div class="grid">
+        <div>
+          <label>Full name</label>
+          <input id="nc_full_name" />
+        </div>
+        <div>
+          <label>Email (optional)</label>
+          <input id="nc_email" type="email" />
+        </div>
+        <div>
+          <label>Phone</label>
+          <input id="nc_phone" />
+        </div>
+        <div>
+          <label>Address</label>
+          <input id="nc_address" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" onclick="closeClientModal()">Cancel</button>
+        <button class="btn" id="nc_save" onclick="saveNewClient()">Save Client</button>
+      </div>
+      <div id="nc_msg" class="muted" style="margin-top:8px"></div>
+    </div>
+  </div>
+
   <script>
     const { T } = NC, api = NCAPI;
 
@@ -193,9 +232,12 @@
     function v(s){ const e=document.querySelector(s); return e? e.value : ''; }
     function s(slc,val){ const e=document.querySelector(slc); if(e) e.value=val; }
     function setMsg(t, ok){ const el=document.getElementById('msg'); if(!el) return; el.textContent=t||''; el.className = ok ? 'ok' : 'danger'; }
+    function setNcMsg(t, ok){ const el=document.getElementById('nc_msg'); if(!el) return; el.textContent=t||''; el.style.color = ok ? '#065f46' : '#b91c1c'; }
 
     // Vehicle working set
     let VEH_LINES = []; // { vehicle_no, intervention_type_id, intervention_name }
+    let CLIENTS = {};  // id -> {full_name, address, phone}
+    let IT_MAP = {};   // id -> name
 
     function renderVeh(){
       const tb = document.getElementById('vehTable');
@@ -204,7 +246,7 @@
         <tr>
           <td>${idx+1}</td>
           <td>${x.vehicle_no}</td>
-          <td>${x.intervention_name || x.intervention_type_id}</td>
+          <td>${IT_MAP[x.intervention_type_id] || x.intervention_type_id}</td>
           <td>
             <button class="btn secondary" onclick="editVeh(${idx})">Edit</button>
             <button class="btn ghost" onclick="delVeh(${idx})">Remove</button>
@@ -215,10 +257,9 @@
     function addVehicle(){
       const vehicle_no = v('#veh_no').trim();
       const itId = +v('#veh_it') || null;
-      const itName = document.querySelector('#veh_it').selectedOptions[0]?.text || '';
       if(!vehicle_no) return setMsg('Vehicle is required');
-      if(!itId) return setMsg('Intervention for vehicle is required');
-      VEH_LINES.push({ vehicle_no, intervention_type_id: itId, intervention_name: itName });
+      if(!itId) return setMsg('Intervention is required for the vehicle');
+      VEH_LINES.push({ vehicle_no, intervention_type_id: itId, intervention_name: IT_MAP[itId] || '' });
       s('#veh_no',''); renderVeh(); setMsg('', true);
     }
     function editVeh(i){
@@ -236,45 +277,72 @@
       s('#so_id', id);
     }
 
-    // Address → Lat/Lng (Nominatim)
-    async function geocode(){
-      const addr = v('#address').trim();
-      if(!addr) return setMsg('Enter an address to geocode');
+    // When client changes → fill address/contact
+    function onClientChange(){
+      const id = +v('#client_id') || null;
+      const c = CLIENTS[id];
+      if(!c) return;
+      if(!v('#address')) s('#address', c.address || '');
+      s('#contact_person', c.full_name || '');
+      s('#contact_phone', c.phone || '');
+    }
+
+    // Modal open/close
+    function openClientModal(){ document.getElementById('clientModal').style.display = 'flex'; setNcMsg(''); }
+    function closeClientModal(){ document.getElementById('clientModal').style.display = 'none'; }
+
+    async function saveNewClient(){
+      const full_name = v('#nc_full_name').trim();
+      const email_address = v('#nc_email').trim() || null;
+      const phone = v('#nc_phone').trim() || null;
+      const address = v('#nc_address').trim() || null;
+
+      if(!full_name && !email_address){ setNcMsg('Provide at least a name or email.'); return; }
+
+      const btn = document.getElementById('nc_save');
+      btn.disabled = true; setNcMsg('Saving…', true);
       try{
-        setMsg('Geocoding…', true);
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`;
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        const data = await res.json();
-        if(data && data[0]){
-          s('#lat', Number(data[0].lat).toFixed(6));
-          s('#lng', Number(data[0].lon).toFixed(6));
-          setMsg('Address geocoded', true);
-        }else{
-          setMsg('No match for that address');
-        }
+        const created = await api.create(T.users, {
+          full_name, email_address, phone, address,
+          user_role: 'client',
+          status: 'active'
+        });
+        CLIENTS[created.id] = { full_name, address, phone };
+        const sel = document.getElementById('client_id');
+        const opt = document.createElement('option');
+        opt.value = created.id; opt.textContent = full_name || email_address || ('Client #'+created.id);
+        sel.appendChild(opt);
+        sel.value = String(created.id);
+        onClientChange();
+        closeClientModal();
+        setMsg('Client created', true);
       }catch(e){
-        console.error(e); setMsg('Geocoding error');
+        console.error(e); setNcMsg('Error: ' + (e.message||'Failed'));
+      }finally{
+        btn.disabled = false;
       }
     }
-    // Also geocode on blur
-    document.addEventListener('DOMContentLoaded', ()=> {
-      const a = document.getElementById('address');
-      if(a){ a.addEventListener('blur', ()=> { if(!v('#lat') || !v('#lng')) geocode(); }); }
-    });
 
     // Preload dropdowns + edit mode
     async function preload(){
-      const [techs, its] = await Promise.all([
+      const [clients, techs, its] = await Promise.all([
+        api.list(T.users, "filter=(user_role,eq,client)&limit=2000&sort=full_name"),
         api.list(T.technicians, 'limit=2000&sort=full_name'),
         api.list(T.intervention_types, 'limit=1000&sort=intervention_name')
       ]);
+
+      CLIENTS = Object.fromEntries(clients.list.map(u=>[u.id, { full_name:u.full_name, address:u.address, phone:u.phone }]));
+      document.querySelector('#client_id').innerHTML =
+        '<option value="">(choose client)</option>' +
+        clients.list.map(u=>`<option value="${u.id}">${u.full_name || u.email_address || ('Client #'+u.id)}</option>`).join('');
+
       document.querySelector('#technician_id').innerHTML =
         '<option value="">(choose technician)</option>' +
         techs.list.map(t=>`<option value="${t.id}">${t.full_name||('Tech #'+t.id)}</option>`).join('');
 
+      IT_MAP = Object.fromEntries(its.list.map(i=>[i.id, i.intervention_name]));
       const itOpts = its.list.map(i=>`<option value="${i.id}">${i.intervention_name}</option>`).join('');
-      document.querySelector('#intervention_type_id').innerHTML = itOpts;
-      document.querySelector('#veh_it').innerHTML = itOpts;
+      document.querySelector('#veh_it').innerHTML = '<option value="">(choose)</option>' + itOpts;
 
       // Edit mode support (?edit=ID)
       const p = new URLSearchParams(location.search);
@@ -284,28 +352,32 @@
 
     async function loadForEdit(id){
       const r = await api.read(T.service_orders, id);
-      s('#so_id', r.so_id||'');
+
+      const clientId = r.user_id || (Array.isArray(r.users) ? r.users[0] : r.users) || null;
+
+      s('#client_id', clientId || '');
       s('#technician_id', r.technician_id||'');
-      s('#intervention_type_id', r.intervention_type_id||'');
+      s('#so_id', r.so_id||'');
       s('#priority', r.priority||'normal');
       s('#status', r.status||'assigned');
       s('#scheduled_at', r.scheduled_at ? toLocalInput(r.scheduled_at) : '');
       s('#address', r.address||'');
-      s('#lat', r.address_lat || '');
-      s('#lng', r.address_lng || '');
+      s('#contact_person', r.contact_person||'');
+      s('#contact_phone', r.contact_phone||'');
       s('#notes', r.notes||'');
+
+      if(clientId && CLIENTS[clientId]){
+        if(!r.address) s('#address', CLIENTS[clientId].address || '');
+        if(!r.contact_person) s('#contact_person', CLIENTS[clientId].full_name || '');
+        if(!r.contact_phone) s('#contact_phone', CLIENTS[clientId].phone || '');
+      }
 
       const veh = await api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${id})&limit=1000`);
       VEH_LINES = veh.list.map(v => ({
         vehicle_no: v.vehicle_no,
-        intervention_type_id: v.intervention_type_id || (r.intervention_type_id || null),
-        intervention_name: '' // will be hydrated below
+        intervention_type_id: v.intervention_type_id,  // required now
+        intervention_name: IT_MAP[v.intervention_type_id] || ''
       }));
-
-      // hydrate intervention names
-      const its = await api.list(T.intervention_types, 'limit=1000&select=id,intervention_name');
-      const map = Object.fromEntries(its.list.map(i=>[i.id,i.intervention_name]));
-      VEH_LINES = VEH_LINES.map(x=>({ ...x, intervention_name: map[x.intervention_type_id] || '' }));
       renderVeh();
 
       document.getElementById('msg').textContent = 'Editing SO #' + (r.so_id||r.id);
@@ -315,22 +387,32 @@
 
     function toLocalInput(iso){ const d = new Date(iso); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
 
+    function validateBeforeSave(){
+      const techId = +v('#technician_id') || null;
+      if(!techId){ setMsg('Technician is required'); return false; }
+      if(VEH_LINES.length === 0){ setMsg('Add at least one vehicle with its intervention'); return false; }
+      const bad = VEH_LINES.find(x => !x.vehicle_no || !x.intervention_type_id);
+      if(bad){ setMsg('Each vehicle must have an intervention'); return false; }
+      return true;
+    }
+
     async function saveSO(){
+      if(!validateBeforeSave()) return;
+
       const editId = +document.querySelector('.btn').getAttribute('data-edit') || null;
 
-      const techId = +v('#technician_id') || null;
-      if(!techId){ setMsg('Technician is required'); return; }
-
       const body = {
+        user_id: +v('#client_id') || null,
         so_id: v('#so_id') || null,
-        technician_id: techId,
-        intervention_type_id: +v('#intervention_type_id') || null,
+        technician_id: +v('#technician_id'),
         priority: v('#priority') || 'normal',
         status: v('#status') || 'assigned',
         scheduled_at: v('#scheduled_at') ? new Date(v('#scheduled_at')).toISOString() : null,
         address: v('#address') || null,
-        address_lat: v('#lat') ? parseFloat(v('#lat')) : null,
-        address_lng: v('#lng') ? parseFloat(v('#lng')) : null,
+        address_lat: null,
+        address_lng: null,
+        contact_person: v('#contact_person') || null,
+        contact_phone: v('#contact_phone') || null,
         notes: v('#notes') || null
       };
 
@@ -339,7 +421,6 @@
         if(editId){
           body.id = editId;
           so = await api.patch(T.service_orders, body);
-          // remove existing vehicle rows, recreate from VEH_LINES
           const existing = await api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${editId})&limit=1000`);
           for(const row of existing.list){ await api.del(T.service_order_vehicles, row.id); }
         }else{
@@ -350,7 +431,7 @@
           await api.create(T.service_order_vehicles, {
             service_order_id: so.id,
             vehicle_no: line.vehicle_no,
-            intervention_type_id: line.intervention_type_id  // ⬅ requires column in DB
+            intervention_type_id: line.intervention_type_id
           });
         }
 
