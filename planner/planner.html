@@ -1,79 +1,367 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <title>Planner • Hub</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="../assets/js/noco.js"></script>
-  <script src="../assets/js/auth-lite.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Naveo FSM — Planner</title>
+  <!-- Global stylesheet -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="technician-app/assets/naveo.css" />
   <style>
-    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
-    h1{font-size:18px;margin:0}
-    .container{padding:16px;display:grid;gap:16px}
-    .card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
-    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    .kpi{padding:14px;border:1px solid var(--border);border-radius:12px}
-    .kpi h3{margin:0 0 6px;font-size:12px;color:#6b7280} .kpi div{font-size:28px;font-weight:700}
-    .links{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    a.btn{display:block;text-align:center;padding:12px;border-radius:10px;background:#e9eef7;color:#111;text-decoration:none;border:1px solid var(--border)}
-    @media(max-width:960px){ .kpis,.links{grid-template-columns:1fr} }
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow { flex:1 1 auto; }
+    .planner { border:1px solid var(--border); border-radius: var(--radius-lg); overflow:hidden; background: var(--surface); }
+    .planner-head { display:grid; grid-template-columns: 80px repeat(7, 1fr); border-bottom:1px solid var(--border); }
+    .planner-head .col { padding:10px 12px; font-weight:600; color:var(--text-muted); text-align:center; border-left:1px solid var(--border); }
+    .planner-head .col:first-child{ border-left:0; text-align:right; }
+    .planner-body { display:grid; grid-template-columns: 80px repeat(7, 1fr); }
+    .hours { border-right:1px solid var(--border); background: var(--surface-2); }
+    .hour { height:56px; font-size: var(--text-sm); color: var(--text-muted); padding:4px 8px; display:flex; align-items:flex-start; justify-content:flex-end; }
+    .day-col { position:relative; min-height: 56px * 12; border-left:1px solid var(--border); }
+    .slot { height:56px; border-bottom:1px dashed var(--border); opacity:.5; }
+    .event { position:relative; margin:6px; padding:10px 10px; border:1px solid var(--border); background: var(--surface-2); border-radius: var(--radius-md); cursor:grab; }
+    .event:active{ cursor:grabbing; }
+    .event .title { font-weight:600; }
+    .event .meta { font-size: var(--text-sm); color: var(--text-muted); margin-top:4px; }
+    .badge.small{ font-size: var(--text-sm); padding:2px 6px; }
+    .pill { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:999px; padding:4px 10px; }
+    .view-toggle a{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; text-decoration:none; color:inherit; }
+    .view-toggle a.active{ background:var(--surface-2); }
+    .muted-ctr { color: var(--text-muted); text-align:center; padding: 12px 0; }
+    @media (max-width: 1100px){ .planner-head, .planner-body{ grid-template-columns: 60px repeat(7,1fr);} .hour{font-size:12px;} }
+    @media (max-width: 900px){ .planner-head, .planner-body{ grid-template-columns: 0px repeat(7,1fr);} .hours{display:none;} }
   </style>
 </head>
 <body>
-  <script>Auth.ensureRole(['planner']);</script>
+  <div class="topbar">
+    <div class="title">Naveo FSM</div>
+    <span class="muted">Planner</span>
+    <div class="grow"></div>
+    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
+  </div>
 
-  <header>
-    <h1>Planner Hub</h1>
-    <div></div>
-  </header>
-  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
+  <aside class="sidebar">
+    <div class="brand">Naveo</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a class="active" href="planner.html">Planner</a>
+    <a href="planner-jobs.html">Service Orders</a>
+    <a href="assign-job-enhanced.html">Assign Job</a>
+    <a href="planner-inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="realtime-map.html">Live Map</a>
+    <a href="history.html">History</a>
+    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+    <a href="admin-tech-master.html">Admin · Technicians</a>
+  </aside>
 
-  <main class="container">
-    <section class="card">
-      <h2 style="margin:0 0 10px;font-size:16px;">Today</h2>
-      <div class="kpis">
-        <div class="kpi"><h3>Assigned</h3><div id="c_ass">0</div></div>
-        <div class="kpi"><h3>In Progress</h3><div id="c_prog">0</div></div>
-        <div class="kpi"><h3>Completed</h3><div id="c_comp">0</div></div>
+  <main class="main">
+    <div class="card">
+      <div class="card-header">
+        <h2>Planner</h2>
+        <div class="toolbar">
+          <div class="view-toggle" role="tablist" aria-label="View">
+            <a href="#" class="active" data-view="week">Week</a>
+            <a href="#" data-view="list">List</a>
+          </div>
+          <div class="pill">
+            <button class="btn btn-sm" id="btnPrev">◀</button>
+            <div id="rangeLabel" style="min-width:220px; text-align:center"></div>
+            <button class="btn btn-sm" id="btnNext">▶</button>
+          </div>
+          <button class="btn" id="btnToday">Today</button>
+          <input id="q" class="input" placeholder="Search SO / address / contact…" style="min-width:260px" />
+          <select id="status" class="select">
+            <option value="">All status</option>
+            <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
+          </select>
+          <select id="tech" class="select" style="min-width:200px"><option value="">All technicians</option></select>
+          <button class="btn" id="btnRefresh">↻ Refresh</button>
+          <div class="grow"></div>
+          <a class="btn btn-primary" id="btnNew" href="assign-job-enhanced.html">＋ New</a>
+        </div>
       </div>
-    </section>
+      <div class="card-body" id="plannerWrap">
+        <!-- Week view -->
+        <div class="planner" id="weekView" role="region" aria-label="Week planner">
+          <div class="planner-head" id="weekHead"></div>
+          <div class="planner-body" id="weekBody"></div>
+        </div>
 
-    <section class="card">
-      <h2 style="margin:0 0 10px;font-size:16px;">Quick Links</h2>
-      <div class="links">
-        <a class="btn" href="./planner-jobs.html">Jobs</a>
-        <a class="btn" href="./assign-job-enhanced.html">Assign SO</a>
-        <a class="btn" href="./dashboard.html">Dashboard</a>
-        <a class="btn" href="./realtime-map.html">Live Map</a>
-        <a class="btn" href="./assign-inventory-selector.html">Assign Inventory</a>
-        <a class="btn" href="./planner-inventory.html">Inventory Usage</a>
-        <a class="btn" href="./admin-intervention-master.html">Interventions/Checklists</a>
-        <a class="btn" href="./admin-tech-master.html">Technicians</a>
-        <a class="btn" href="./history.html">Status History</a>
-        <a class="btn" href="./reports.html">Reports</a>
+        <!-- List view -->
+        <div id="listView" class="hide">
+          <div class="table-wrap">
+            <table class="table" id="tblList">
+              <thead><tr><th>When</th><th>SO</th><th>Technician</th><th>Type</th><th>Priority</th><th>Status</th><th>Address</th><th class="text-right">Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
   </main>
 
+  <!-- Slide-over: SO details quick edit -->
+  <div class="slideover" id="detailSO">
+    <div class="backdrop" data-close></div>
+    <div class="panel">
+      <header class="flex justify-between items-center">
+        <div>
+          <div class="mini muted">Service Order</div>
+          <h3><span class="mono" id="d_soid">—</span></h3>
+        </div>
+        <button class="btn" data-close>✖ Close</button>
+      </header>
+      <div class="content">
+        <div class="form">
+          <div class="form-row">
+            <div class="col-6"><label class="label">Technician</label><select class="select" id="d_technician"></select></div>
+            <div class="col-6"><label class="label">Status</label><select class="select" id="d_status"><option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option></select></div>
+            <div class="col-6"><label class="label">Scheduled at</label><input class="input" id="d_scheduled" type="datetime-local"></div>
+            <div class="col-6"><label class="label">Priority</label><select class="select" id="d_priority"><option>low</option><option selected>normal</option><option>high</option><option>urgent</option></select></div>
+            <div class="col-12"><label class="label">Address</label><textarea class="textarea" id="d_address"></textarea></div>
+            <div class="col-6"><label class="label">Contact person</label><input class="input" id="d_contact_person"></div>
+            <div class="col-6"><label class="label">Contact phone</label><input class="input" id="d_contact_phone"></div>
+            <div class="col-12"><label class="label">Notes</label><textarea class="textarea" id="d_notes"></textarea></div>
+          </div>
+        </div>
+        <div class="mt-3">
+          <a class="btn" id="d_assign_inv" href="#">Assign inventory…</a>
+        </div>
+      </div>
+      <footer>
+        <button class="btn" data-close>Cancel</button>
+        <button class="btn btn-primary" id="d_save">Save changes</button>
+      </footer>
+    </div>
+  </div>
+
   <script>
-    const { T } = NC, api = NCAPI, U = NCUTIL;
-    async function hubCounts(){
-      const today = new Date(); const from = new Date(today); from.setHours(0,0,0,0);
-      const to = new Date(today); to.setHours(23,59,59,999);
-      const q = (st)=> `filter=(status,eq,${st})&filter=(scheduled_at,between,${U.iso(from)},${U.iso(to)})&limit=1`;
-      const [ass, prog, comp] = await Promise.all([
-        api.list(T.service_orders, q('assigned')),
-        api.list(T.service_orders, q('in_progress')),
-        api.list(T.service_orders, q('completed')),
-      ]);
-      set('#c_ass', ass.pageInfo?.totalRows ?? ass.list.length);
-      set('#c_prog', prog.pageInfo?.totalRows ?? prog.list.length);
-      set('#c_comp', comp.pageInfo?.totalRows ?? comp.list.length);
+    // ---------------------- Config -------------------------------------------
+    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
+    const TBL_TECH = 'mzw1focsec0tekg';   // technicians
+    const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
+
+    const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
+    const $ = (s, p=document) => p.querySelector(s);
+    const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
+
+    // ---------------------- State --------------------------------------------
+    let state = { start: startOfWeek(new Date()), view: 'week', q:'', status:'', tech:'' };
+    let techList = [];
+
+    // ---------------------- Dates --------------------------------------------
+    const pad=(n)=> String(n).padStart(2,'0');
+    function toLocalDateInputValue(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`; }
+    function toLocalDTInputValue(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`; }
+    function startOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; // Monday=0
+      x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; }
+    function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+    function endOfWeek(d){ const x=new Date(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
+
+    // ---------------------- Lookups ------------------------------------------
+    async function loadTechs(){
+      const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&orderBy=full_name&order=asc`;
+      techList = await fetch(url,{headers:H()}).then(r=>r.json());
+      $('#tech').innerHTML = '<option value="">All technicians</option>' + techList.map(t=>`<option value="${t.id}">${t.full_name||t.email_address||('Tech #'+t.id)}</option>`).join('');
+      $('#d_technician').innerHTML = techList.map(t=>`<option value="${t.id}">${t.full_name||t.email_address||('Tech #'+t.id)}</option>`).join('');
     }
-    function set(sel, v){ const e=document.querySelector(sel); if(e) e.textContent=v; }
-    document.addEventListener('DOMContentLoaded', hubCounts);
+
+    // ---------------------- Fetch SOs ----------------------------------------
+    function buildWhereWeek(){
+      const fromISO = state.start.toISOString().slice(0,19);
+      const toISO   = endOfWeek(state.start).toISOString().slice(0,19);
+      const wh=[`(scheduled_at,ge,${fromISO})`,`(scheduled_at,le,${toISO})`];
+      if(state.q){ const q=encodeURIComponent('%'+state.q+'%'); wh.push(`(so_id,like,${q})~or(address,like,${q})~or(contact_person,like,${q})`); }
+      if(state.status) wh.push(`(status,eq,${state.status})`);
+      if(state.tech) wh.push(`(technician_id,eq,${state.tech})`);
+      return wh.join('~and');
+    }
+    async function fetchSOs(){
+      let url = `${NC_BASE}/tables/${TBL_SO}/records?limit=10000&orderBy=scheduled_at&order=asc`;
+      const where = buildWhereWeek(); if(where) url += `&where=${where}`;
+      return fetch(url,{headers:H()}).then(r=>r.json());
+    }
+
+    // ---------------------- Week view render ---------------------------------
+    const HOURS = Array.from({length:12}, (_,i)=> i+7); // 7:00 → 18:00
+
+    function renderWeekHead(){
+      const head = $('#weekHead'); head.innerHTML='';
+      const h0 = document.createElement('div'); h0.className='col'; h0.textContent=''; head.appendChild(h0);
+      for(let i=0;i<7;i++){
+        const d = addDays(state.start, i);
+        const el = document.createElement('div'); el.className='col';
+        el.innerHTML = `<div>${d.toLocaleDateString(undefined,{ weekday:'short'})}</div><div class="mini">${d.getDate()} ${d.toLocaleDateString(undefined,{ month:'short'})}</div>`;
+        head.appendChild(el);
+      }
+    }
+
+    function renderWeekBody(rows){
+      const body = $('#weekBody'); body.innerHTML='';
+      // hours column
+      const hoursCol = document.createElement('div'); hoursCol.className='hours';
+      HOURS.forEach(h=>{ const el=document.createElement('div'); el.className='hour'; el.textContent = pad(h)+':00'; hoursCol.appendChild(el); });
+      body.appendChild(hoursCol);
+      // 7 day columns
+      for(let i=0;i<7;i++){
+        const day = addDays(state.start,i); const dayKey = day.toISOString().slice(0,10);
+        const col = document.createElement('div'); col.className='day-col'; col.setAttribute('data-date', dayKey);
+        // grid slots background
+        HOURS.forEach(()=>{ const s=document.createElement('div'); s.className='slot'; col.appendChild(s); });
+
+        // events for this day
+        const list = rows.filter(r=> (r.scheduled_at||'').slice(0,10)===dayKey);
+        list.forEach(r=>{
+          const pr = (r.priority||'normal').toLowerCase();
+          const st = (r.status||'assigned').toLowerCase();
+          const tname = r.technicians?.full_name || r.technician_id || '';
+          const time = r.scheduled_at ? new Date(r.scheduled_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+          const ev = document.createElement('div'); ev.className='event'; ev.draggable=true; ev.setAttribute('data-id', r.id);
+          ev.innerHTML = `
+            <div class="title mono">${r.so_id || r.id}</div>
+            <div class="meta">${time} · ${r.intervention_types?.intervention_name||r.intervention_type_id||''}</div>
+            <div class="meta">${tname}</div>
+            <div class="meta"> <span class="badge small priority-${pr}">${pr}</span> <span class="badge small status-${st}">${st}</span></div>`;
+          // click → detail
+          ev.addEventListener('click',()=> viewSO(r.id));
+          // drag
+          ev.addEventListener('dragstart', (e)=>{ e.dataTransfer.setData('text/plain', r.id); });
+          col.appendChild(ev);
+        });
+
+        // drop target
+        col.addEventListener('dragover', (e)=>{ e.preventDefault(); });
+        col.addEventListener('drop', (e)=>{ e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); promptReschedule(id, dayKey); });
+
+        body.appendChild(col);
+      }
+    }
+
+    // ---------------------- List view render ---------------------------------
+    function renderList(rows){
+      const tb = document.querySelector('#tblList tbody'); tb.innerHTML='';
+      rows.forEach(r=>{
+        const pr = (r.priority||'normal').toLowerCase();
+        const st = (r.status||'assigned').toLowerCase();
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.scheduled_at? new Date(r.scheduled_at).toLocaleString():''}</td>
+          <td class="mono">${r.so_id||r.id}</td>
+          <td>${r.technicians?.full_name||r.technician_id||''}</td>
+          <td>${r.intervention_types?.intervention_name||r.intervention_type_id||''}</td>
+          <td><span class="badge priority-${pr}">${pr}</span></td>
+          <td><span class="badge status-${st}">${st}</span></td>
+          <td class="text-sm">${r.address||''}</td>
+          <td class="text-right"><button class="btn btn-sm" data-view data-id="${r.id}">Details</button> <a class="btn btn-sm" href="assign-inventory-selector.html?so=${encodeURIComponent(r.id)}">Assign inv</a></td>`;
+        tb.appendChild(tr);
+      });
+      tb.addEventListener('click', (e)=>{ const t=e.target; if(t.hasAttribute('data-view')) viewSO(t.getAttribute('data-id')); });
+    }
+
+    // ---------------------- Detail panel -------------------------------------
+    let d_current = null;
+    function openDetail(){ $('#detailSO').classList.add('show'); }
+    function closeDetail(){ $('#detailSO').classList.remove('show'); }
+
+    async function viewSO(id){
+      const so = await fetch(`${NC_BASE}/tables/${TBL_SO}/records/${id}`,{headers:H()}).then(r=>r.json());
+      d_current = so;
+      $('#d_soid').textContent = so.so_id || so.id;
+      $('#d_status').value = so.status || 'assigned';
+      $('#d_priority').value = (so.priority || 'normal').toLowerCase();
+      $('#d_address').value = so.address || '';
+      $('#d_contact_person').value = so.contact_person || '';
+      $('#d_contact_phone').value = so.contact_phone || '';
+      $('#d_notes').value = so.notes || '';
+      $('#d_technician').value = so.technician_id || '';
+      const dt = so.scheduled_at ? new Date(so.scheduled_at) : new Date();
+      $('#d_scheduled').value = toLocalDTInputValue(dt);
+      $('#d_assign_inv').href = `assign-inventory-selector.html?so=${encodeURIComponent(so.id)}`;
+      openDetail();
+    }
+
+    async function saveDetail(){
+      if(!d_current) return;
+      const body = {
+        technician_id: $('#d_technician').value || undefined,
+        status: $('#d_status').value,
+        scheduled_at: new Date($('#d_scheduled').value).toISOString().slice(0,19),
+        priority: $('#d_priority').value,
+        address: $('#d_address').value.trim() || undefined,
+        contact_person: $('#d_contact_person').value.trim() || undefined,
+        contact_phone: $('#d_contact_phone').value.trim() || undefined,
+        notes: $('#d_notes').value.trim() || undefined,
+      };
+      const r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records`,{ method:'PATCH', headers:H(), body: JSON.stringify({ records:[{ id: d_current.id, ...body }] }) });
+      if(!r.ok) return alert('Save failed');
+      closeDetail(); refresh();
+    }
+
+    // ---------------------- Reschedule via drag & drop -----------------------
+    async function promptReschedule(soId, dayKey){
+      const time = prompt(`New time for ${dayKey} (HH:MM)`, '09:00');
+      if(!time) return;
+      const ok = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time.trim()); if(!ok) return alert('Invalid time format');
+      const iso = `${dayKey}T${time}:00`;
+      const r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records`,{ method:'PATCH', headers:H(), body: JSON.stringify({ records:[{ id: soId, scheduled_at: iso }] }) });
+      if(!r.ok) return alert('Move failed');
+      refresh();
+    }
+
+    // ---------------------- View switching -----------------------------------
+    function setView(name){ state.view = name; $('#weekView').classList.toggle('hide', name!=='week'); $('#listView').classList.toggle('hide', name!=='list'); $$('.view-toggle a').forEach(a=> a.classList.toggle('active', a.getAttribute('data-view')===name)); }
+
+    // ---------------------- Refresh ------------------------------------------
+    async function refresh(){
+      const rows = await fetchSOs();
+      // header label
+      const end = endOfWeek(state.start);
+      $('#rangeLabel').textContent = `${state.start.toLocaleDateString()} → ${end.toLocaleDateString()}`;
+      if(state.view==='week'){
+        renderWeekHead(); renderWeekBody(rows);
+        if(!rows.length){ $('#weekBody').insertAdjacentHTML('beforeend', `<div class="muted-ctr" style="grid-column: 1 / -1">No jobs scheduled in this week.</div>`); }
+      } else {
+        renderList(rows);
+      }
+    }
+
+    // ---------------------- Settings & bindings -------------------------------
+    $('#btnSettings').addEventListener('click', ()=>{
+      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
+      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
+      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
+      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
+      location.reload();
+    });
+
+    // Filters & navigation
+    $('#q').addEventListener('input', e=>{ state.q=e.target.value.trim(); refresh(); });
+    $('#status').addEventListener('change', e=>{ state.status=e.target.value; refresh(); });
+    $('#tech').addEventListener('change', e=>{ state.tech=e.target.value; refresh(); });
+    $('#btnRefresh').addEventListener('click', refresh);
+    $('#btnPrev').addEventListener('click', ()=>{ state.start = addDays(state.start, -7); refresh(); });
+    $('#btnNext').addEventListener('click', ()=>{ state.start = addDays(state.start, +7); refresh(); });
+    $('#btnToday').addEventListener('click', ()=>{ state.start = startOfWeek(new Date()); refresh(); });
+
+    document.querySelector('.view-toggle').addEventListener('click', (e)=>{
+      const a = e.target.closest('a[data-view]'); if(!a) return; e.preventDefault(); setView(a.getAttribute('data-view')); refresh();
+    });
+
+    // Detail panel
+    $('#detailSO').addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')) closeDetail(); });
+    $('#d_save').addEventListener('click', saveDetail);
+
+    // ---------------------- Init ---------------------------------------------
+    (async function init(){
+      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
+      await loadTechs();
+      setView('week');
+      await refresh();
+    })();
   </script>
 </body>
 </html>
