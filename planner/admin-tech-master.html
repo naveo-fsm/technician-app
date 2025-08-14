@@ -1,150 +1,377 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <title>Planner • Technician Master</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="../assets/js/noco.js"></script>
-  <script src="../assets/js/auth-lite.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Naveo FSM — Admin · Technicians</title>
+  <!-- Global stylesheet (adjust path if this file is inside a subfolder) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="technician-app/assets/naveo.css">
   <style>
-    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
-    h1{font-size:18px;margin:0}
-    .container{padding:16px;display:grid;gap:16px;grid-template-columns:1fr 1fr}
-    .card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
-    table{width:100%;border-collapse:collapse} thead th{padding:8px;border-bottom:1px solid var(--border);text-align:left;color:#374151}
-    tbody td{padding:8px;border-bottom:1px solid var(--border)}
-    label{font-weight:600;font-size:.9rem} input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn.secondary{background:#e9eef7;color:#111}
-    @media(max-width:1020px){ .container{grid-template-columns:1fr} }
+    /* Page-specific micro-helpers */
+    .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow { flex:1 1 auto; }
   </style>
 </head>
 <body>
-  <script>Auth.ensureRole(['planner']);</script>
+  <div class="topbar">
+    <div class="title">Naveo FSM</div>
+    <span class="muted">Admin · Technicians</span>
+    <div class="grow"></div>
+    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
+  </div>
 
-  <header>
-    <h1>Technicians</h1>
-    <nav class="row">
-      <a class="btn secondary" href="./planner.html">Home</a>
-      <a class="btn secondary" href="./planner-jobs.html">Jobs</a>
-    </nav>
-  </header>
-  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
+  <aside class="sidebar">
+    <div class="brand">Naveo</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="planner-jobs.html">Service Orders</a>
+    <a href="planner-inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+    <a class="active" href="admin-tech-master.html">Admin · Technicians</a>
+  </aside>
 
-  <main class="container">
-    <section class="card">
-      <h2 style="margin:0 0 10px;font-size:16px">Add / Edit Technician</h2>
-      <div class="row">
-        <input id="t_id" type="hidden">
-        <div style="flex:1"><label>Full Name</label><input id="t_name" placeholder="Jane Doe"/></div>
-        <div style="flex:1"><label>Email</label><input id="t_email" placeholder="tech@example.com"/></div>
-      </div>
-      <div class="row">
-        <div style="flex:1"><label>Phone</label><input id="t_phone" placeholder="+230 ..."/></div>
-        <div style="flex:1"><label>Role</label>
-          <select id="t_role"><option value="technician" selected>technician</option><option value="lead">lead</option></select>
+  <main class="main">
+    <div class="card">
+      <div class="card-header">
+        <h2>Technicians</h2>
+        <div class="toolbar">
+          <input id="q" class="input" placeholder="Search name/email/phone…" style="min-width:280px" />
+          <select id="roleFilter" class="select">
+            <option value="">All roles</option>
+            <option>technician</option>
+            <option>lead</option>
+            <option>contractor</option>
+          </select>
+          <select id="statusFilter" class="select">
+            <option value="">All status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <button class="btn" id="btnRefresh">↻ Refresh</button>
+          <button class="btn btn-outline" id="btnExport">Export CSV</button>
+          <button class="btn btn-primary" id="btnAdd">＋ New</button>
         </div>
-        <div style="flex:1"><label>Status</label>
-          <select id="t_status"><option value="active" selected>active</option><option value="inactive">inactive</option></select>
+      </div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="table" id="tbl">
+            <thead>
+              <tr>
+                <th style="width:48px">#</th>
+                <th style="width:52px">Photo</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th style="width:120px">Role</th>
+                <th style="width:120px">Status</th>
+                <th style="width:120px" id="thShift">Shift (min)</th>
+                <th style="width:120px">Updated</th>
+                <th class="text-right" style="width:180px">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between items-center mt-4">
+          <div class="muted" id="meta">0 items</div>
+          <div class="pagination" id="pager"></div>
         </div>
       </div>
-      <div class="row">
-        <div style="flex:1"><label>Shift Minutes</label><input id="t_shift" type="number" value="480"/></div>
-        <div style="flex:1"><label>Photo URL</label><input id="t_photo" placeholder="https://..."/></div>
-        <div style="flex:1"><label>Preferred Language</label><input id="t_lang" placeholder="en/fr/…"/></div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn" onclick="techCreate()">Create</button>
-        <button class="btn secondary" onclick="techSave()">Save</button>
-        <button class="btn secondary" onclick="clearTech()">Clear</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2 style="margin:0 0 10px;font-size:16px">Directory</h2>
-      <div style="overflow:auto">
-        <table>
-          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Shift</th><th></th></tr></thead>
-          <tbody id="techBody"><tr><td colspan="7">Loading…</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    </div>
   </main>
 
+  <!-- Create / Edit Modal -->
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <header><h3 id="editTitle">New Technician</h3></header>
+      <div class="content">
+        <form class="form" id="editForm">
+          <input type="hidden" id="tech_id" />
+          <div class="form-row">
+            <div class="col-6">
+              <label class="label">Full name</label>
+              <input class="input" id="full_name" placeholder="Optional if column doesn't exist" />
+            </div>
+            <div class="col-6">
+              <label class="label">Email <span class="muted">(required)</span></label>
+              <input class="input" id="email_address" type="email" required />
+            </div>
+            <div class="col-4">
+              <label class="label">Phone</label>
+              <input class="input" id="phone" />
+            </div>
+            <div class="col-4">
+              <label class="label">Role</label>
+              <select class="select" id="role">
+                <option>technician</option>
+                <option>lead</option>
+                <option>contractor</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="label">Status</label>
+              <select class="select" id="status">
+                <option value="active">active</option>
+                <option value="inactive">inactive</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="label">Shift minutes</label>
+              <input class="input" id="shift_minutes" type="number" min="0" placeholder="480" />
+            </div>
+            <div class="col-4">
+              <label class="label">Preferred language</label>
+              <select class="select" id="preferred_language">
+                <option value="">—</option>
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="label">Photo URL</label>
+              <input class="input" id="photo_url" placeholder="https://..." />
+            </div>
+          </div>
+        </form>
+      </div>
+      <footer>
+        <button class="btn" data-close>Cancel</button>
+        <button class="btn btn-primary" id="btnSave">Save</button>
+      </footer>
+    </div>
+  </div>
+
   <script>
-    const { T } = NC, api = NCAPI;
+    // --- Config --------------------------------------------------------------
+    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    const TBL_TECH = 'mzw1focsec0tekg'; // technicians
 
-    async function techList(){
-      const res = await api.list(T.technicians, 'limit=1000&sort=full_name');
-      document.querySelector('#techBody').innerHTML = res.list.map(t=>`
-        <tr>
-          <td>${t.full_name||''}</td>
-          <td>${t.email_address||''}</td>
-          <td>${t.phone||''}</td>
-          <td>${t.role||''}</td>
-          <td>${t.status||''}</td>
-          <td>${t.shift_minutes||''}</td>
-          <td><button onclick="techEdit(${t.id})">Edit</button> <button onclick="techDel(${t.id})">Del</button></td>
-        </tr>`).join('');
-    }
+    function headers() { return { 'Content-Type': 'application/json', 'xc-token': NC_PAT }; }
+    function fmtDT(v){ if(!v) return ''; const d = new Date(v); return d.toLocaleString(); }
+    function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild; }
 
-    async function techCreate(){
-      const b = readTech();
-      if(!b.full_name) return alert('Name required');
-      if(!b.email_address) return alert('Email required');
-      const existing = await api.list(T.technicians, `filter=(email_address,eq,${encodeURIComponent(b.email_address)})&limit=1`);
-      if(existing.list.length) return alert('Email already exists');
-      await api.create(T.technicians, b);
-      await techList(); clearTech();
-    }
-    async function techEdit(id){
-      const r = await api.read(T.technicians, id);
-      fillTech(r);
-    }
-    async function techSave(){
-      const b = readTech();
-      if(!b.id) return alert('No record selected');
-      await api.patch(T.technicians, b);
-      await techList(); clearTech();
-    }
-    async function techDel(id){
-      if(!confirm('Delete technician?')) return;
-      await api.del(T.technicians, id);
-      await techList();
+    // --- State ---------------------------------------------------------------
+    let state = { page:1, limit:10, total:0, q:'', role:'', status:'' };
+
+    // --- List/pager ----------------------------------------------------------
+    async function fetchTechs(){
+      const {page, limit, q, role, status} = state;
+      const offset = (page-1)*limit;
+      let url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=${limit}&offset=${offset}&orderBy=updated_at&order=desc`;
+      const filters=[];
+      if(q) filters.push(`(full_name,like,${encodeURIComponent('%'+q+'%')})~or(email_address,like,${encodeURIComponent('%'+q+'%')})~or(phone,like,${encodeURIComponent('%'+q+'%')})`);
+      if(role) filters.push(`(role,eq,${role})`);
+      if(status) filters.push(`(status,eq,${status})`);
+      if(filters.length) url += `&where=${filters.join('~and')}`;
+      const res = await fetch(url,{ headers: headers() });
+      if(!res.ok){ alert('Load failed. Check NC_BASE / NC_PAT'); return; }
+      const rows = await res.json();
+
+      // count
+      let countUrl = `${NC_BASE}/tables/${TBL_TECH}/records/count`;
+      if(filters.length) countUrl += `?where=${filters.join('~and')}`;
+      const c = await fetch(countUrl,{ headers: headers() }).then(r=>r.json());
+      state.total = c?.count || rows.length;
+
+      renderTable(rows);
+      renderPager();
     }
 
-    function readTech(){
-      return {
-        id: +v('#t_id') || undefined,
-        full_name: v('#t_name').trim(),
-        email_address: v('#t_email').trim(),
-        phone: v('#t_phone').trim(),
-        role: v('#t_role') || 'technician',
-        status: v('#t_status') || 'active',
-        shift_minutes: +v('#t_shift') || 480,
-        photo_url: v('#t_photo').trim(),
-        preferred_language: v('#t_lang').trim()
+    function renderTable(rows){
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML='';
+      let showShift = false; if(rows?.length && (rows[0].shift_minutes!==undefined && rows[0].shift_minutes!==null)) showShift = true;
+      document.getElementById('thShift').style.display = showShift? 'table-cell':'none';
+
+      rows.forEach((r,i)=>{
+        const badge = r.status==='active' ? 'badge success':'badge warning';
+        const tr = el(`<tr>
+          <td>${(state.page-1)*state.limit + i + 1}</td>
+          <td>${r.photo_url? `<img class="avatar" src="${r.photo_url}" alt="">`:''}</td>
+          <td class="fw-600">${r.full_name||''}</td>
+          <td>${r.email_address||''}</td>
+          <td>${r.phone||''}</td>
+          <td>${r.role||''}</td>
+          <td><span class="${badge}">${r.status||''}</span></td>
+          <td style="display:${showShift?'table-cell':'none'}">${r.shift_minutes ?? ''}</td>
+          <td>${fmtDT(r.updated_at)}</td>
+          <td class="text-right">
+            <div class="actions">
+              <button class="btn btn-sm" data-edit data-id="${r.id}">Edit</button>
+              <button class="btn btn-sm" data-toggle data-id="${r.id}" data-val="${r.status==='active'?'inactive':'active'}">${r.status==='active'?'Deactivate':'Activate'}</button>
+              <button class="btn btn-danger btn-sm" data-del data-id="${r.id}">Delete</button>
+            </div>
+          </td>
+        </tr>`);
+        tbody.appendChild(tr);
+      });
+      document.getElementById('meta').textContent = `${state.total} items`;
+    }
+
+    function renderPager(){
+      const pager = document.getElementById('pager');
+      pager.innerHTML='';
+      const pages = Math.max(1, Math.ceil(state.total/state.limit));
+      const mk = (n,active=false)=> el(`<a class="page ${active?'active':''}" href="#">${n}</a>`);
+      for(let i=1;i<=pages;i++){
+        const a = mk(i, i===state.page);
+        a.addEventListener('click', e=>{ e.preventDefault(); state.page=i; fetchTechs(); });
+        pager.appendChild(a);
+      }
+    }
+
+    // --- CRUD ---------------------------------------------------------------
+    function collectForm(){
+      const data = {
+        full_name: document.getElementById('full_name').value.trim(),
+        email_address: document.getElementById('email_address').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        role: document.getElementById('role').value,
+        status: document.getElementById('status').value,
+        shift_minutes: document.getElementById('shift_minutes').value? Number(document.getElementById('shift_minutes').value) : undefined,
+        preferred_language: document.getElementById('preferred_language').value || undefined,
+        photo_url: document.getElementById('photo_url').value.trim() || undefined,
       };
+      return data;
     }
-    function fillTech(r){
-      s('#t_id', r.id);
-      s('#t_name', r.full_name||'');
-      s('#t_email', r.email_address||'');
-      s('#t_phone', r.phone||'');
-      s('#t_role', r.role||'technician');
-      s('#t_status', r.status||'active');
-      s('#t_shift', r.shift_minutes||480);
-      s('#t_photo', r.photo_url||'');
-      s('#t_lang', r.preferred_language||'');
+
+    function sanitizeForSchema(body){
+      // Minimal guaranteed fields per your table definition
+      const minimal = {
+        email_address: body.email_address,
+        phone: body.phone,
+        role: body.role,
+        status: body.status,
+      };
+      // Try to include optional fields if present
+      if(body.full_name) minimal.full_name = body.full_name;
+      if(Number.isFinite(body.shift_minutes)) minimal.shift_minutes = body.shift_minutes;
+      if(body.preferred_language) minimal.preferred_language = body.preferred_language;
+      if(body.photo_url) minimal.photo_url = body.photo_url;
+      return minimal;
     }
-    function clearTech(){ ['#t_id','#t_name','#t_email','#t_phone','#t_role','#t_status','#t_shift','#t_photo','#t_lang'].forEach(x=>s(x,'')); s('#t_role','technician'); s('#t_status','active'); s('#t_shift','480'); }
 
-    function v(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
-    function s(sel,val){ const e=document.querySelector(sel); if(e) e.value = val; }
+    async function createOrUpdate(){
+      const id = document.getElementById('tech_id').value || null;
+      const form = collectForm();
+      if(!form.email_address){ alert('Email is required'); return; }
 
-    document.addEventListener('DOMContentLoaded', techList);
+      // First attempt with full sanitized set; if it fails with 4xx, retry with strict minimal
+      const tryBodies = [ sanitizeForSchema(form), { email_address: form.email_address, phone: form.phone, role: form.role, status: form.status } ];
+
+      for(const body of tryBodies){
+        let ok=false;
+        if(id){
+          const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records`,{ method:'PATCH', headers: headers(), body: JSON.stringify({ records:[{ id, ...body }] }) });
+          ok = r.ok;
+        } else {
+          const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records`,{ method:'POST', headers: headers(), body: JSON.stringify(body) });
+          ok = r.ok;
+        }
+        if(ok){ closeModal(); fetchTechs(); return; }
+      }
+      alert('Save failed. If you added new fields (full_name, shift_minutes, etc.), ensure those columns exist in technicians table.');
+    }
+
+    async function toggleStatus(id,next){
+      const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records`,{ method:'PATCH', headers: headers(), body: JSON.stringify({ records:[{ id, status: next }] }) });
+      if(!r.ok) return alert('Update failed');
+      fetchTechs();
+    }
+
+    async function removeOne(id){
+      if(!confirm('Delete this technician?')) return;
+      const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records/${id}`,{ method:'DELETE', headers: headers() });
+      if(!r.ok) return alert('Delete failed');
+      fetchTechs();
+    }
+
+    async function openEdit(id){
+      document.getElementById('editTitle').textContent = id ? 'Edit Technician' : 'New Technician';
+      document.getElementById('tech_id').value = id || '';
+      if(id){
+        const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records/${id}`,{ headers: headers() });
+        if(!r.ok){ alert('Load failed'); return; }
+        const row = await r.json();
+        document.getElementById('full_name').value = row.full_name || '';
+        document.getElementById('email_address').value = row.email_address || '';
+        document.getElementById('phone').value = row.phone || '';
+        document.getElementById('role').value = row.role || 'technician';
+        document.getElementById('status').value = row.status || 'active';
+        document.getElementById('shift_minutes').value = row.shift_minutes ?? '';
+        document.getElementById('preferred_language').value = row.preferred_language || '';
+        document.getElementById('photo_url').value = row.photo_url || '';
+      } else {
+        document.getElementById('editForm').reset();
+        document.getElementById('role').value = 'technician';
+        document.getElementById('status').value = 'active';
+      }
+      openModal();
+    }
+
+    // --- Export --------------------------------------------------------------
+    function toCSV(rows){
+      const cols = ['id','full_name','email_address','phone','role','status','shift_minutes','preferred_language','updated_at'];
+      const esc = s => ('"'+ String(s??'').replaceAll('"','""') +'"');
+      const head = cols.join(',');
+      const body = rows.map(r=> cols.map(c=>esc(r[c])).join(',')).join('\n');
+      return head+'\n'+body;
+    }
+
+    async function exportCSV(){
+      let url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=10000&orderBy=updated_at&order=desc`;
+      const filters=[];
+      if(state.q) filters.push(`(full_name,like,${encodeURIComponent('%'+state.q+'%')})~or(email_address,like,${encodeURIComponent('%'+state.q+'%')})~or(phone,like,${encodeURIComponent('%'+state.q+'%')})`);
+      if(state.role) filters.push(`(role,eq,${state.role})`);
+      if(state.status) filters.push(`(status,eq,${state.status})`);
+      if(filters.length) url += `&where=${filters.join('~and')}`;
+      const rows = await fetch(url,{ headers: headers() }).then(r=>r.json());
+      const csv = toCSV(rows);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+      a.download = `technicians_${Date.now()}.csv`;
+      a.click();
+    }
+
+    // --- Modal helpers & settings -------------------------------------------
+    const modal = document.getElementById('editModal');
+    function openModal(){ modal.classList.add('show'); }
+    function closeModal(){ modal.classList.remove('show'); }
+    modal.addEventListener('click', e=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeModal(); });
+
+    document.getElementById('btnSettings').addEventListener('click', ()=>{
+      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
+      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
+      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
+      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
+      location.reload();
+    });
+
+    // --- Bindings ------------------------------------------------------------
+    document.getElementById('btnAdd').addEventListener('click', ()=> openEdit(null));
+    document.getElementById('btnRefresh').addEventListener('click', fetchTechs);
+    document.getElementById('btnSave').addEventListener('click', createOrUpdate);
+    document.getElementById('btnExport').addEventListener('click', exportCSV);
+
+    document.getElementById('q').addEventListener('input', e=>{ state.q=e.target.value.trim(); state.page=1; fetchTechs(); });
+    document.getElementById('roleFilter').addEventListener('change', e=>{ state.role=e.target.value; state.page=1; fetchTechs(); });
+    document.getElementById('statusFilter').addEventListener('change', e=>{ state.status=e.target.value; state.page=1; fetchTechs(); });
+
+    document.getElementById('tbody').addEventListener('click', (e)=>{
+      const t=e.target;
+      if(t.hasAttribute('data-edit')) openEdit(t.getAttribute('data-id'));
+      else if(t.hasAttribute('data-toggle')) toggleStatus(t.getAttribute('data-id'), t.getAttribute('data-val'));
+      else if(t.hasAttribute('data-del')) removeOne(t.getAttribute('data-id'));
+    });
+
+    // --- Init ----------------------------------------------------------------
+    if(!NC_PAT){ alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.'); }
+    fetchTechs();
   </script>
 </body>
 </html>
