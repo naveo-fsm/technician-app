@@ -1,116 +1,331 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <title>Planner • Reports</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="../assets/js/noco.js"></script>
-  <script src="../assets/js/auth-lite.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Naveo FSM — Reports & Analytics</title>
+  <!-- Global stylesheet -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="technician-app/assets/naveo.css" />
+  <!-- Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb;--muted:#6b7280}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
-    h1{font-size:18px;margin:0}
-    .wrap{max-width:1100px;margin:16px auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    label{font-weight:600;font-size:.9rem}
-    input,select{padding:10px;border:1px solid var(--border);border-radius:10px}
-    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
-    .kpi{padding:14px;border:1px solid var(--border);border-radius:12px}
-    .kpi h3{margin:0 0 6px;font-size:12px;color:#6b7280} .kpi div{font-size:24px;font-weight:700}
-    table{width:100%;border-collapse:collapse;margin-top:12px} thead th,tbody td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
-    .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn.secondary{background:#e9eef7;color:#111}
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow { flex:1 1 auto; }
+    .grid-2-1 { display:grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); }
+    @media (max-width: 1200px){ .grid-2-1 { grid-template-columns: 1fr; } }
+    .mini { font-size: var(--text-sm); color: var(--text-muted); }
+    .chart-card canvas{ width:100%; height:320px; }
+    .muted-ctr { color: var(--text-muted); text-align:center; padding: 16px 0; }
+    .kpi .kpi-item small{ color: var(--text-muted); display:block; margin-top:4px; }
   </style>
 </head>
 <body>
-  <script>Auth.ensureRole(['planner']);</script>
-
-  <header>
-    <h1>Reports</h1>
-    <nav class="row">
-      <a class="btn secondary" href="./planner.html">Home</a>
-    </nav>
-  </header>
-  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
-
-  <div class="wrap">
-    <div class="row">
-      <div><label>From</label><br><input id="r_from" type="date"></div>
-      <div><label>To</label><br><input id="r_to" type="date"></div>
-      <div><label>Technician (id)</label><br><input id="r_tech" placeholder="e.g. 12"></div>
-      <div><label>Intervention Type (id)</label><br><input id="r_it" placeholder="e.g. 5"></div>
-      <div><label>Status</label><br>
-        <select id="r_status"><option value="">(any)</option><option>assigned</option><option>in_progress</option><option>completed</option></select>
-      </div>
-      <div style="align-self:end"><button class="btn" onclick="runReport()">Run</button></div>
-      <div style="align-self:end"><button class="btn secondary" onclick="exportCSV()">Export CSV</button></div>
-    </div>
-
-    <div class="kpis">
-      <div class="kpi"><h3>Total Jobs</h3><div id="k_total">0</div></div>
-      <div class="kpi"><h3>First-Time Fix</h3><div id="k_ftf">0%</div></div>
-      <div class="kpi"><h3>Avg Start Δ</h3><div id="k_delta">0 min</div></div>
-    </div>
-
-    <h3 style="margin:14px 0 6px">Per Technician</h3>
-    <table id="exportTable">
-      <thead><tr><th>Technician ID</th><th>Jobs</th></tr></thead>
-      <tbody id="r_table"><tr><td colspan="2">—</td></tr></tbody>
-    </table>
+  <div class="topbar">
+    <div class="title">Naveo FSM</div>
+    <span class="muted">Reports & Analytics</span>
+    <div class="grow"></div>
+    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
+  <aside class="sidebar">
+    <div class="brand">Naveo</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="planner-jobs.html">Service Orders</a>
+    <a href="assign-job-enhanced.html">Assign Job</a>
+    <a href="planner-inventory.html">Inventory</a>
+    <a class="active" href="reports.html">Reports</a>
+    <a href="realtime-map.html">Live Map</a>
+    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+    <a href="admin-tech-master.html">Admin · Technicians</a>
+  </aside>
+
+  <main class="main">
+    <!-- Filters -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Filters</h2>
+        <div class="toolbar">
+          <input id="from" class="input" type="date" />
+          <input id="to" class="input" type="date" />
+          <select id="status" class="select">
+            <option value="">All status</option>
+            <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
+          </select>
+          <select id="tech" class="select" style="min-width:200px"><option value="">All technicians</option></select>
+          <select id="itype" class="select" style="min-width:220px"><option value="">All intervention types</option></select>
+          <button class="btn" id="btnRefresh">↻ Refresh</button>
+          <div class="grow"></div>
+          <button class="btn btn-outline" id="btnExport">Export CSV</button>
+          <button class="btn" id="btnPrint">Print</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="kpi">
+          <div class="kpi-item"><div class="kpi-label">Completed</div><div class="kpi-value" id="kpiDone">0</div><small id="kpiDoneNote"></small></div>
+          <div class="kpi-item"><div class="kpi-label">Avg cycle time</div><div class="kpi-value" id="kpiCycle">0h 00m</div><small class="mini">actual_start→completed (fallback: scheduled→completed)</small></div>
+          <div class="kpi-item"><div class="kpi-label">SLA Hit</div><div class="kpi-value" id="kpiSLA">0%</div><small id="kpiSLANote"></small></div>
+          <div class="kpi-item"><div class="kpi-label">First‑Time Fix</div><div class="kpi-value" id="kpiFTF">0%</div><small id="kpiFTFNote"></small></div>
+          <div class="kpi-item"><div class="kpi-label">Inventory used</div><div class="kpi-value" id="kpiInv">0</div><small id="kpiInvNote"></small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2-1 mt-4">
+      <div class="grid" style="gap: var(--space-6)">
+        <div class="card chart-card">
+          <div class="card-header"><h3>Jobs per Day (completed)</h3><div class="mini" id="rangeLabel"></div></div>
+          <div class="card-body"><canvas id="chJobsPerDay"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-header"><h3>Status Breakdown</h3></div>
+          <div class="card-body"><canvas id="chStatus"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-header"><h3>Jobs by Technician (completed)</h3></div>
+          <div class="card-body"><canvas id="chByTech"></canvas></div>
+        </div>
+      </div>
+      <div class="grid" style="gap: var(--space-6)">
+        <div class="card chart-card">
+          <div class="card-header"><h3>Inventory Usage by Category</h3><div class="mini">from Service‑Order Inventory</div></div>
+          <div class="card-body"><canvas id="chInv"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>SLA Breaches (Top 10)</h3></div>
+          <div class="card-body">
+            <div class="table-wrap" style="max-height: 340px; overflow:auto;">
+              <table class="table" id="tblBreaches">
+                <thead><tr><th>SO</th><th>Type</th><th>Technician</th><th>Cycle (min)</th><th>SLA (min)</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><h3>Recent Completed</h3></div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="table" id="tblRecent">
+            <thead><tr><th>Completed</th><th>SO</th><th>Technician</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script>
-    const { T } = NC, api = NCAPI, U = NCUTIL;
+    // ---------------------- Config -------------------------------------------
+    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
+    const TBL_TECH = 'mzw1focsec0tekg';   // technicians
+    const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
+    const TBL_SOI  = 'm40n0bb2o41gfxp';   // service_order_inventory
+    const TBL_INV  = 'mu70y5tmw0pqflp';   // inventory
 
-    async function runReport(){
-      const from = new Date(document.querySelector('#r_from').value);
-      const to   = new Date(document.querySelector('#r_to').value);
-      const tech = +val('#r_tech') || null;
-      const it   = +val('#r_it') || null;
-      const st   = val('#r_status');
+    const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
+    const $ = (s, p=document) => p.querySelector(s);
 
-      let qs = '';
-      if(!isNaN(from.getTime()) && !isNaN(to.getTime())){
-        qs += `filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`;
-      } else {
-        qs += 'limit=5000';
+    // ---------------------- Date helpers -------------------------------------
+    const pad=(n)=> String(n).padStart(2,'0');
+    function toLocalDateInputValue(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function startOfDayISO(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,19); }
+    function endOfDayISO(d){ const x=new Date(d); x.setHours(23,59,59,999); return x.toISOString().slice(0,19); }
+
+    // ---------------------- Load lookups -------------------------------------
+    async function loadTechs(){
+      const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&orderBy=full_name&order=asc`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      $('#tech').innerHTML = '<option value="">All technicians</option>' + rows.map(t=>`<option value="${t.id}">${t.full_name||t.email_address||('Tech #'+t.id)}</option>`).join('');
+      return new Map(rows.map(r=>[r.id, r]));
+    }
+    async function loadItypes(){
+      const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&orderBy=intervention_name&order=asc`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      $('#itype').innerHTML = '<option value="">All intervention types</option>' + rows.map(t=>`<option value="${t.id}">${t.intervention_name}</option>`).join('');
+      return new Map(rows.map(r=>[r.id, r]));
+    }
+
+    // ---------------------- Fetch SOs ----------------------------------------
+    function buildWhere(from,to,status,tech,itype){
+      const wh=[]; if(from) wh.push(`(scheduled_at,ge,${startOfDayISO(new Date(from))})`);
+      if(to) wh.push(`(scheduled_at,le,${endOfDayISO(new Date(to))})`);
+      if(status) wh.push(`(status,eq,${status})`);
+      if(tech) wh.push(`(technician_id,eq,${tech})`);
+      if(itype) wh.push(`(intervention_type_id,eq,${itype})`);
+      return wh.join('~and');
+    }
+    async function fetchSOs(from,to,status,tech,itype){
+      let url = `${NC_BASE}/tables/${TBL_SO}/records?limit=10000&orderBy=scheduled_at&order=asc`;
+      const where = buildWhere(from,to,status,tech,itype); if(where) url += `&where=${where}`;
+      return fetch(url,{headers:H()}).then(r=>r.json());
+    }
+
+    // ---------------------- Inventory usage ----------------------------------
+    async function fetchInventoryUsage(soIds){
+      if(!soIds.length) return { used:0, byCat:new Map() };
+      const chunks = []; for(let i=0;i<soIds.length;i+=100) chunks.push(soIds.slice(i,i+100));
+      const allSOI = [];
+      for(const ch of chunks){
+        const w = `(service_order_id,in,${ch.join(',')})`;
+        const url = `${NC_BASE}/tables/${TBL_SOI}/records?limit=10000&where=${encodeURIComponent(w)}`;
+        const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+        allSOI.push(...rows);
       }
-      if(st) qs += `&filter=(status,eq,${st})`;
-      if(tech) qs += `&filter=(technician_id,eq,${tech})`;
-      if(it) qs += `&filter=(intervention_type_id,eq,${it})`;
-
-      const res = await api.list(T.service_orders, qs);
-      const rows = res.list || [];
-
-      const total = rows.length;
-      const ftf = rows.filter(r => (r.status||'')==='completed' && (r.return_visit_required===false || r.return_visit_required==='false')).length;
-      const ftfPct = total ? Math.round(ftf/total*100) : 0;
-
-      const withTimes = rows.filter(r=> r.scheduled_at && (r.actual_start || r.completed_at));
-      const avgStartDeltaMin = Math.round(withTimes.reduce((a,r)=> a + ((new Date(r.actual_start||r.completed_at) - new Date(r.scheduled_at))/60000), 0) / Math.max(1, withTimes.length));
-
-      set('#k_total', total); set('#k_ftf', ftfPct + '%'); set('#k_delta', (isFinite(avgStartDeltaMin)?avgStartDeltaMin:0) + ' min');
-
-      const perTech = {};
-      for(const r of rows){ perTech[r.technician_id] = (perTech[r.technician_id]||0)+1; }
-      document.querySelector('#r_table').innerHTML = Object.entries(perTech).map(([techId,count])=>`
-        <tr><td>${techId}</td><td>${count}</td></tr>
-      `).join('') || '<tr><td colspan="2">No rows</td></tr>';
+      const invIds = [...new Set(allSOI.map(x=>x.inventory_item_id).filter(Boolean))];
+      const invMap = new Map();
+      for(let i=0;i<invIds.length;i+=100){
+        const ids = invIds.slice(i,i+100);
+        const url = `${NC_BASE}/tables/${TBL_INV}/records?limit=${ids.length}&where=${encodeURIComponent(`(id,in,${ids.join(',')})`)}`;
+        const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+        rows.forEach(r=> invMap.set(r.id, r));
+      }
+      const byCat = new Map();
+      let used = 0;
+      allSOI.forEach(x=>{ const inv = invMap.get(x.inventory_item_id) || {}; const cat = inv.category || 'unknown'; const qty=Number(x.qty||1); used += qty; byCat.set(cat, (byCat.get(cat)||0) + qty); });
+      return { used, byCat };
     }
 
-    function exportCSV(){
-      const table = document.querySelector('#exportTable');
-      if(!table) return alert('No table to export');
-      const rows = [...table.querySelectorAll('tr')].map(tr => [...tr.children].map(td => `"${(td.textContent||'').replace(/"/g,'""')}"`).join(','));
-      const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'report.csv'; a.click();
+    // ---------------------- Calculations -------------------------------------
+    function minutesBetween(a,b){ if(!a||!b) return null; const A=new Date(a), B=new Date(b); return Math.max(0, Math.round((B-A)/60000)); }
+    function hmn(min){ if(min==null) return '0h 00m'; const h=Math.floor(min/60), m=min%60; return `${h}h ${String(m).padStart(2,'0')}m`; }
+
+    function groupByDayCompleted(rows){
+      const m = new Map();
+      rows.filter(x=>x.completed_at).forEach(x=>{ const d = new Date(x.completed_at); const k = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; m.set(k,(m.get(k)||0)+1); });
+      const keys = [...m.keys()].sort(); return { labels: keys, data: keys.map(k=>m.get(k)) };
     }
 
-    function val(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
-    function set(sel,v){ const e=document.querySelector(sel); if(e) e.textContent=v; }
+    function statusCounts(rows){
+      const m = new Map(); rows.forEach(x=>{ const s=(x.status||'assigned').toLowerCase(); m.set(s,(m.get(s)||0)+1); });
+      const labels=[...m.keys()], data=labels.map(k=>m.get(k));
+      return { labels, data };
+    }
 
-    document.addEventListener('DOMContentLoaded', runReport);
+    function byTechCompleted(rows, techMap){
+      const m=new Map(); rows.filter(x=>x.status==='completed').forEach(x=>{ const t=techMap.get(x.technician_id); const name = t?.full_name || t?.email_address || ('Tech #'+x.technician_id); m.set(name,(m.get(name)||0)+1); });
+      const labels=[...m.keys()], data=labels.map(k=>m.get(k));
+      return { labels, data };
+    }
+
+    function computeKpis(rows, itypeMap){
+      const completed = rows.filter(r=>r.status==='completed' && r.completed_at);
+      const done = completed.length;
+      // avg cycle time
+      let totalMin=0, have=0; const breaches=[];
+      completed.forEach(r=>{
+        const end=r.completed_at; const start=r.actual_start || r.scheduled_at; const mins = minutesBetween(start,end); if(mins!=null){ totalMin+=mins; have++; }
+        const it = itypeMap.get(r.intervention_type_id); const sla=Number(it?.sla_minutes||0) || null; if(mins!=null && sla!=null && sla>0 && mins>sla){ breaches.push({ so:r.so_id||r.id, tech:r.technician_id, type: it?.intervention_name || r.intervention_type_id, mins, sla }); }
+      });
+      const avgCycle = have? Math.round(totalMin/have):0;
+      // SLA hit
+      let withSLA=0, slaOnTime=0; completed.forEach(r=>{ const it=itypeMap.get(r.intervention_type_id); const sla=Number(it?.sla_minutes||0) || null; if(!sla) return; const mins = minutesBetween(r.actual_start||r.scheduled_at, r.completed_at); if(mins==null) return; withSLA++; if(mins<=sla) slaOnTime++; });
+      const slaPct = withSLA? Math.round(100*slaOnTime/withSLA):0;
+      // FTF
+      const ftfNum = completed.filter(r=> r.return_visit_required===false).length; const ftfPct = done? Math.round(100*ftfNum/done):0;
+      return { done, avgCycle, slaPct, slaNote: `${slaOnTime}/${withSLA} within SLA`, ftfPct, ftfNote: `${ftfNum}/${done} first‑time fixes`, breaches: breaches.sort((a,b)=>b.mins-a.mins).slice(0,10) };
+    }
+
+    // ---------------------- Charts -------------------------------------------
+    let chA, chB, chC, chD;
+    function renderBar(el, labels, data, label){ if(window[el]) window[el].destroy?.(); const ctx=document.getElementById(el).getContext('2d'); window[el]= new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ label, data }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, precision:0 } } } }); }
+    function renderLine(el, labels, data, label){ if(window[el]) window[el].destroy?.(); const ctx=document.getElementById(el).getContext('2d'); window[el]= new Chart(ctx,{ type:'line', data:{ labels, datasets:[{ label, data, fill:false }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, precision:0 } } } }); }
+    function renderDoughnut(el, labels, data){ if(window[el]) window[el].destroy?.(); const ctx=document.getElementById(el).getContext('2d'); window[el]= new Chart(ctx,{ type:'doughnut', data:{ labels, datasets:[{ data }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } } }); }
+
+    // ---------------------- Recent table & breaches ---------------------------
+    function renderRecent(rows, techMap, itypeMap){
+      const tb = document.querySelector('#tblRecent tbody'); tb.innerHTML='';
+      rows.filter(r=>r.status==='completed' && r.completed_at).sort((a,b)=> new Date(b.completed_at)-new Date(a.completed_at)).slice(0,20).forEach(r=>{
+        const t = techMap.get(r.technician_id); const it = itypeMap.get(r.intervention_type_id);
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${new Date(r.completed_at).toLocaleString()}</td><td class="mono">${r.so_id||r.id}</td><td>${t?.full_name||t?.email_address||('Tech #'+r.technician_id)}</td><td>${it?.intervention_name||r.intervention_type_id||''}</td><td><span class="badge priority-${(r.priority||'normal').toLowerCase()}">${r.priority||'normal'}</span></td><td>${r.notes||''}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+    function renderBreaches(rows, techMap){
+      const tb = document.querySelector('#tblBreaches tbody'); tb.innerHTML='';
+      rows.forEach(r=>{
+        const t=techMap.get(r.tech);
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td class="mono">${r.so}</td><td>${r.type}</td><td>${t?.full_name||t?.email_address||('Tech #'+r.tech)}</td><td>${r.mins}</td><td>${r.sla}</td>`;
+        tb.appendChild(tr);
+      });
+      if(!rows.length){ tb.innerHTML = `<tr><td colspan="5" class="muted-ctr">No SLA breaches in range 🎉</td></tr>`; }
+    }
+
+    // ---------------------- Export -------------------------------------------
+    function csvEscape(s){ return '"'+ String(s??'').replaceAll('"','""') +'"'; }
+    function exportCSV(rows){
+      const cols=['id','so_id','technician_id','intervention_type_id','scheduled_at','actual_start','completed_at','priority','status','return_visit_required'];
+      const head=cols.join(','); const body=rows.map(r=> cols.map(c=>csvEscape(r[c])).join(',')).join('\n');
+      const csv=head+'\n'+body; const a=document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`report_${Date.now()}.csv`; a.click();
+    }
+
+    // ---------------------- Main loader --------------------------------------
+    async function refreshAll(){
+      const from = $('#from').value; const to = $('#to').value; const st = $('#status').value; const tech = $('#tech').value; const it = $('#itype').value;
+      const [techMap, itypeMap] = await Promise.all([loadTechs(), loadItypes()]);
+      const rows = await fetchSOs(from,to,st,tech,it);
+      // KPIs
+      const k = computeKpis(rows, itypeMap);
+      $('#kpiDone').textContent = k.done; $('#kpiDoneNote').textContent = `${rows.length} total in range`;
+      $('#kpiCycle').textContent = hmn(k.avgCycle);
+      $('#kpiSLA').textContent = k.slaPct + '%'; $('#kpiSLANote').textContent = k.slaNote;
+      $('#kpiFTF').textContent = k.ftfPct + '%'; $('#kpiFTFNote').textContent = k.ftfNote;
+
+      // Charts
+      const g = groupByDayCompleted(rows); renderLine('chJobsPerDay', g.labels, g.data, 'Completed');
+      const sc = statusCounts(rows); renderDoughnut('chStatus', sc.labels, sc.data);
+      const bt = byTechCompleted(rows, techMap); renderBar('chByTech', bt.labels, bt.data, 'Completed');
+
+      // Recent
+      renderRecent(rows, techMap, itypeMap);
+
+      // Inventory usage
+      const soIds = rows.map(r=>r.id);
+      const inv = await fetchInventoryUsage(soIds);
+      $('#kpiInv').textContent = inv.used; $('#kpiInvNote').textContent = `${inv.byCat.size} categories`;
+      const invLabels = [...inv.byCat.keys()], invData = invLabels.map(k=> inv.byCat.get(k));
+      renderBar('chInv', invLabels, invData, 'Qty used');
+
+      // SLA breaches table
+      renderBreaches(k.breaches, techMap);
+
+      // range label
+      $('#rangeLabel').textContent = from && to ? `${from} → ${to}` : 'All time';
+
+      // bind export
+      document.getElementById('btnExport').onclick = ()=> exportCSV(rows);
+    }
+
+    // ---------------------- Settings & bindings -------------------------------
+    document.getElementById('btnSettings').addEventListener('click', ()=>{
+      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
+      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
+      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
+      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
+      location.reload();
+    });
+
+    document.getElementById('btnRefresh').addEventListener('click', refreshAll);
+    document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
+
+    // ---------------------- Init ---------------------------------------------
+    (async function init(){
+      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
+      // Default last 7 days
+      const d1=new Date(); const d0=new Date(Date.now()-6*86400000);
+      document.getElementById('from').value = toLocalDateInputValue(d0);
+      document.getElementById('to').value   = toLocalDateInputValue(d1);
+      await refreshAll();
+    })();
   </script>
 </body>
 </html>
