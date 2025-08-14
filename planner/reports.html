@@ -1,25 +1,137 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Naveo FSM — Reports & Analytics</title>
-  <!-- Global stylesheet -->
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/naveo.css"/>
+
+  <!-- Global (optional) -->
+  <!-- If you already have assets/naveo.css, you can keep it. The styles below will ensure modern light look either way. -->
+  <!-- <link rel="stylesheet" href="assets/naveo.css"/> -->
+
   <!-- Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
+    /* === Modern Light Theme (same system used on other screens) ================= */
+    :root{
+      --bg:#f7f8fb;
+      --text:#0f172a;
+      --text-muted:#64748b;
+      --surface:#ffffff;
+      --surface-2:#f2f4f8;
+      --border:#e5e7eb;
+      --radius-sm:8px;
+      --radius-md:12px;
+      --radius-lg:16px;
+      --shadow-sm:0 1px 2px rgba(16,24,40,.06);
+      --shadow-md:0 2px 10px rgba(16,24,40,.08);
+      --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+      --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+      --primary:#2563eb; --primary-ink:#0b3aa4;
+      --danger:#ef4444; --success:#16a34a; --warning:#f59e0b; --info:#0ea5e9;
+      --focus: 0 0 0 3px rgba(37,99,235,.25);
+      --text-sm: 12.5px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; font-family:Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background:var(--bg); color:var(--text);
+    }
+    a{ color:inherit; text-decoration:none; }
+    .hide{ display:none !important; }
+
+    /* Layout */
+    .topbar{
+      position:sticky; top:0; z-index:40;
+      display:flex; align-items:center; gap:10px;
+      padding:12px 18px; border-bottom:1px solid var(--border);
+      background:var(--surface); box-shadow:var(--shadow-sm);
+    }
+    .title{ font-weight:700; }
+    .muted{ color:var(--text-muted); }
+    .sidebar{
+      position:fixed; top:54px; left:0; bottom:0; width:240px;
+      padding:16px; border-right:1px solid var(--border); background:var(--surface);
+    }
+    .sidebar .brand{ font-weight:700; margin:6px 0 12px; }
+    .sidebar a{ display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted); }
+    .sidebar a:hover{ background:var(--surface-2); color:var(--text); }
+    .sidebar a.active{ background:rgba(37,99,235,.08); color:var(--primary); font-weight:600; }
+    .main{ margin-left:240px; padding:24px; }
+    @media (max-width: 900px){
+      .sidebar{ width:72px; padding:12px; }
+      .sidebar a{ text-align:center; }
+      .main{ margin-left:72px; }
+    }
+
+    /* Cards */
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card + .card{ margin-top:var(--space-6); }
+    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid var(--border); }
+    .card-body{ padding:18px; }
+
+    /* Inputs */
+    .input, .select, .textarea{
+      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
+      background:#fff; color:var(--text); outline:none; transition: box-shadow .15s, border-color .15s;
+    }
+    .textarea{ min-height:98px; resize:vertical; }
+    .input:focus, .select:focus, .textarea:focus{ border-color:var(--primary); box-shadow:var(--focus); }
+    .label{ display:block; font-weight:600; margin-bottom:6px; }
+    .help{ color:var(--text-muted); font-size:var(--text-sm); margin-top:6px; }
+
+    /* Buttons */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer;
+      transition: transform .04s ease, box-shadow .15s, border-color .15s, background .15s;
+    }
+    .btn:hover{ background:var(--surface-2); }
+    .btn:active{ transform:translateY(0.5px); }
+    .btn-sm{ padding:6px 10px; border-radius:10px; font-size:var(--text-sm); }
+    .btn-primary{ background:var(--primary); border-color:var(--primary); color:#fff; }
+    .btn-primary:hover{ background:#1e54c6; border-color:#1e54c6; }
+    .btn-outline{ background:#fff; color:var(--primary); border-color:rgba(37,99,235,.35); }
+
+    /* Utilities */
     .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
     .grow { flex:1 1 auto; }
+    .mini { font-size: var(--text-sm); color: var(--text-muted); }
+
+    /* Tables */
+    .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; }
+    table.table{ width:100%; border-collapse:separate; border-spacing:0; }
+    .table thead th{ text-align:left; padding:12px; border-bottom:1px solid var(--border); font-weight:600; color:var(--text-muted); background:var(--surface-2); }
+    .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .table tbody tr:hover{ background:#fafafa; }
+
+    /* Charts */
     .grid-2-1 { display:grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); }
     @media (max-width: 1200px){ .grid-2-1 { grid-template-columns: 1fr; } }
-    .mini { font-size: var(--text-sm); color: var(--text-muted); }
     .chart-card canvas{ width:100%; height:320px; }
     .muted-ctr { color: var(--text-muted); text-align:center; padding: 16px 0; }
+
+    /* KPIs */
+    .kpi{ display:grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-6); }
+    @media (max-width: 1100px){ .kpi{ grid-template-columns: repeat(2, 1fr); } }
+    .kpi-item{ background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-md); padding:14px 16px; }
+    .kpi-label{ font-weight:600; color:var(--text-muted); }
+    .kpi-value{ font-size:24px; font-weight:700; margin-top:6px; }
     .kpi .kpi-item small{ color: var(--text-muted); display:block; margin-top:4px; }
+
+    /* Badges (priority) */
+    .badge{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; }
+    .badge.priority-low{ background:#ecfeff; border-color:#a5f3fc; color:#155e75; }
+    .badge.priority-normal{ background:#eef2ff; border-color:#c7d2fe; color:#3730a3; }
+    .badge.priority-high{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+    .badge.priority-urgent{ background:#fee2e2; border-color:#fecaca; color:#991b1b; }
   </style>
 </head>
 <body>
@@ -27,7 +139,7 @@
     <div class="title">Naveo FSM</div>
     <span class="muted">Reports & Analytics</span>
     <div class="grow"></div>
-    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
+    <!-- Settings button removed: config is embedded below -->
   </div>
 
   <aside class="sidebar">
@@ -67,7 +179,7 @@
           <div class="kpi-item"><div class="kpi-label">Completed</div><div class="kpi-value" id="kpiDone">0</div><small id="kpiDoneNote"></small></div>
           <div class="kpi-item"><div class="kpi-label">Avg cycle time</div><div class="kpi-value" id="kpiCycle">0h 00m</div><small class="mini">actual_start→completed (fallback: scheduled→completed)</small></div>
           <div class="kpi-item"><div class="kpi-label">SLA Hit</div><div class="kpi-value" id="kpiSLA">0%</div><small id="kpiSLANote"></small></div>
-          <div class="kpi-item"><div class="kpi-label">First‑Time Fix</div><div class="kpi-value" id="kpiFTF">0%</div><small id="kpiFTFNote"></small></div>
+          <div class="kpi-item"><div class="kpi-label">First-Time Fix</div><div class="kpi-value" id="kpiFTF">0%</div><small id="kpiFTFNote"></small></div>
           <div class="kpi-item"><div class="kpi-label">Inventory used</div><div class="kpi-value" id="kpiInv">0</div><small id="kpiInvNote"></small></div>
         </div>
       </div>
@@ -90,7 +202,7 @@
       </div>
       <div class="grid" style="gap: var(--space-6)">
         <div class="card chart-card">
-          <div class="card-header"><h3>Inventory Usage by Category</h3><div class="mini">from Service‑Order Inventory</div></div>
+          <div class="card-header"><h3>Inventory Usage by Category</h3><div class="mini">from Service-Order Inventory</div></div>
           <div class="card-body"><canvas id="chInv"></canvas></div>
         </div>
         <div class="card">
@@ -121,9 +233,11 @@
   </main>
 
   <script>
-    // ---------------------- Config -------------------------------------------
-    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    // ---------------------- Embedded NocoDB config ----------------------------
+    // Replace with your actual base + PAT (PAT is visible client-side).
+    const NC_BASE = 'https://app.nocodb.com/api/v2';  // ← your NocoDB base
+    const NC_PAT  = 'REPLACE_WITH_PAT';               // ← your PAT
+
     const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
     const TBL_TECH = 'mzw1focsec0tekg';   // technicians
     const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
@@ -189,7 +303,13 @@
       }
       const byCat = new Map();
       let used = 0;
-      allSOI.forEach(x=>{ const inv = invMap.get(x.inventory_item_id) || {}; const cat = inv.category || 'unknown'; const qty=Number(x.qty||1); used += qty; byCat.set(cat, (byCat.get(cat)||0) + qty); });
+      allSOI.forEach(x=>{
+        const inv = invMap.get(x.inventory_item_id) || {};
+        const cat = inv.category || 'unknown';
+        const qty=Number(x.qty||1);
+        used += qty;
+        byCat.set(cat, (byCat.get(cat)||0) + qty);
+      });
       return { used, byCat };
     }
 
@@ -199,7 +319,11 @@
 
     function groupByDayCompleted(rows){
       const m = new Map();
-      rows.filter(x=>x.completed_at).forEach(x=>{ const d = new Date(x.completed_at); const k = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; m.set(k,(m.get(k)||0)+1); });
+      rows.filter(x=>x.completed_at).forEach(x=>{
+        const d = new Date(x.completed_at);
+        const k = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        m.set(k,(m.get(k)||0)+1);
+      });
       const keys = [...m.keys()].sort(); return { labels: keys, data: keys.map(k=>m.get(k)) };
     }
 
@@ -210,7 +334,12 @@
     }
 
     function byTechCompleted(rows, techMap){
-      const m=new Map(); rows.filter(x=>x.status==='completed').forEach(x=>{ const t=techMap.get(x.technician_id); const name = t?.full_name || t?.email_address || ('Tech #'+x.technician_id); m.set(name,(m.get(name)||0)+1); });
+      const m=new Map();
+      rows.filter(x=>x.status==='completed').forEach(x=>{
+        const t=techMap.get(x.technician_id);
+        const name = t?.full_name || t?.email_address || ('Tech #'+x.technician_id);
+        m.set(name,(m.get(name)||0)+1);
+      });
       const labels=[...m.keys()], data=labels.map(k=>m.get(k));
       return { labels, data };
     }
@@ -218,36 +347,90 @@
     function computeKpis(rows, itypeMap){
       const completed = rows.filter(r=>r.status==='completed' && r.completed_at);
       const done = completed.length;
+
       // avg cycle time
       let totalMin=0, have=0; const breaches=[];
       completed.forEach(r=>{
-        const end=r.completed_at; const start=r.actual_start || r.scheduled_at; const mins = minutesBetween(start,end); if(mins!=null){ totalMin+=mins; have++; }
-        const it = itypeMap.get(r.intervention_type_id); const sla=Number(it?.sla_minutes||0) || null; if(mins!=null && sla!=null && sla>0 && mins>sla){ breaches.push({ so:r.so_id||r.id, tech:r.technician_id, type: it?.intervention_name || r.intervention_type_id, mins, sla }); }
+        const end=r.completed_at; const start=r.actual_start || r.scheduled_at;
+        const mins = minutesBetween(start,end);
+        if(mins!=null){ totalMin+=mins; have++; }
+        const it = itypeMap.get(r.intervention_type_id);
+        const sla=Number(it?.sla_minutes||0) || null;
+        if(mins!=null && sla!=null && sla>0 && mins>sla){
+          breaches.push({ so:r.so_id||r.id, tech:r.technician_id, type: it?.intervention_name || r.intervention_type_id, mins, sla });
+        }
       });
       const avgCycle = have? Math.round(totalMin/have):0;
+
       // SLA hit
-      let withSLA=0, slaOnTime=0; completed.forEach(r=>{ const it=itypeMap.get(r.intervention_type_id); const sla=Number(it?.sla_minutes||0) || null; if(!sla) return; const mins = minutesBetween(r.actual_start||r.scheduled_at, r.completed_at); if(mins==null) return; withSLA++; if(mins<=sla) slaOnTime++; });
+      let withSLA=0, slaOnTime=0;
+      completed.forEach(r=>{
+        const it=itypeMap.get(r.intervention_type_id);
+        const sla=Number(it?.sla_minutes||0) || null; if(!sla) return;
+        const mins = minutesBetween(r.actual_start||r.scheduled_at, r.completed_at);
+        if(mins==null) return; withSLA++; if(mins<=sla) slaOnTime++;
+      });
       const slaPct = withSLA? Math.round(100*slaOnTime/withSLA):0;
+
       // FTF
-      const ftfNum = completed.filter(r=> r.return_visit_required===false).length; const ftfPct = done? Math.round(100*ftfNum/done):0;
-      return { done, avgCycle, slaPct, slaNote: `${slaOnTime}/${withSLA} within SLA`, ftfPct, ftfNote: `${ftfNum}/${done} first‑time fixes`, breaches: breaches.sort((a,b)=>b.mins-a.mins).slice(0,10) };
+      const ftfNum = completed.filter(r=> r.return_visit_required===false).length;
+      const ftfPct = done? Math.round(100*ftfNum/done):0;
+
+      return {
+        done, avgCycle, slaPct,
+        slaNote: `${slaOnTime}/${withSLA} within SLA`,
+        ftfPct, ftfNote: `${ftfNum}/${done} first-time fixes`,
+        breaches: breaches.sort((a,b)=>b.mins-a.mins).slice(0,10)
+      };
     }
 
     // ---------------------- Charts -------------------------------------------
-    let chA, chB, chC, chD;
-    function renderBar(el, labels, data, label){ if(window[el]) window[el].destroy?.(); const ctx=document.getElementById(el).getContext('2d'); window[el]= new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ label, data }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, precision:0 } } } }); }
-    function renderLine(el, labels, data, label){ if(window[el]) window[el].destroy?.(); const ctx=document.getElementById(el).getContext('2d'); window[el]= new Chart(ctx,{ type:'line', data:{ labels, datasets:[{ label, data, fill:false }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, precision:0 } } } }); }
-    function renderDoughnut(el, labels, data){ if(window[el]) window[el].destroy?.(); const ctx=document.getElementById(el).getContext('2d'); window[el]= new Chart(ctx,{ type:'doughnut', data:{ labels, datasets:[{ data }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } } }); }
+    function renderBar(el, labels, data, label){
+      if(window[el]) window[el].destroy?.();
+      const ctx=document.getElementById(el).getContext('2d');
+      window[el]= new Chart(ctx,{
+        type:'bar',
+        data:{ labels, datasets:[{ label, data }] },
+        options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+      });
+    }
+    function renderLine(el, labels, data, label){
+      if(window[el]) window[el].destroy?.();
+      const ctx=document.getElementById(el).getContext('2d');
+      window[el]= new Chart(ctx,{
+        type:'line',
+        data:{ labels, datasets:[{ label, data, fill:false }] },
+        options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+      });
+    }
+    function renderDoughnut(el, labels, data){
+      if(window[el]) window[el].destroy?.();
+      const ctx=document.getElementById(el).getContext('2d');
+      window[el]= new Chart(ctx,{
+        type:'doughnut',
+        data:{ labels, datasets:[{ data }] },
+        options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } }
+      });
+    }
 
-    // ---------------------- Recent table & breaches ---------------------------
+    // ---------------------- Recent & breaches tables --------------------------
     function renderRecent(rows, techMap, itypeMap){
       const tb = document.querySelector('#tblRecent tbody'); tb.innerHTML='';
-      rows.filter(r=>r.status==='completed' && r.completed_at).sort((a,b)=> new Date(b.completed_at)-new Date(a.completed_at)).slice(0,20).forEach(r=>{
-        const t = techMap.get(r.technician_id); const it = itypeMap.get(r.intervention_type_id);
-        const tr=document.createElement('tr');
-        tr.innerHTML = `<td>${new Date(r.completed_at).toLocaleString()}</td><td class="mono">${r.so_id||r.id}</td><td>${t?.full_name||t?.email_address||('Tech #'+r.technician_id)}</td><td>${it?.intervention_name||r.intervention_type_id||''}</td><td><span class="badge priority-${(r.priority||'normal').toLowerCase()}">${r.priority||'normal'}</span></td><td>${r.notes||''}</td>`;
-        tb.appendChild(tr);
-      });
+      rows
+        .filter(r=>r.status==='completed' && r.completed_at)
+        .sort((a,b)=> new Date(b.completed_at)-new Date(a.completed_at))
+        .slice(0,20)
+        .forEach(r=>{
+          const t = techMap.get(r.technician_id); const it = itypeMap.get(r.intervention_type_id);
+          const tr=document.createElement('tr');
+          tr.innerHTML = `<td>${new Date(r.completed_at).toLocaleString()}</td>
+                          <td class="mono">${r.so_id||r.id}</td>
+                          <td>${t?.full_name||t?.email_address||('Tech #'+r.technician_id)}</td>
+                          <td>${it?.intervention_name||r.intervention_type_id||''}</td>
+                          <td><span class="badge priority-${(r.priority||'normal').toLowerCase()}">${r.priority||'normal'}</span></td>
+                          <td>${r.notes||''}</td>`;
+          tb.appendChild(tr);
+        });
     }
     function renderBreaches(rows, techMap){
       const tb = document.querySelector('#tblBreaches tbody'); tb.innerHTML='';
@@ -257,22 +440,28 @@
         tr.innerHTML = `<td class="mono">${r.so}</td><td>${r.type}</td><td>${t?.full_name||t?.email_address||('Tech #'+r.tech)}</td><td>${r.mins}</td><td>${r.sla}</td>`;
         tb.appendChild(tr);
       });
-      if(!rows.length){ tb.innerHTML = `<tr><td colspan="5" class="muted-ctr">No SLA breaches in range 🎉</td></tr>`; }
+      if(!rows.length){
+        tb.innerHTML = `<tr><td colspan="5" class="muted-ctr">No SLA breaches in range 🎉</td></tr>`;
+      }
     }
 
     // ---------------------- Export -------------------------------------------
     function csvEscape(s){ return '"'+ String(s??'').replaceAll('"','""') +'"'; }
     function exportCSV(rows){
       const cols=['id','so_id','technician_id','intervention_type_id','scheduled_at','actual_start','completed_at','priority','status','return_visit_required'];
-      const head=cols.join(','); const body=rows.map(r=> cols.map(c=>csvEscape(r[c])).join(',')).join('\n');
-      const csv=head+'\n'+body; const a=document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`report_${Date.now()}.csv`; a.click();
+      const head=cols.join(',');
+      const body=rows.map(r=> cols.map(c=>csvEscape(r[c])).join(',')).join('\n');
+      const csv=head+'\n'+body;
+      const a=document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`report_${Date.now()}.csv`; a.click();
     }
 
     // ---------------------- Main loader --------------------------------------
     async function refreshAll(){
       const from = $('#from').value; const to = $('#to').value; const st = $('#status').value; const tech = $('#tech').value; const it = $('#itype').value;
+
       const [techMap, itypeMap] = await Promise.all([loadTechs(), loadItypes()]);
       const rows = await fetchSOs(from,to,st,tech,it);
+
       // KPIs
       const k = computeKpis(rows, itypeMap);
       $('#kpiDone').textContent = k.done; $('#kpiDoneNote').textContent = `${rows.length} total in range`;
@@ -301,25 +490,19 @@
       // range label
       $('#rangeLabel').textContent = from && to ? `${from} → ${to}` : 'All time';
 
-      // bind export
+      // export click
       document.getElementById('btnExport').onclick = ()=> exportCSV(rows);
     }
 
-    // ---------------------- Settings & bindings -------------------------------
-    document.getElementById('btnSettings').addEventListener('click', ()=>{
-      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
-      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
-      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
-      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
-      location.reload();
-    });
-
+    // ---------------------- Bindings -----------------------------------------
     document.getElementById('btnRefresh').addEventListener('click', refreshAll);
     document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
 
     // ---------------------- Init ---------------------------------------------
     (async function init(){
-      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
+      if(!NC_PAT || NC_PAT === 'REPLACE_WITH_PAT'){
+        alert('NocoDB PAT is not set. Open the HTML and replace REPLACE_WITH_PAT with your token.');
+      }
       // Default last 7 days
       const d1=new Date(); const d0=new Date(Date.now()-6*86400000);
       document.getElementById('from').value = toLocalDateInputValue(d0);
