@@ -1,26 +1,192 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Naveo FSM — Inventory</title>
-  <!-- Global stylesheet -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/naveo.css"/>
+
   <style>
-    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .grow { flex:1 1 auto; }
-    .mini { font-size: var(--text-sm); color: var(--text-muted); }
-    .slideover { position: fixed; inset:0; display:none; }
-    .slideover.show { display:block; }
-    .slideover .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
-    .slideover .panel{ position:absolute; top:0; right:0; height:100%; width:min(860px, 96vw); background:var(--surface); border-left:1px solid var(--border); box-shadow:var(--shadow-lg); display:flex; flex-direction:column; }
-    .slideover header, .slideover footer{ padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    :root{
+      --bg:#f7f8fb;
+      --text:#0f172a;
+      --text-muted:#64748b;
+      --surface:#ffffff;
+      --surface-2:#f2f4f8;
+      --border:#e5e7eb;
+      --radius-sm:8px;
+      --radius-md:12px;
+      --radius-lg:16px;
+      --shadow-sm:0 1px 2px rgba(16,24,40,.06);
+      --shadow-md:0 2px 10px rgba(16,24,40,.08);
+      --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+      --space-2:8px;
+      --space-3:12px;
+      --space-4:16px;
+      --space-5:20px;
+      --space-6:24px;
+      --primary:#2563eb;
+      --primary-ink:#0b3aa4;
+      --danger:#ef4444;
+      --success:#16a34a;
+      --warning:#f59e0b;
+      --info:#0ea5e9;
+      --focus: 0 0 0 3px rgba(37,99,235,.25);
+      --text-sm: 12.5px;
+    }
+
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; font-family:Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background:var(--bg); color:var(--text);
+    }
+    a{ color:inherit; text-decoration:none; }
+    .hide{ display:none !important; }
+
+    /* Layout */
+    .topbar{
+      position:sticky; top:0; z-index:40;
+      display:flex; align-items:center; gap:10px;
+      padding:12px 18px; border-bottom:1px solid var(--border);
+      background:var(--surface); box-shadow:var(--shadow-sm);
+    }
+    .title{ font-weight:700; }
+    .muted{ color:var(--text-muted); }
+    .sidebar{
+      position:fixed; top:54px; left:0; bottom:0; width:240px;
+      padding:16px; border-right:1px solid var(--border); background:var(--surface);
+    }
+    .sidebar .brand{ font-weight:700; margin:6px 0 12px; }
+    .sidebar a{
+      display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted);
+    }
+    .sidebar a:hover{ background:var(--surface-2); color:var(--text); }
+    .sidebar a.active{ background:rgba(37,99,235,.08); color:var(--primary); font-weight:600; }
+    .main{ margin-left:240px; padding:24px; }
+
+    /* Cards */
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card + .card{ margin-top:var(--space-6); }
+    .card-header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:16px 18px; border-bottom:1px solid var(--border);
+    }
+    .card-body{ padding:18px; }
+
+    /* Inputs */
+    .input, .select, .textarea{
+      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
+      background:#fff; color:var(--text); outline:none; transition: box-shadow .15s, border-color .15s;
+    }
+    .textarea{ min-height:98px; resize:vertical; }
+    .input:focus, .select:focus, .textarea:focus{ border-color:var(--primary); box-shadow:var(--focus); }
+    .label{ display:block; font-weight:600; margin-bottom:6px; }
+    .help{ color:var(--text-muted); font-size:var(--text-sm); margin-top:6px; }
+
+    /* Form grid */
+    .form-row{ display:flex; flex-wrap:wrap; gap:12px; }
+    .col-12{ flex:0 0 100%; }
+    .col-6{ flex:0 0 calc(50% - 6px); }
+    .col-4{ flex:0 0 calc(33.333% - 8px); }
+    .col-3{ flex:0 0 calc(25% - 9px); }
+    @media (max-width: 900px){
+      .col-6,.col-4,.col-3{ flex-basis:100%; }
+      .sidebar{ width:72px; padding:12px; }
+      .sidebar a{ text-align:center; }
+      .main{ margin-left:72px; }
+    }
+
+    /* Buttons */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer;
+      transition: transform .04s ease, box-shadow .15s, border-color .15s, background .15s;
+    }
+    .btn:hover{ background:var(--surface-2); }
+    .btn:active{ transform:translateY(0.5px); }
+    .btn-sm{ padding:6px 10px; border-radius:10px; font-size:var(--text-sm); }
+    .btn-primary{ background:var(--primary); border-color:var(--primary); color:#fff; }
+    .btn-primary:hover{ background:#1e54c6; border-color:#1e54c6; }
+    .btn-danger{ background:var(--danger); border-color:var(--danger); color:#fff; }
+    .btn-outline{ background:#fff; color:var(--primary); border-color:rgba(37,99,235,.35); }
+    .btn-outline:hover{ background:rgba(37,99,235,.06); }
+
+    /* Utilities */
+    .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow{ flex:1 1 auto; }
+    .mini{ font-size:var(--text-sm); color:var(--text-muted); }
+    .mt-2{ margin-top:8px; } .mt-3{ margin-top:12px; } .mt-4{ margin-top:16px; }
+    .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
+    .gap-2{ gap:8px; } .gap-4{ gap:16px; }
+    .grid{ display:grid; } .grid-2{ grid-template-columns: 1fr 1fr; }
+    .text-right{ text-align:right; }
+    .fw-600{ font-weight:600; }
+
+    /* Table */
+    .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; }
+    table.table{ width:100%; border-collapse:separate; border-spacing:0; min-width:880px; }
+    .table thead th{
+      text-align:left; padding:12px; border-bottom:1px solid var(--border);
+      font-weight:600; color:var(--text-muted); background:var(--surface-2);
+    }
+    .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .table tbody tr:hover{ background:#fafafa; }
+    .actions{ display:inline-flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; }
+
+    /* Badges */
+    .badge{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; }
+    .badge.success{ background: #ecfdf5; border-color:#bbf7d0; color:#166534; }
+    .badge.info{ background: #e0f2fe; border-color:#bae6fd; color:#075985; }
+    .badge.warning{ background: #fff7ed; border-color:#fed7aa; color:#9a3412; }
+    .badge.danger{ background: #fee2e2; border-color:#fecaca; color:#991b1b; }
+
+    /* Pagination */
+    .pagination{ display:flex; gap:8px; }
+    .pagination .page{
+      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
+      border:1px solid var(--border); border-radius:10px; background:#fff;
+    }
+    .pagination .page:hover{ background:var(--surface-2); }
+    .pagination .page.active{ background:var(--primary); color:#fff; border-color:var(--primary); }
+
+    /* Modal */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.4); display:none; align-items:flex-end; justify-content:center; padding:24px; }
+    .modal-backdrop.show{ display:flex; }
+    .modal{ width:min(880px, 96vw); max-height:90vh; overflow:auto; background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-lg); }
+    .modal header, .modal footer{ padding:16px 18px; border-bottom:1px solid var(--border); }
+    .modal footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
+    .modal .content{ padding:18px; }
+
+    /* Slide-over (detail panel) */
+    .slideover{ position:fixed; inset:0; display:none; }
+    .slideover.show{ display:block; }
+    .slideover .backdrop{ position:absolute; inset:0; background:rgba(15,23,42,.4); }
+    .slideover .panel{
+      position:absolute; top:0; right:0; height:100%; width:min(860px, 96vw);
+      background:var(--surface); border-left:1px solid var(--border); box-shadow:var(--shadow-lg);
+      display:flex; flex-direction:column;
+    }
+    .slideover header, .slideover footer{ padding:16px 18px; border-bottom:1px solid var(--border); }
     .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
-    .slideover .content{ padding:var(--space-5); overflow:auto; }
-    .tabs-wrap { margin-top: var(--space-4); }
+    .slideover .content{ padding:18px; overflow:auto; }
+
+    /* Tabs */
+    .tabs{ display:flex; gap:6px; border-bottom:1px solid var(--border); }
+    .tab{ padding:8px 12px; border:1px solid transparent; border-radius:10px 10px 0 0; cursor:pointer; color:var(--text-muted); }
+    .tab.active{ color:var(--text); background:#fff; border-color:var(--border); border-bottom-color:#fff; }
+
+    /* Dropdown */
+    .dropdown{ position:relative; }
+    .dropdown-menu{
+      position:absolute; right:0; top:calc(100% + 6px); min-width:180px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-md);
+      display:none; overflow:hidden;
+    }
+    .dropdown.open .dropdown-menu{ display:block; }
+    .dropdown-menu a{ display:block; padding:8px 12px; color:var(--text); }
+    .dropdown-menu a:hover{ background:var(--surface-2); }
   </style>
 </head>
 <body>
@@ -28,7 +194,7 @@
     <div class="title">Naveo FSM</div>
     <span class="muted">Inventory</span>
     <div class="grow"></div>
-    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
+    <!-- Settings removed since API + PAT are embedded -->
   </div>
 
   <aside class="sidebar">
@@ -221,9 +387,11 @@
   </div>
 
   <script>
-    // ---------------------- Config -------------------------------------------
-    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    // ---------------------- Embedded Config -----------------------------------
+    // If you prefer, hardcode your base below. PAT is visible client-side.
+    const NC_BASE = 'https://app.nocodb.com/api/v2';      // ← your NocoDB base
+    const NC_PAT  = 'REPLACE_WITH_PAT';                   // ← your PAT
+
     const TBL_INV = 'mu70y5tmw0pqflp';    // inventory
     const TBL_ASN = 'mt71bvrpbemeziu';    // inventory_assignment
     const TBL_ALT = 'mol0oedvhajviux';    // inventory_alerts
@@ -242,7 +410,11 @@
     function fmtDT(v){ if(!v) return ''; const d = new Date(v); return d.toLocaleString(); }
     function nowLocalDT(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
     function buildWhere(){
-      const w=[]; if(state.q){ const q=encodeURIComponent('%'+state.q+'%'); w.push(`(item_name,like,${q})~or(serial_number,like,${q})~or(sim_number,like,${q})~or(make,like,${q})~or(model,like,${q})`); }
+      const w=[];
+      if(state.q){
+        const q=encodeURIComponent('%'+state.q+'%');
+        w.push(`(item_name,like,${q})~or(serial_number,like,${q})~or(sim_number,like,${q})~or(make,like,${q})~or(model,like,${q})`);
+      }
       if(state.cat) w.push(`(category,eq,${state.cat})`);
       if(state.status) w.push(`(status,eq,${state.status})`);
       return w.join('~and');
@@ -256,7 +428,8 @@
     }
 
     async function fetchInv(){
-      const offset=(state.page-1)*state.limit; let url = `${NC_BASE}/tables/${TBL_INV}/records?limit=${state.limit}&offset=${offset}&orderBy=updated_at&order=desc`;
+      const offset=(state.page-1)*state.limit;
+      let url = `${NC_BASE}/tables/${TBL_INV}/records?limit=${state.limit}&offset=${offset}&orderBy=updated_at&order=desc`;
       const where = buildWhere(); if(where) url += `&where=${where}`;
       const rows = await fetch(url,{headers:H()}).then(r=>r.json());
       // count
@@ -388,7 +561,6 @@
         const text = reader.result; const lines = text.split(/\r?\n/).filter(Boolean);
         if(!lines.length) return alert('Empty CSV');
         const headers = lines[0].split(',').map(h=>h.trim());
-        // expected minimal headers: item_name,status,category,make,model,serial_number,sim_number
         const idx = (k)=> headers.findIndex(h=> h.replace(/\"/g,'').toLowerCase()===k);
         let ok=0, fail=0;
         for(let i=1;i<lines.length;i++){
@@ -506,14 +678,6 @@
     function closeSlide(id){ document.getElementById(id).classList.remove('show'); }
 
     // ---------------------- Bindings -----------------------------------------
-    $('#btnSettings').addEventListener('click', ()=>{
-      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
-      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
-      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
-      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
-      location.reload();
-    });
-
     $('#btnAdd').addEventListener('click', ()=> openEdit(null));
     $('#btnSave').addEventListener('click', saveEdit);
     document.getElementById('editModal').addEventListener('click', e=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeModal('editModal'); });
@@ -563,7 +727,9 @@
 
     // ---------------------- Init ---------------------------------------------
     (async function init(){
-      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
+      if(!NC_PAT || NC_PAT === 'REPLACE_WITH_PAT'){
+        alert('NocoDB PAT is not set. Open the HTML and replace REPLACE_WITH_PAT with your token.');
+      }
       await loadTechs();
       await fetchInv();
     })();
