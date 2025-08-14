@@ -1,118 +1,397 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <title>Planner • Jobs</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="../assets/js/noco.js"></script>
-  <script src="../assets/js/auth-lite.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Naveo FSM — Service Orders</title>
+  <!-- Global stylesheet -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="technician-app/assets/naveo.css" />
   <style>
-    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb;--muted:#6b7280}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
-    h1{font-size:18px;margin:0}
-    .wrap{max-width:1180px;margin:16px auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    label{font-weight:600;font-size:.9rem}
-    input,select{padding:10px;border:1px solid var(--border);border-radius:10px}
-    .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn.secondary{background:#e9eef7;color:#111}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    thead th, tbody td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
-    .badge{padding:2px 8px;border-radius:999px;background:#eef5ff}
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow { flex:1 1 auto; }
+    .chip { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border:1px solid var(--border); border-radius:999px; }
+    .slideover { position: fixed; inset:0; display:none; }
+    .slideover.show { display:block; }
+    .slideover .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
+    .slideover .panel{ position:absolute; top:0; right:0; height:100%; width:min(720px, 96vw); background:var(--surface); border-left:1px solid var(--border); box-shadow:var(--shadow-lg); display:flex; flex-direction:column; }
+    .slideover header, .slideover footer{ padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
+    .slideover .content{ padding:var(--space-5); overflow:auto; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
 </head>
 <body>
-  <script>Auth.ensureRole(['planner']);</script>
+  <div class="topbar">
+    <div class="title">Naveo FSM</div>
+    <span class="muted">Service Orders</span>
+    <div class="grow"></div>
+    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
+  </div>
 
-  <header>
-    <h1>Jobs</h1>
-    <nav class="row">
-      <a class="btn secondary" href="./planner.html">Home</a>
-      <a class="btn secondary" href="./assign-job-enhanced.html">Assign SO</a>
-      <a class="btn secondary" href="./assign-inventory-selector.html">Assign Inventory</a>
-    </nav>
-  </header>
-  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
+  <aside class="sidebar">
+    <div class="brand">Naveo</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a class="active" href="planner-jobs.html">Service Orders</a>
+    <a href="assign-job-enhanced.html">Assign Job</a>
+    <a href="planner-inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="realtime-map.html">Live Map</a>
+    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+    <a href="admin-tech-master.html">Admin · Technicians</a>
+  </aside>
 
-  <div class="wrap">
-    <div class="row">
-      <div><label>Status</label><br/>
-        <select id="f_status">
-          <option value="">(any)</option>
-          <option>assigned</option>
-          <option>in_progress</option>
-          <option>completed</option>
-          <option>cancelled</option>
-        </select>
+  <main class="main">
+    <div class="card">
+      <div class="card-header">
+        <h2>Service Orders</h2>
+        <div class="toolbar">
+          <input id="q" class="input" placeholder="Search SO / address / contact…" style="min-width:260px" />
+          <select id="status" class="select">
+            <option value="">All status</option>
+            <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
+          </select>
+          <select id="priority" class="select">
+            <option value="">All priority</option>
+            <option>low</option><option>normal</option><option>high</option><option>urgent</option>
+          </select>
+          <select id="tech" class="select" style="min-width:180px"><option value="">All technicians</option></select>
+          <input id="from" class="input" type="date" />
+          <input id="to" class="input" type="date" />
+          <button class="btn" id="btnClearDates">✖</button>
+          <button class="btn" id="btnRefresh">↻ Refresh</button>
+          <div class="grow"></div>
+          <button class="btn btn-outline" id="btnExport">Export CSV</button>
+          <a class="btn btn-primary" href="assign-job-enhanced.html">＋ New</a>
+        </div>
       </div>
-      <div><label>Technician (id)</label><br/><input id="f_tech" placeholder="e.g. 12"/></div>
-      <div><label>From</label><br/><input id="f_from" type="date"/></div>
-      <div><label>To</label><br/><input id="f_to" type="date"/></div>
-      <div style="align-self:end"><button class="btn" onclick="loadJobs()">Filter</button></div>
-      <div style="align-self:end"><button class="btn secondary" onclick="resetFilters()">Reset</button></div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="table" id="tbl">
+            <thead>
+              <tr>
+                <th style="width:38px"><input type="checkbox" id="chkAll"></th>
+                <th>When</th>
+                <th>SO</th>
+                <th>Technician</th>
+                <th>Type</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Address</th>
+                <th class="text-right" style="width:220px">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between items-center mt-4">
+          <div class="toolbar">
+            <select id="bulkStatus" class="select">
+              <option value="">Bulk: set status…</option>
+              <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
+            </select>
+            <button class="btn" id="btnBulkApply">Apply</button>
+          </div>
+          <div class="pagination" id="pager"></div>
+        </div>
+      </div>
     </div>
+  </main>
 
-    <div style="overflow:auto">
-      <table>
-        <thead>
-          <tr>
-            <th>SO</th><th>Scheduled</th><th>Status</th><th>Technician</th>
-            <th>Address</th><th>Vehicles</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="jobsBody"><tr><td colspan="7">Loading…</td></tr></tbody>
-      </table>
+  <!-- Detail Slide-over -->
+  <div class="slideover" id="detailSO">
+    <div class="backdrop" data-close></div>
+    <div class="panel">
+      <header class="flex justify-between items-center">
+        <div>
+          <div class="mini muted">Service Order</div>
+          <h3><span class="mono" id="d_soid">—</span></h3>
+        </div>
+        <button class="btn" data-close>✖ Close</button>
+      </header>
+      <div class="content">
+        <div class="form">
+          <div class="form-row">
+            <div class="col-6">
+              <label class="label">Technician</label>
+              <select class="select" id="d_technician"></select>
+            </div>
+            <div class="col-6">
+              <label class="label">Status</label>
+              <select class="select" id="d_status">
+                <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="label">Scheduled at</label>
+              <input class="input" type="datetime-local" id="d_scheduled">
+            </div>
+            <div class="col-6">
+              <label class="label">Priority</label>
+              <select class="select" id="d_priority"><option>low</option><option selected>normal</option><option>high</option><option>urgent</option></select>
+            </div>
+            <div class="col-12">
+              <label class="label">Address</label>
+              <textarea class="textarea" id="d_address"></textarea>
+            </div>
+            <div class="col-6"><label class="label">Contact person</label><input class="input" id="d_contact_person"></div>
+            <div class="col-6"><label class="label">Contact phone</label><input class="input" id="d_contact_phone"></div>
+            <div class="col-12"><label class="label">Notes</label><textarea class="textarea" id="d_notes"></textarea></div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <a class="btn" id="d_assign_inv" href="#">Assign inventory…</a>
+          <span class="chip">Vehicles: <span id="d_veh_count">0</span></span>
+          <span class="chip">Checklist lines: <span id="d_ck_count">0</span></span>
+        </div>
+      </div>
+      <footer>
+        <button class="btn" data-close>Cancel</button>
+        <button class="btn btn-primary" id="d_save">Save changes</button>
+      </footer>
     </div>
   </div>
 
   <script>
-    const { T } = NC, api = NCAPI, U = NCUTIL;
+    // ---------------------- Config -------------------------------------------
+    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
+    const TBL_TECH = 'mzw1focsec0tekg';   // technicians
+    const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
+    const TBL_SOV  = 'mvn2do01qdif4yt';   // service_order_vehicles
+    const TBL_SOC  = 'mibtqjiulezywtx';   // service_order_checklist
 
-    function resetFilters(){
-      ['#f_status','#f_tech','#f_from','#f_to'].forEach(s=>{ const el=document.querySelector(s); if(el) el.value=''; });
-      loadJobs();
+    const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
+    const $ = (s, p=document) => p.querySelector(s);
+    const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
+
+    // ---------------------- State --------------------------------------------
+    let state = { page:1, limit:10, total:0, q:'', status:'', priority:'', tech:'', from:'', to:'' };
+    let techList = [];
+
+    // ---------------------- Helpers ------------------------------------------
+    function fmtDT(v){ if(!v) return ''; const d = new Date(v); return d.toLocaleString(); }
+    function ymd(d){ return d.toISOString().slice(0,10); }
+    function buildWhere(){
+      const w=[]; const s=state;
+      if(s.q){ const q=encodeURIComponent('%'+s.q+'%'); w.push(`(so_id,like,${q})~or(address,like,${q})~or(contact_person,like,${q})~or(contact_phone,like,${q})`); }
+      if(s.status) w.push(`(status,eq,${s.status})`);
+      if(s.priority) w.push(`(priority,eq,${s.priority})`);
+      if(s.tech) w.push(`(technician_id,eq,${s.tech})`);
+      const toISO = (d) => new Date(d+'T23:59:59').toISOString().slice(0,19);
+      if(s.from) w.push(`(scheduled_at,ge,${s.from}T00:00:00)`);
+      if(s.to)   w.push(`(scheduled_at,le,${toISO(s.to)})`);
+      return w.join('~and');
     }
 
-    async function loadJobs(){
-      let qs = 'limit=1000&sort=scheduled_at';
-      const st = v('#f_status'); const tech = +v('#f_tech')||null;
-      const from = document.querySelector('#f_from').value;
-      const to   = document.querySelector('#f_to').value;
-
-      if(st) qs += `&filter=(status,eq,${st})`;
-      if(tech) qs += `&filter=(technician_id,eq,${tech})`;
-      if(from && to) qs += `&filter=(scheduled_at,between,${new Date(from).toISOString()},${new Date(to).toISOString()})`;
-
-      const [soRes, vehRes, techRes] = await Promise.all([
-        api.list(T.service_orders, qs),
-        api.list(T.service_order_vehicles, 'limit=10000&select=id,service_order_id'),
-        api.list(T.technicians, 'limit=2000&select=id,full_name')
-      ]);
-
-      const vehCount = {};
-      vehRes.list.forEach(v => vehCount[v.service_order_id] = (vehCount[v.service_order_id]||0)+1);
-      const techMap = Object.fromEntries(techRes.list.map(t=>[t.id, t.full_name||('Tech #'+t.id)]));
-
-      const rows = soRes.list.map(r => `
-        <tr>
-          <td>${r.so_id || ('SO #'+r.id)}</td>
-          <td>${r.scheduled_at ? new Date(r.scheduled_at).toLocaleString() : '—'}</td>
-          <td><span class="badge">${r.status||''}</span></td>
-          <td>${techMap[r.technician_id]||''}</td>
-          <td>${r.address||''}</td>
-          <td>${vehCount[r.id]||0}</td>
-          <td>
-            <a class="btn secondary" href="./assign-inventory-selector.html">Inventory</a>
-            <a class="btn secondary" href="./assign-job-enhanced.html?edit=${r.id}">Edit</a>
-          </td>
-        </tr>
-      `).join('');
-      document.getElementById('jobsBody').innerHTML = rows || '<tr><td colspan="7">No jobs</td></tr>';
+    async function loadTechs(){
+      const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&orderBy=full_name&order=asc`;
+      techList = await fetch(url,{headers:H()}).then(r=>r.json());
+      $('#tech').innerHTML = '<option value="">All technicians</option>' + techList.map(t=>`<option value="${t.id}">${t.full_name||t.email_address||('Tech #'+t.id)}</option>`).join('');
+      $('#d_technician').innerHTML = techList.map(t=>`<option value="${t.id}">${t.full_name||t.email_address||('Tech #'+t.id)}</option>`).join('');
     }
 
-    function v(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
-    document.addEventListener('DOMContentLoaded', loadJobs);
+    // ---------------------- Fetch & render -----------------------------------
+    async function fetchSOs(){
+      const offset=(state.page-1)*state.limit; let url = `${NC_BASE}/tables/${TBL_SO}/records?limit=${state.limit}&offset=${offset}&orderBy=scheduled_at&order=asc`;
+      const where = buildWhere(); if(where) url += `&where=${where}`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      // count
+      let cUrl = `${NC_BASE}/tables/${TBL_SO}/records/count`; if(where) cUrl += `?where=${where}`;
+      const c = await fetch(cUrl,{headers:H()}).then(r=>r.json()); state.total = c?.count || rows.length;
+      renderTable(rows); renderPager();
+    }
+
+    function renderTable(rows){
+      const tbody = $('#tbody'); tbody.innerHTML='';
+      rows.forEach(r=>{
+        const pr = (r.priority||'normal').toLowerCase();
+        const st = (r.status||'assigned').toLowerCase();
+        const tech = r.technicians?.full_name || techList.find(t=>String(t.id)===String(r.technician_id))?.full_name || r.technician_id || '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="rowChk" data-id="${r.id}"></td>
+          <td>${r.scheduled_at? fmtDT(r.scheduled_at):''}</td>
+          <td><div class="mono">${r.so_id || r.id}</div></td>
+          <td>${tech}</td>
+          <td>${r.intervention_types?.intervention_name || r.intervention_type_id || ''}</td>
+          <td><span class="badge priority-${pr}">${pr}</span></td>
+          <td><span class="badge status-${st}">${st}</span></td>
+          <td class="text-sm">${r.address||''}</td>
+          <td class="text-right">
+            <div class="actions">
+              <button class="btn btn-sm" data-view data-id="${r.id}">Details</button>
+              <a class="btn btn-sm" href="assign-inventory-selector.html?so=${encodeURIComponent(r.id)}">Assign inv</a>
+              <div class="dropdown">
+                <button class="btn btn-sm" data-dd>Set status ▾</button>
+                <div class="dropdown-menu">
+                  <a href="#" data-set-status data-id="${r.id}" data-val="assigned">assigned</a>
+                  <a href="#" data-set-status data-id="${r.id}" data-val="in_progress">in_progress</a>
+                  <a href="#" data-set-status data-id="${r.id}" data-val="completed">completed</a>
+                  <a href="#" data-set-status data-id="${r.id}" data-val="cancelled">cancelled</a>
+                </div>
+              </div>
+              <button class="btn btn-danger btn-sm" data-del data-id="${r.id}">Delete</button>
+            </div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPager(){
+      const pager = $('#pager'); pager.innerHTML='';
+      const pages = Math.max(1, Math.ceil(state.total/state.limit));
+      for(let i=1;i<=pages;i++){
+        const a = document.createElement('a'); a.href='#'; a.className='page' + (i===state.page?' active':''); a.textContent = i;
+        a.addEventListener('click', e=>{ e.preventDefault(); state.page=i; fetchSOs(); });
+        pager.appendChild(a);
+      }
+    }
+
+    // ---------------------- Actions ------------------------------------------
+    async function setStatus(id, val){
+      const patch = { records:[{ id, status: val }] };
+      if(val==='completed') patch.records[0].completed_at = new Date().toISOString().slice(0,19);
+      const r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records`,{ method:'PATCH', headers:H(), body: JSON.stringify(patch) });
+      if(!r.ok) return alert('Failed to update status');
+      fetchSOs();
+    }
+
+    async function deleteSO(id){
+      if(!confirm('Delete this service order?')) return;
+      const r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records/${id}`,{ method:'DELETE', headers:H() });
+      if(!r.ok) return alert('Delete failed');
+      fetchSOs();
+    }
+
+    async function bulkApply(){
+      const sel = $$('.rowChk:checked').map(x=>x.getAttribute('data-id'));
+      const val = $('#bulkStatus').value; if(!val || sel.length===0) return;
+      const records = sel.map(id=>({ id, status: val }));
+      const r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records`,{ method:'PATCH', headers:H(), body: JSON.stringify({ records }) });
+      if(!r.ok) return alert('Bulk update failed');
+      fetchSOs(); $('#chkAll').checked=false; $('#bulkStatus').value='';
+    }
+
+    // ---------------------- Export -------------------------------------------
+    function toCSV(rows){
+      const cols = ['id','so_id','technician_id','intervention_type_id','scheduled_at','priority','status','address','contact_person','contact_phone','created_at','updated_at'];
+      const esc = s => ('"'+ String(s??'').replaceAll('"','""') +'"');
+      const head = cols.join(',');
+      const body = rows.map(r=> cols.map(c=>esc(r[c])).join(',')).join('\n');
+      return head+'\n'+body;
+    }
+
+    async function exportCSV(){
+      let url = `${NC_BASE}/tables/${TBL_SO}/records?limit=10000&orderBy=scheduled_at&order=asc`;
+      const where = buildWhere(); if(where) url += `&where=${where}`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      const csv = toCSV(rows);
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = `service_orders_${Date.now()}.csv`; a.click();
+    }
+
+    // ---------------------- Details panel ------------------------------------
+    let d_current = null;
+    function openDetail(){ $('#detailSO').classList.add('show'); }
+    function closeDetail(){ $('#detailSO').classList.remove('show'); }
+
+    async function viewSO(id){
+      const so = await fetch(`${NC_BASE}/tables/${TBL_SO}/records/${id}`,{headers:H()}).then(r=>r.json());
+      d_current = so;
+      $('#d_soid').textContent = so.so_id || so.id;
+      $('#d_status').value = so.status || 'assigned';
+      $('#d_priority').value = (so.priority || 'normal').toLowerCase();
+      $('#d_address').value = so.address || '';
+      $('#d_contact_person').value = so.contact_person || '';
+      $('#d_contact_phone').value = so.contact_phone || '';
+      $('#d_notes').value = so.notes || '';
+      // technician
+      $('#d_technician').value = so.technician_id || '';
+      // schedule
+      const dt = so.scheduled_at ? new Date(so.scheduled_at) : new Date();
+      const p=(n)=>String(n).padStart(2,'0');
+      $('#d_scheduled').value = `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}T${p(dt.getHours())}:${p(dt.getMinutes())}`;
+      // counts
+      const vCnt = await fetch(`${NC_BASE}/tables/${TBL_SOV}/records/count?where=${encodeURIComponent(`(service_order_id,eq,${so.id})`)}`,{headers:H()}).then(r=>r.json());
+      const cCnt = await fetch(`${NC_BASE}/tables/${TBL_SOC}/records/count?where=${encodeURIComponent(`(service_order_id,eq,${so.id})`)}`,{headers:H()}).then(r=>r.json());
+      $('#d_veh_count').textContent = vCnt?.count || 0;
+      $('#d_ck_count').textContent  = cCnt?.count || 0;
+      $('#d_assign_inv').href = `assign-inventory-selector.html?so=${encodeURIComponent(so.id)}`;
+      openDetail();
+    }
+
+    async function saveDetail(){
+      if(!d_current) return;
+      const body = {
+        technician_id: $('#d_technician').value || undefined,
+        status: $('#d_status').value,
+        scheduled_at: $('#d_scheduled').value || undefined,
+        priority: $('#d_priority').value,
+        address: $('#d_address').value.trim() || undefined,
+        contact_person: $('#d_contact_person').value.trim() || undefined,
+        contact_phone: $('#d_contact_phone').value.trim() || undefined,
+        notes: $('#d_notes').value.trim() || undefined,
+      };
+      // PATCH bulk format
+      const r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records`,{ method:'PATCH', headers:H(), body: JSON.stringify({ records:[{ id: d_current.id, ...body }] }) });
+      if(!r.ok) return alert('Save failed');
+      closeDetail(); fetchSOs();
+    }
+
+    // ---------------------- Settings & bindings -------------------------------
+    $('#btnSettings').addEventListener('click', ()=>{
+      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
+      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
+      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
+      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
+      location.reload();
+    });
+
+    // filters
+    $('#q').addEventListener('input', e=>{ state.q=e.target.value.trim(); state.page=1; fetchSOs(); });
+    $('#status').addEventListener('change', e=>{ state.status=e.target.value; state.page=1; fetchSOs(); });
+    $('#priority').addEventListener('change', e=>{ state.priority=e.target.value; state.page=1; fetchSOs(); });
+    $('#tech').addEventListener('change', e=>{ state.tech=e.target.value; state.page=1; fetchSOs(); });
+    $('#from').addEventListener('change', e=>{ state.from=e.target.value; state.page=1; fetchSOs(); });
+    $('#to').addEventListener('change', e=>{ state.to=e.target.value; state.page=1; fetchSOs(); });
+    $('#btnClearDates').addEventListener('click', ()=>{ $('#from').value=''; $('#to').value=''; state.from=''; state.to=''; fetchSOs(); });
+    $('#btnRefresh').addEventListener('click', fetchSOs);
+
+    // table actions
+    $('#tbody').addEventListener('click', (e)=>{
+      const t=e.target;
+      if(t.hasAttribute('data-view')){ viewSO(t.getAttribute('data-id')); }
+      else if(t.hasAttribute('data-del')){ deleteSO(t.getAttribute('data-id')); }
+      else if(t.hasAttribute('data-dd')){ t.parentElement.classList.toggle('open'); }
+      else if(t.hasAttribute('data-set-status')){ e.preventDefault(); setStatus(t.getAttribute('data-id'), t.getAttribute('data-val')); }
+    });
+
+    // select all / bulk
+    $('#chkAll').addEventListener('change', (e)=>{ $$('.rowChk').forEach(c=> c.checked = e.target.checked); });
+    $('#btnBulkApply').addEventListener('click', bulkApply);
+
+    // export
+    $('#btnExport').addEventListener('click', exportCSV);
+
+    // detail panel
+    $('#detailSO').addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')) closeDetail(); });
+    $('#d_save').addEventListener('click', saveDetail);
+
+    // ---------------------- Init ---------------------------------------------
+    (async function init(){
+      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
+      // sensible default date range: today..+7
+      const d0 = new Date(); const d1 = new Date(Date.now()+7*86400000);
+      const p=(n)=>String(n).padStart(2,'0');
+      $('#from').value = `${d0.getFullYear()}-${p(d0.getMonth()+1)}-${p(d0.getDate())}`;
+      $('#to').value   = `${d1.getFullYear()}-${p(d1.getMonth()+1)}-${p(d1.getDate())}`;
+      state.from = $('#from').value; state.to = $('#to').value;
+      await loadTechs();
+      await fetchSOs();
+    })();
   </script>
 </body>
 </html>
