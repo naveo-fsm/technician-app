@@ -1,17 +1,157 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Naveo FSM — Admin · Technicians</title>
-  <!-- Global stylesheet (adjust path if this file is inside a subfolder) -->
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/naveo.css"/>
+
+  <!-- Inline modern LIGHT theme CSS (no external naveo.css) -->
   <style>
-    /* Page-specific micro-helpers */
-    .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+    /* ======= Design tokens (light) ======= */
+    :root{
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --surface-2: #f9fafb;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --accent: #7c3aed;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --border: #e5e7eb;
+
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+      --shadow-sm: 0 1px 2px rgba(15,23,42,.06);
+      --shadow-md: 0 6px 16px rgba(15,23,42,.10);
+      --shadow-lg: 0 16px 40px rgba(15,23,42,.12);
+
+      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
+      --text-sm: .875rem; --text-xs: .78rem;
+    }
+
+    /* ======= Base ======= */
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font: 400 16px/1.5 Poppins, ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    a{ color:var(--primary); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .fw-600{ font-weight:600; }
+    .text-sm{ font-size: var(--text-sm); }
+    .muted{ color: var(--text-muted); }
+    .hide{ display:none !important; }
+    .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
+    .mb-4{ margin-bottom:var(--space-4); }
+    .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
+    .text-right{ text-align:right; }
+
+    /* ======= App layout ======= */
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; gap:12px;
+      padding: 10px 16px; background:#fff;
+      border-bottom:1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .topbar .title{ font-weight:700; letter-spacing:.2px; }
+
+    .sidebar{
+      position:fixed; inset:56px auto 0 0; width:240px; padding:16px;
+      background:#fff; border-right:1px solid var(--border); overflow:auto;
+    }
+    .sidebar .brand{ font-weight:700; margin-bottom:10px; }
+    .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
+    .sidebar a:hover{ background:#f3f4f6; }
+    .sidebar a.active{ background:rgba(37,99,235,.10); border:1px solid #bfdbfe; }
+
+    .main{ margin-left:240px; padding: 18px; }
+
+    /* ======= Cards / containers ======= */
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .card-body{ padding: var(--space-5); }
+
+    /* ======= Toolbar & helpers ======= */
+    .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow{ flex:1 1 auto; }
+    .avatar{ width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid var(--border); }
+
+    /* ======= Buttons ======= */
+    .btn{
+      --bg:#fff; --bd:var(--border); --fg:var(--text);
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 14px; border:1px solid var(--bd); background:var(--bg); color:var(--fg);
+      border-radius:10px; cursor:pointer; user-select:none; transition:.15s ease; box-shadow:0 1px 0 rgba(15,23,42,.02);
+    }
+    .btn:hover{ background:#f8fafc; }
+    .btn:active{ transform: translateY(1px); }
+    .btn-sm{ padding:6px 10px; font-size: var(--text-sm); border-radius:8px; }
+    .btn-primary{ --bg: linear-gradient(135deg, var(--primary), var(--accent)); --bd: transparent; --fg:#fff; color:#fff; box-shadow: var(--shadow-sm); }
+    .btn-primary:hover{ filter: brightness(1.03); }
+    .btn-outline{ --bg:#fff; --bd:#cbd5e1; }
+    .btn-danger{ --bg:#fff; --bd:#fecaca; color:#b91c1c; }
+
+    /* ======= Inputs ======= */
+    .input,.select,.textarea{
+      width:100%; padding:10px 12px; background:#fff; color:var(--text);
+      border:1px solid var(--border); border-radius:10px; outline:none; transition:.12s ease;
+    }
+    .textarea{ min-height:96px; resize:vertical; }
+    .input:focus,.select:focus,.textarea:focus{ border-color:#93c5fd; box-shadow: 0 0 0 3px rgba(37,99,235,.20); }
+    .label{ display:block; margin-bottom:6px; font-weight:500; color:#475569; }
+
+    .form{ display:block; }
+    .form-row{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .col-12{ grid-column: span 12; }
+    .col-6{ grid-column: span 6; }
+    .col-4{ grid-column: span 4; }
+    .col-3{ grid-column: span 3; }
+
+    /* ======= Table ======= */
+    .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; background:#fff; }
+    table.table{ width:100%; border-collapse:collapse; }
+    .table thead th{
+      background: var(--surface-2); color:#475569; font-weight:600;
+      text-align:left; padding:12px; border-bottom:1px solid var(--border); white-space:nowrap;
+    }
+    .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:top; }
+    .table tbody tr:hover{ background:#f8fafc; }
+
+    /* ======= Badges & pagination ======= */
+    .badge{ display:inline-block; padding:4px 8px; border-radius:999px; background:#f1f5f9; border:1px solid var(--border); font-size:var(--text-sm); color:#0f172a; }
+    .badge.success{ background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+    .badge.warning{ background:#fef3c7; border-color:#fde68a; color:#92400e; }
+
+    .pagination{ display:flex; gap:8px; }
+    .page{ display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; color:inherit; text-decoration:none; background:#fff; }
+    .page.active{ background:#eef2ff; border-color:#c7d2fe; }
+
+    /* ======= Modal ======= */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:60; }
+    .modal-backdrop.show{ display:flex; }
+    .modal{ width:min(720px, 96vw); background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg); }
+    .modal header{ padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .modal .content{ padding: var(--space-5); max-height:65vh; overflow:auto; }
+    .modal footer{ padding: var(--space-4) var(--space-5); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+
+    /* ======= Responsive ======= */
+    @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
+    @media (max-width: 760px){
+      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border); }
+      .main{ margin-left:0; }
+    }
+  </style>
+
+  <!-- Page-specific micro-helpers -->
+  <style>
     .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
     .grow { flex:1 1 auto; }
   </style>
@@ -146,9 +286,9 @@
   </div>
 
   <script>
-    // --- Config --------------------------------------------------------------
+    // --- Config (embedded BASE & PAT; still overridable via Settings/localStorage) ---
     const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    const NC_PAT  = localStorage.getItem('NC_PAT')  || '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
     const TBL_TECH = 'mzw1focsec0tekg'; // technicians
 
     function headers() { return { 'Content-Type': 'application/json', 'xc-token': NC_PAT }; }
@@ -241,14 +381,12 @@
     }
 
     function sanitizeForSchema(body){
-      // Minimal guaranteed fields per your table definition
       const minimal = {
         email_address: body.email_address,
         phone: body.phone,
         role: body.role,
         status: body.status,
       };
-      // Try to include optional fields if present
       if(body.full_name) minimal.full_name = body.full_name;
       if(Number.isFinite(body.shift_minutes)) minimal.shift_minutes = body.shift_minutes;
       if(body.preferred_language) minimal.preferred_language = body.preferred_language;
@@ -261,7 +399,6 @@
       const form = collectForm();
       if(!form.email_address){ alert('Email is required'); return; }
 
-      // First attempt with full sanitized set; if it fails with 4xx, retry with strict minimal
       const tryBodies = [ sanitizeForSchema(form), { email_address: form.email_address, phone: form.phone, role: form.role, status: form.status } ];
 
       for(const body of tryBodies){
