@@ -4,22 +4,139 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Naveo FSM — Admin · Intervention Types</title>
-  <!-- Global stylesheet (adjust path if this file is inside a subfolder) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/naveo.css"/>
+
+  <!-- Inline, modern minimal CSS (no external naveo.css) -->
   <style>
-    /* Page-specific tiny helpers (everything else comes from naveo.css) */
-    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .grow { flex:1 1 auto; }
-    .slideover { position: fixed; inset:0; display:none; }
-    .slideover.show { display:block; }
+    /* ======= Design tokens ======= */
+    :root{
+      --bg: #0b1020;
+      --surface: #111827;
+      --surface-2: #0d1422;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --primary: #5a8dee;
+      --accent: #a855f7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border: rgba(255,255,255,.08);
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+      --shadow-md: 0 6px 16px rgba(0,0,0,.35);
+      --shadow-lg: 0 16px 40px rgba(0,0,0,.45);
+      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
+      --text-sm: .875rem; --text-xs: .78rem;
+    }
+
+    /* ======= Base ======= */
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{ margin:0; background:var(--bg); color:var(--text); font: 400 16px/1.45 Poppins, ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    a{ color:#9ec3ff; text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .fw-600{ font-weight:600; }
+    .text-sm{ font-size: var(--text-sm); }
+    .muted{ color: var(--text-muted); }
+    .hide{ display:none !important; }
+    .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
+    .mb-4{ margin-bottom:var(--space-4); }
+    .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
+    .grid{ display:grid; } .grid-2{ grid-template-columns: repeat(2, minmax(0,1fr)); gap: var(--space-4); }
+    .text-right{ text-align:right; }
+
+    /* ======= App layout ======= */
+    .topbar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; padding: 10px 16px; background: linear-gradient(180deg, rgba(17,24,39,.95), rgba(17,24,39,.85)); border-bottom:1px solid var(--border); backdrop-filter: blur(6px); }
+    .topbar .title{ font-weight:700; letter-spacing:.3px; }
+
+    .sidebar{ position:fixed; inset:56px auto 0 0; width:240px; padding:16px; background:var(--surface-2); border-right:1px solid var(--border); overflow:auto; }
+    .sidebar .brand{ font-weight:700; margin-bottom:10px; }
+    .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
+    .sidebar a:hover{ background:rgba(255,255,255,.04); }
+    .sidebar a.active{ background:rgba(90,141,238,.14); border:1px solid rgba(90,141,238,.35); }
+
+    .main{ margin-left:240px; padding: 18px; }
+
+    /* ======= Cards / containers ======= */
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .card-body{ padding: var(--space-5); }
+
+    /* ======= Toolbar ======= */
+    .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow{ flex:1 1 auto; }
+
+    /* ======= Buttons ======= */
+    .btn{ --bg:transparent; --bd:var(--border); --fg:var(--text); display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid var(--bd); background:var(--bg); color:var(--fg); border-radius:10px; cursor:pointer; user-select:none; transition: .15s ease; }
+    .btn:hover{ filter: brightness(1.08); background: rgba(255,255,255,.03); }
+    .btn:active{ transform: translateY(1px); }
+    .btn-sm{ padding:6px 10px; font-size: var(--text-sm); border-radius:8px; }
+    .btn-primary{ --bg: linear-gradient(135deg, var(--primary), var(--accent)); --bd: rgba(255,255,255,.12); --fg:#fff; box-shadow: var(--shadow-sm); }
+    .btn-outline{ --bg: transparent; --bd: rgba(255,255,255,.18); }
+    .btn-danger{ --bg: transparent; --bd: rgba(239,68,68,.5); color:#fecaca; }
+
+    /* ======= Inputs ======= */
+    .input,.select,.textarea{ width:100%; padding:10px 12px; background: rgba(255,255,255,.02); color:var(--text); border:1px solid var(--border); border-radius:10px; outline:none; transition:.12s ease; }
+    .textarea{ min-height:96px; resize:vertical; }
+    .input:focus,.select:focus,.textarea:focus{ border-color: rgba(90,141,238,.6); box-shadow: 0 0 0 3px rgba(90,141,238,.25); }
+    .label{ display:block; margin-bottom:6px; font-weight:500; color:var(--text-muted); }
+
+    .form{ display:block; }
+    .form-row{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .col-12{ grid-column: span 12; }
+    .col-6{ grid-column: span 6; }
+    .col-4{ grid-column: span 4; }
+    .col-3{ grid-column: span 3; }
+
+    .control-inline{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+    .control-inline input[type=checkbox]{ width:16px; height:16px; }
+
+    /* ======= Table ======= */
+    .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; }
+    table.table{ width:100%; border-collapse:collapse; }
+    .table thead th{ background: rgba(255,255,255,.03); color:var(--text-muted); font-weight:600; text-align:left; padding:12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:top; }
+    .table tbody tr:hover{ background: rgba(255,255,255,.03); }
+
+    /* ======= Badges & pagination ======= */
+    .badge{ display:inline-block; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid var(--border); font-size:var(--text-sm); }
+    .badge.success{ background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.3); color:#bbf7d0; }
+    .badge.warning{ background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.4); color:#fde68a; }
+
+    .pagination{ display:flex; gap:8px; }
+    .page{ display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; color:inherit; text-decoration:none; }
+    .page.active{ background: rgba(255,255,255,.06); }
+
+    /* ======= Dropdown (used in other pages but harmless here) ======= */
+    .dropdown{ position:relative; display:inline-block; }
+    .dropdown-menu{ position:absolute; top:calc(100% + 6px); right:0; min-width:180px; padding:6px; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow-md); display:none; }
+    .dropdown.open .dropdown-menu{ display:block; }
+    .dropdown-menu a{ display:block; padding:8px 10px; border-radius:8px; color:inherit; text-decoration:none; }
+    .dropdown-menu a:hover{ background:rgba(255,255,255,.05); }
+
+    /* ======= Modal ======= */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:60; }
+    .modal-backdrop.show{ display:flex; }
+    .modal{ width:min(720px, 96vw); background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg); }
+    .modal header{ padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .modal .content{ padding: var(--space-5); max-height:65vh; overflow:auto; }
+    .modal footer{ padding: var(--space-4) var(--space-5); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+
+    /* ======= Slideover (checklist panel) ======= */
+    .slideover{ position:fixed; inset:0; display:none; z-index:55; }
+    .slideover.show{ display:block; }
     .slideover .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
     .slideover .panel{ position:absolute; top:0; right:0; height:100%; width:min(720px, 96vw); background:var(--surface); border-left:1px solid var(--border); box-shadow:var(--shadow-lg); display:flex; flex-direction:column; }
     .slideover header, .slideover footer{ padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
     .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
     .slideover .content{ padding:var(--space-5); overflow:auto; }
+
+    @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
+    @media (max-width: 760px){ .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);} .main{ margin-left:0; } }
   </style>
 </head>
 <body>
