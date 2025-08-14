@@ -1,145 +1,303 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <title>Naveo FSM – Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="../assets/js/noco.js"></script>
-  <script src="../assets/js/auth-lite.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Naveo FSM — Dashboard</title>
+  <!-- Global stylesheet (adjust path if file is in a subfolder) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="technician-app/assets/naveo.css" />
+
+  <!-- Charts & Map (optional) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
-    body{margin:0;background:var(--bg);font-family:Poppins, Arial, sans-serif}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--card);box-shadow:0 4px 18px rgba(0,0,0,.06)}
-    h1{font-size:18px;margin:0}
-    .container{padding:16px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 26px rgba(0,0,0,.05);padding:16px;margin-bottom:16px}
-    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .kpi h3{margin:0 0 6px;font-size:12px;color:#6b7280}
-    .kpi div{font-size:28px;font-weight:700}
-    @media(max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr)} }
+    .grid-2-1 { display:grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); }
+    @media (max-width: 1200px){ .grid-2-1 { grid-template-columns: 1fr; } }
+    .kpi .kpi-item .kpi-delta { font-size: var(--text-sm); color: var(--text-muted); }
+    .list { display:grid; gap:12px; }
+    .list-item { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid var(--border); background:var(--surface); border-radius:var(--radius-md); padding:10px 12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .mini { font-size: var(--text-sm); color: var(--text-muted); }
   </style>
 </head>
 <body>
-  <script>Auth.ensureRole(['planner']);</script>
-
-  <header>
-    <h1>Planner • Dashboard</h1>
-    <div></div>
-  </header>
-  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
-
-  <div class="container">
-    <section class="card">
-      <h2 style="margin:0 0 10px;font-size:16px;">Today’s KPIs</h2>
-      <div class="kpis">
-        <div class="kpi"><h3>Completed</h3><div id="kpiCompleted">0</div></div>
-        <div class="kpi"><h3>First-Time Fix</h3><div id="kpiFTF">0%</div></div>
-        <div class="kpi"><h3>Utilization</h3><div id="kpiUtil">0%</div></div>
-        <div class="kpi"><h3>In Progress</h3><div id="kpiInProg">0</div></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin:0 0 10px;">Jobs per Tech (Last 7 days)</h3>
-      <canvas id="jobsPerTech"></canvas>
-    </section>
-
-    <section class="card">
-      <h3 style="margin:0 0 10px;">FTF Trend (Last 14 days)</h3>
-      <canvas id="ftfTrend"></canvas>
-    </section>
+  <div class="topbar">
+    <div class="title">Naveo FSM</div>
+    <span class="muted">Dashboard</span>
+    <div style="flex:1 1 auto"></div>
+    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
+  <aside class="sidebar">
+    <div class="brand">Naveo</div>
+    <a class="active" href="dashboard.html">Dashboard</a>
+    <a href="planner-jobs.html">Service Orders</a>
+    <a href="assign-job-enhanced.html">Assign Job</a>
+    <a href="planner-inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="realtime-map.html">Live Map</a>
+    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+    <a href="admin-tech-master.html">Admin · Technicians</a>
+  </aside>
+
+  <main class="main">
+    <!-- KPIs -->
+    <div class="kpi">
+      <div class="kpi-item">
+        <div class="kpi-label">Open (assigned)</div>
+        <div class="kpi-value" id="kpiOpen">0</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">In Progress</div>
+        <div class="kpi-value" id="kpiInProg">0</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">Completed Today</div>
+        <div class="kpi-value" id="kpiDone">0</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">Overdue</div>
+        <div class="kpi-value" id="kpiOverdue">0</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">First‑Time Fix (today)</div>
+        <div class="kpi-value" id="kpiFTF">0%</div>
+        <div class="kpi-delta" id="kpiFTFNote" style="margin-top:4px"></div>
+      </div>
+    </div>
+
+    <div class="grid-2-1 mt-4">
+      <!-- Left: Charts & Recent -->
+      <div class="grid" style="gap: var(--space-6)">
+        <div class="card chart-card">
+          <div class="card-header"><h3>Jobs per Technician (today)</h3><div class="mini">Scheduled for today</div></div>
+          <div class="card-body">
+            <canvas id="chartJobsPerTech"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Upcoming Jobs (next 7 days)</h3></div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table class="table" id="tblUpcoming">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>SO</th>
+                    <th>Technician</th>
+                    <th>Type</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Recent Activity</h3></div>
+          <div class="card-body">
+            <div id="recentList" class="list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Map & quick links -->
+      <div class="grid" style="gap: var(--space-6)">
+        <div class="card">
+          <div class="card-header"><h3>Live Technicians</h3><div class="mini">Last known location</div></div>
+          <div class="card-body">
+            <div id="map" class="map-container"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Quick Actions</h3></div>
+          <div class="card-body">
+            <div class="grid grid-2" style="gap:12px">
+              <a class="btn btn-primary" href="assign-job-enhanced.html">＋ New Service Order</a>
+              <a class="btn" href="planner-jobs.html">View All Jobs</a>
+              <a class="btn" href="planner-inventory.html">Manage Inventory</a>
+              <a class="btn" href="admin-tech-master.html">Manage Technicians</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script>
-    const { T } = NC, api = NCAPI, U = NCUTIL;
+    // ---------------------- Config -------------------------------------------
+    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
+    const TBL_TECH = 'mzw1focsec0tekg';   // technicians
+    const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
+    const TBL_TLOC = 'mdau1eojkb8c56x';   // technician_locations
+    const TBL_SOSH = 'mirdk2w4yjcny1b';   // service_order_status_history
 
-    function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
-    function daysAgo(n){ const x = new Date(); x.setDate(x.getDate()-n); return x; }
+    const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
+    const $ = (s, p=document) => p.querySelector(s);
 
-    async function fetchToday() {
-      const from = startOfDay(new Date());
-      const to = new Date();
-      const qRange = `filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`;
+    // ---------------------- Date helpers -------------------------------------
+    function startOfTodayISO(){
+      const d = new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,19);
+    }
+    function endOfTodayISO(){
+      const d = new Date(); d.setHours(23,59,59,999); return new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,19);
+    }
+    function nowISO(){ return new Date().toISOString().slice(0,19); }
+    function inDaysISO(days){ const d=new Date(Date.now()+days*86400000); return d.toISOString().slice(0,19); }
 
-      const [completed, inProg, allCompleted, ftfCompleted, techs] = await Promise.all([
-        api.list(T.service_orders, `filter=(status,eq,completed)&${qRange}`),
-        api.list(T.service_orders, `filter=(status,eq,in_progress)`),
-        api.list(T.service_orders, `filter=(status,eq,completed)&${qRange}&select=id,technician_id`),
-        api.list(T.service_orders, `filter=(status,eq,completed)&filter=(return_visit_required,eq,false)&${qRange}&select=id`),
-        api.list(T.technicians, 'limit=1000&select=id,full_name,shift_minutes')
-      ]);
-
-      document.getElementById('kpiCompleted').textContent = completed.list.length;
-      document.getElementById('kpiInProg').textContent = inProg.list.length;
-
-      const ftf = allCompleted.list.length ? Math.round((ftfCompleted.list.length / allCompleted.list.length) * 100) : 0;
-      document.getElementById('kpiFTF').textContent = ftf + '%';
-
-      // Simple utilization heuristic
-      const techById = Object.fromEntries(techs.list.map(t => [t.id, t]));
-      let totalCapacity = 0, totalJobs = 0;
-      const jobsByTech = {};
-      for (const so of allCompleted.list) {
-        jobsByTech[so.technician_id] = (jobsByTech[so.technician_id] || 0) + 1;
-      }
-      Object.keys(jobsByTech).forEach(id => {
-        const t = techById[id] || {};
-        const shiftMin = +t.shift_minutes || 480;   // default 8h
-        const avgJobMin = 60;                       // tune if you track true durations
-        totalCapacity += Math.max(1, Math.floor(shiftMin / avgJobMin));
-        totalJobs += jobsByTech[id];
-      });
-      const util = totalCapacity ? Math.round((totalJobs / totalCapacity) * 100) : 0;
-      document.getElementById('kpiUtil').textContent = util + '%';
+    // ---------------------- KPI counts ---------------------------------------
+    async function countSO(where){
+      let url = `${NC_BASE}/tables/${TBL_SO}/records/count`;
+      if(where) url += `?where=${encodeURIComponent(where)}`;
+      const r = await fetch(url,{headers:H()}); if(!r.ok) return 0; const j = await r.json(); return j?.count||0;
     }
 
-    async function chartJobsPerTech() {
-      const from = daysAgo(7), to = new Date();
-      const res = await api.list(T.service_orders, `filter=(completed_at,between,${U.iso(from)},${U.iso(to)})&filter=(status,eq,completed)&select=id,technician_id`);
-      const techs = await api.list(T.technicians, 'limit=1000&select=id,full_name');
-      const name = (id)=> (techs.list.find(t=>t.id===id)?.full_name) || ('Tech #'+id);
+    async function loadKPIs(){
+      const open = await countSO('(status,eq,assigned)');
+      const inprog = await countSO('(status,eq,in_progress)');
+      const doneToday = await countSO(`(status,eq,completed)~and(completed_at,ge,${startOfTodayISO()})`);
+      const overdue = await countSO(`(scheduled_at,lt,${nowISO()})~and(status,neq,completed)~and(status,neq,cancelled)`);
 
-      const counts = {};
-      res.list.forEach(so => counts[so.technician_id] = (counts[so.technician_id]||0)+1);
-      const labels = Object.keys(counts).map(id => name(+id));
-      const data = Object.values(counts);
+      $('#kpiOpen').textContent = open;
+      $('#kpiInProg').textContent = inprog;
+      $('#kpiDone').textContent = doneToday;
+      $('#kpiOverdue').textContent = overdue;
 
-      const ctx = document.getElementById('jobsPerTech').getContext('2d');
+      const ftfNum = await countSO(`(status,eq,completed)~and(completed_at,ge,${startOfTodayISO()})~and(return_visit_required,eq,false)`);
+      const ftf = doneToday ? Math.round(100 * ftfNum / doneToday) : 0;
+      $('#kpiFTF').textContent = ftf + '%';
+      $('#kpiFTFNote').textContent = `${ftfNum}/${doneToday} first-time fixes`;
+    }
+
+    // ---------------------- Jobs per Technician (today) ----------------------
+    async function jobsPerTechChart(){
+      // fetch all jobs scheduled for today
+      const where = `(scheduled_at,ge,${startOfTodayISO()})~and(scheduled_at,le,${endOfTodayISO()})`;
+      let url = `${NC_BASE}/tables/${TBL_SO}/records?limit=10000&where=${encodeURIComponent(where)}`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      // tally by technician_id
+      const counts = new Map();
+      rows.forEach(r=>{ const k=r.technicians?.full_name || r.technician_id || 'Unassigned'; counts.set(k, (counts.get(k)||0)+1); });
+      const labels = Array.from(counts.keys());
+      const data = Array.from(counts.values());
+
+      const ctx = document.getElementById('chartJobsPerTech').getContext('2d');
       new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ label: 'Completed Jobs', data }] },
-        options: { responsive:true, plugins:{legend:{display:false}} }
+        data: { labels, datasets: [{ label: 'Jobs', data }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, precision:0 } } }
       });
     }
 
-    async function chartFtfTrend() {
-      const days = [...Array(14)].map((_,i)=> i).reverse();
-      const labels = days.map(d=> {
-        const x = daysAgo(d); return `${x.getMonth()+1}/${x.getDate()}`;
+    // ---------------------- Upcoming (next 7 days) ---------------------------
+    async function loadUpcoming(){
+      const where = `(scheduled_at,ge,${nowISO()})~and(scheduled_at,le,${inDaysISO(7)})`;
+      let url = `${NC_BASE}/tables/${TBL_SO}/records?limit=25&orderBy=scheduled_at&order=asc&where=${encodeURIComponent(where)}`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      const tbody = document.querySelector('#tblUpcoming tbody'); tbody.innerHTML='';
+      rows.forEach(r=>{
+        const pr = (r.priority||'normal').toLowerCase();
+        const st = (r.status||'assigned').toLowerCase();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.scheduled_at ? new Date(r.scheduled_at).toLocaleString() : ''}</td>
+          <td class="mono">${r.so_id || r.id}</td>
+          <td>${r.technicians?.full_name || r.technician_id || ''}</td>
+          <td>${r.intervention_types?.intervention_name || r.intervention_type_id || ''}</td>
+          <td><span class="badge priority-${pr}">${pr}</span></td>
+          <td><span class="badge status-${st}">${st}</span></td>
+          <td class="text-right"><a class="btn btn-sm" href="assign-inventory-selector.html?so=${encodeURIComponent(r.id)}">Assign inventory</a></td>`;
+        tbody.appendChild(tr);
       });
+    }
 
-      const ftfPerc = [];
-      for(const d of days){
-        const day = daysAgo(d);
-        const from = startOfDay(day), to = new Date(from); to.setDate(to.getDate()+1);
-        const all = await api.list(T.service_orders, `filter=(status,eq,completed)&filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`);
-        const good = await api.list(T.service_orders, `filter=(status,eq,completed)&filter=(return_visit_required,eq,false)&filter=(completed_at,between,${U.iso(from)},${U.iso(to)})`);
-        ftfPerc.push(all.list.length ? Math.round((good.list.length/all.list.length)*100) : 0);
+    // ---------------------- Recent Activity ----------------------------------
+    async function loadRecent(){
+      let url = `${NC_BASE}/tables/${TBL_SOSH}/records?limit=10&orderBy=changed_at&order=desc`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      const list = document.getElementById('recentList'); list.innerHTML='';
+      // Optionally map SO ids to so_id
+      const ids = [...new Set(rows.map(r=>r.service_order_id).filter(Boolean))];
+      const soMap = new Map();
+      if(ids.length){
+        const idList = ids.join(',');
+        const soUrl = `${NC_BASE}/tables/${TBL_SO}/records?limit=${ids.length}&where=${encodeURIComponent(`(id,in,${idList})`)}`;
+        const sos = await fetch(soUrl,{headers:H()}).then(r=>r.json());
+        sos.forEach(s=> soMap.set(s.id, s));
       }
-
-      const ctx = document.getElementById('ftfTrend').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ label:'FTF %', data: ftfPerc, tension:.3 }]},
-        options: { responsive:true, scales:{ y:{ suggestedMin:0, suggestedMax:100 }}}
+      rows.forEach(r=>{
+        const so = soMap.get(r.service_order_id);
+        const soLabel = so? (so.so_id || so.id) : r.service_order_id;
+        const who = r.users?.full_name || r.user_id || 'system';
+        const item = document.createElement('div'); item.className='list-item';
+        item.innerHTML = `
+          <div>
+            <div><span class="badge status-${r.status}">${r.status}</span> <span class="mono">${soLabel}</span></div>
+            <div class="mini">by ${who} · ${new Date(r.changed_at).toLocaleString()}</div>
+          </div>
+          <a class="btn btn-sm" href="planner-jobs.html">Open</a>`;
+        list.appendChild(item);
       });
     }
 
+    // ---------------------- Map ----------------------------------------------
+    let map, markerLayer;
+    function ensureMap(){
+      if(map) return map;
+      map = L.map('map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+      markerLayer = L.layerGroup().addTo(map);
+      map.setView([-20.2, 57.5], 9); // Mauritius-ish default; adjust after data
+      return map;
+    }
+
+    async function loadTechLocations(){
+      ensureMap(); markerLayer.clearLayers();
+      // Pull last 500 locations, then keep latest per tech
+      const url = `${NC_BASE}/tables/${TBL_TLOC}/records?limit=500&orderBy=recorded_at&order=desc`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      const latest = new Map();
+      rows.forEach(r=>{ const k=r.technician_id; if(!latest.has(k)) latest.set(k, r); });
+      const bounds = [];
+      latest.forEach(r=>{
+        if(r.lat==null || r.lng==null) return;
+        const label = r.technicians?.full_name || ('Tech #'+r.technician_id);
+        const m = L.marker([r.lat, r.lng]).bindPopup(`<strong>${label}</strong><br>${new Date(r.recorded_at).toLocaleString()}`);
+        m.addTo(markerLayer); bounds.push([r.lat, r.lng]);
+      });
+      if(bounds.length) map.fitBounds(bounds, { padding:[20,20] });
+    }
+
+    // ---------------------- Settings -----------------------------------------
+    document.getElementById('btnSettings').addEventListener('click', ()=>{
+      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
+      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
+      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
+      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
+      location.reload();
+    });
+
+    // ---------------------- Init ---------------------------------------------
     (async function init(){
-      await fetchToday();
-      await chartJobsPerTech();
-      await chartFtfTrend();
+      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
+      await loadKPIs();
+      await jobsPerTechChart();
+      await loadUpcoming();
+      await loadRecent();
+      await loadTechLocations();
     })();
   </script>
 </body>
