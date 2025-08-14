@@ -1,401 +1,89 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Naveo FSM — Status History</title>
-  <!-- Global stylesheet -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/naveo.css"/>
+
+  <!-- Inline modern LIGHT theme (no external naveo.css) -->
   <style>
-    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .grow { flex:1 1 auto; }
-    .timeline { display:grid; gap:10px; }
-    .tl-row { display:grid; grid-template-columns: 200px 140px 1fr 180px 120px; gap:12px; align-items:center; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); padding:10px 12px; }
-    .tl-head { display:grid; grid-template-columns: 200px 140px 1fr 180px 120px; gap:12px; font-weight:600; color:var(--text-muted); padding:0 4px 8px; }
-    @media (max-width: 1100px){
-      .tl-row, .tl-head{ grid-template-columns: 160px 120px 1fr 140px 100px; }
-    }
-    @media (max-width: 900px){
-      .tl-row, .tl-head{ grid-template-columns: 160px 1fr 120px; }
-      .tl-row .hide-sm, .tl-head .hide-sm { display:none; }
-    }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .mini { font-size: var(--text-sm); color: var(--text-muted); }
-    .slideover { position: fixed; inset:0; display:none; }
-    .slideover.show { display:block; }
-    .slideover .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
-    .slideover .panel{ position:absolute; top:0; right:0; height:100%; width:min(760px, 96vw); background:var(--surface); border-left:1px solid var(--border); box-shadow:var(--shadow-lg); display:flex; flex-direction:column; }
-    .slideover header, .slideover footer{ padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
-    .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
-    .slideover .content{ padding:var(--space-5); overflow:auto; }
-  </style>
-</head>
-<body>
-  <div class="topbar">
-    <div class="title">Naveo FSM</div>
-    <span class="muted">Status History</span>
-    <div class="grow"></div>
-    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
-  </div>
-
-  <aside class="sidebar">
-    <div class="brand">Naveo</div>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="planner-jobs.html">Service Orders</a>
-    <a href="assign-job-enhanced.html">Assign Job</a>
-    <a href="planner-inventory.html">Inventory</a>
-    <a href="reports.html">Reports</a>
-    <a href="realtime-map.html">Live Map</a>
-    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
-    <a href="admin-tech-master.html">Admin · Technicians</a>
-    <a class="active" href="history.html">History</a>
-  </aside>
-
-  <main class="main">
-    <!-- Filters & actions -->
-    <div class="card">
-      <div class="card-header">
-        <h2>Status History</h2>
-        <div class="toolbar">
-          <input id="q" class="input" placeholder="Search SO ID…" style="min-width:220px" />
-          <input id="from" class="input" type="date" />
-          <input id="to" class="input" type="date" />
-          <select id="status" class="select">
-            <option value="">All status</option>
-            <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
-          </select>
-          <select id="tech" class="select" style="min-width:200px"><option value="">All technicians</option></select>
-          <button class="btn" id="btnClearDates">✖</button>
-          <button class="btn" id="btnRefresh">↻ Refresh</button>
-          <div class="grow"></div>
-          <button class="btn btn-outline" id="btnExport">Export CSV</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tl-head">
-          <div>When</div>
-          <div class="hide-sm">Status</div>
-          <div>SO</div>
-          <div class="hide-sm">By</div>
-          <div class="hide-sm">Δ since prev</div>
-        </div>
-        <div class="timeline" id="timeline"></div>
-        <div class="flex justify-between items-center mt-4">
-          <div class="mini" id="summary">—</div>
-          <div class="pagination" id="pager"></div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Slide-over: SO details & full timeline -->
-  <div class="slideover" id="detailSO">
-    <div class="backdrop" data-close></div>
-    <div class="panel">
-      <header class="flex justify-between items-center">
-        <div>
-          <div class="mini muted">Service Order</div>
-          <h3><span class="mono" id="d_soid">—</span></h3>
-        </div>
-        <button class="btn" data-close>✖ Close</button>
-      </header>
-      <div class="content">
-        <div class="grid grid-2 gap-4">
-          <div>
-            <div class="card">
-              <div class="card-header"><h4>Add status event</h4></div>
-              <div class="card-body">
-                <div class="form">
-                  <div class="form-row">
-                    <div class="col-6">
-                      <label class="label">Status</label>
-                      <select class="select" id="d_new_status"><option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option></select>
-                    </div>
-                    <div class="col-6">
-                      <label class="label">When</label>
-                      <input class="input" id="d_new_when" type="datetime-local" />
-                    </div>
-                    <div class="col-12">
-                      <label class="label">User</label>
-                      <select class="select" id="d_new_user"></select>
-                    </div>
-                  </div>
-                </div>
-                <div class="mt-3"><button class="btn" id="d_add_event">Add event</button></div>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div class="card">
-              <div class="card-header"><h4>SO meta</h4></div>
-              <div class="card-body">
-                <div class="grid grid-2 gap-4">
-                  <div><div class="mini">Technician</div><div id="d_tech">—</div></div>
-                  <div><div class="mini">Type</div><div id="d_type">—</div></div>
-                  <div><div class="mini">Scheduled</div><div id="d_sched">—</div></div>
-                  <div><div class="mini">Completed</div><div id="d_done">—</div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card mt-4">
-          <div class="card-header"><h4>Full timeline</h4></div>
-          <div class="card-body">
-            <div class="table-wrap">
-              <table class="table" id="tblSO">
-                <thead><tr><th>When</th><th>Status</th><th>User</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-      <footer>
-        <button class="btn" data-close>Close</button>
-      </footer>
-    </div>
-  </div>
-
-  <script>
-    // ---------------------- Config -------------------------------------------
-    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
-    const TBL_SO    = 'm2dmcyfy30klv76';   // service_orders
-    const TBL_SOSH  = 'mirdk2w4yjcny1b';   // service_order_status_history
-    const TBL_TECH  = 'mzw1focsec0tekg';   // technicians (for filter)
-    const TBL_USERS = 'mes51s7dmb2mewm';   // users (for new events)
-
-    const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
-    const $ = (s, p=document) => p.querySelector(s);
-    const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
-
-    // ---------------------- State --------------------------------------------
-    let state = { page:1, limit:20, total:0, q:'', from:'', to:'', status:'', tech:'' };
-    let techMap = new Map();
-    let userMap = new Map();
-
-    // ---------------------- Helpers ------------------------------------------
-    const pad=(n)=> String(n).padStart(2,'0');
-    function toLocalDateInputValue(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-    function startOfDayISO(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,19); }
-    function endOfDayISO(d){ const x=new Date(d); x.setHours(23,59,59,999); return x.toISOString().slice(0,19); }
-    function fmtDT(v){ if(!v) return ''; const d=new Date(v); return d.toLocaleString(); }
-    function nowLocalDT(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
-
-    // ---------------------- Lookups ------------------------------------------
-    async function loadTechs(){
-      const rows = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&orderBy=full_name&order=asc`,{headers:H()}).then(r=>r.json());
-      techMap = new Map(rows.map(r=>[r.id,r]));
-      $('#tech').innerHTML = '<option value="">All technicians</option>' + rows.map(t=>`<option value="${t.id}">${t.full_name||t.email_address||('Tech #'+t.id)}</option>`).join('');
-    }
-    async function loadUsers(){
-      const rows = await fetch(`${NC_BASE}/tables/${TBL_USERS}/records?limit=1000&orderBy=full_name&order=asc`,{headers:H()}).then(r=>r.json());
-      userMap = new Map(rows.map(r=>[r.id,r]));
-      $('#d_new_user').innerHTML = rows.map(u=>`<option value="${u.id}">${u.full_name||u.email_address||('User #'+u.id)}</option>`).join('');
+    /* ====== Design tokens (light) ====== */
+    :root{
+      --bg:#f6f7fb;
+      --surface:#ffffff;
+      --surface-2:#f3f4f6;
+      --surface-muted:#f9fafb;
+      --text:#111827;
+      --text-muted:#6b7280;
+      --primary:#2563eb;
+      --accent:#7c3aed;
+      --success:#16a34a;
+      --warning:#d97706;
+      --danger:#dc2626;
+      --info:#0ea5e9;
+      --border: rgba(0,0,0,.08);
+      --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
+      --shadow-sm:0 1px 2px rgba(0,0,0,.08);
+      --shadow-md:0 6px 16px rgba(0,0,0,.12);
+      --shadow-lg:0 16px 40px rgba(0,0,0,.18);
+      --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+      --text-sm:.875rem; --text-xs:.78rem;
     }
 
-    // ---------------------- SO helpers ---------------------------------------
-    async function findSOIdsByQuery(q){
-      if(!q) return [];
-      const like = encodeURIComponent('%'+q+'%');
-      const url = `${NC_BASE}/tables/${TBL_SO}/records?limit=200&where=(so_id,like,${like})`;
-      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
-      return rows.map(r=>r.id);
-    }
-    async function findSOIdsByTech(techId){
-      if(!techId) return [];
-      const url = `${NC_BASE}/tables/${TBL_SO}/records?limit=10000&where=(technician_id,eq,${techId})`;
-      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
-      return rows.map(r=>r.id);
-    }
+    /* ====== Base ====== */
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{ margin:0; background:var(--bg); color:var(--text); font:400 16px/1.45 Poppins,ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"; }
+    a{ color:#1e40af; text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+    .fw-600{ font-weight:600; }
+    .text-sm{ font-size:var(--text-sm); }
+    .muted,.mini{ color:var(--text-muted); }
+    .mini{ font-size:var(--text-sm); }
+    .hide{ display:none!important; }
+    .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
+    .grid{ display:grid; } .grid-2{ grid-template-columns: repeat(2, minmax(0,1fr)); gap: var(--space-4); }
+    .gap-4{ gap: var(--space-4); }
+    .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
 
-    // ---------------------- Fetch & render history ---------------------------
-    async function fetchHistory(){
-      const offset=(state.page-1)*state.limit;
-      let whereParts=[];
-      if(state.from) whereParts.push(`(changed_at,ge,${startOfDayISO(new Date(state.from))})`);
-      if(state.to)   whereParts.push(`(changed_at,le,${endOfDayISO(new Date(state.to))})`);
-      if(state.status) whereParts.push(`(status,eq,${state.status})`);
+    /* ====== App layout ====== */
+    .topbar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; padding:10px 16px; background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.7)); border-bottom:1px solid var(--border); backdrop-filter: blur(6px); }
+    .topbar .title{ font-weight:700; letter-spacing:.3px; }
+    .sidebar{ position:fixed; inset:56px auto 0 0; width:240px; padding:16px; background:var(--surface); border-right:1px solid var(--border); overflow:auto; }
+    .sidebar .brand{ font-weight:700; margin-bottom:10px; }
+    .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
+    .sidebar a:hover{ background:rgba(0,0,0,.03); }
+    .sidebar a.active{ background:rgba(37,99,235,.10); border:1px solid rgba(37,99,235,.25); }
+    .main{ margin-left:240px; padding:18px; }
 
-      // Optional narrowing by SO ids from q and/or tech filter
-      let idSet = new Set();
-      if(state.q){ (await findSOIdsByQuery(state.q)).forEach(id=> idSet.add(id)); }
-      if(state.tech){ (await findSOIdsByTech(state.tech)).forEach(id=> idSet.add(id)); }
-      if(idSet.size>0){ const ids=[...idSet]; whereParts.push(`(service_order_id,in,${ids.join(',')})`); }
+    /* ====== Cards ====== */
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .card-body{ padding: var(--space-5); }
 
-      const where = whereParts.join('~and');
-      let url = `${NC_BASE}/tables/${TBL_SOSH}/records?limit=${state.limit}&offset=${offset}&orderBy=changed_at&order=desc`;
-      if(where) url += `&where=${encodeURIComponent(where)}`;
-      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+    /* ====== Toolbar ====== */
+    .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow{ flex:1 1 auto; }
 
-      // Count
-      let cUrl = `${NC_BASE}/tables/${TBL_SOSH}/records/count`;
-      if(where) cUrl += `?where=${encodeURIComponent(where)}`;
-      const c = await fetch(cUrl,{headers:H()}).then(r=>r.json()); state.total = c?.count || rows.length;
+    /* ====== Buttons ====== */
+    .btn{ --bg:transparent; --bd:var(--border); --fg:var(--text); display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid var(--bd); background:var(--bg); color:var(--fg); border-radius:10px; cursor:pointer; user-select:none; transition:.15s ease; }
+    .btn:hover{ filter:brightness(1.02); background:rgba(0,0,0,.03); }
+    .btn:active{ transform: translateY(1px); }
+    .btn-sm{ padding:6px 10px; font-size:var(--text-sm); border-radius:8px; }
+    .btn-primary{ --bg: linear-gradient(135deg, var(--primary), var(--accent)); --bd: rgba(0,0,0,.06); --fg:#fff; background: var(--bg); color: var(--fg); box-shadow: var(--shadow-sm); }
+    .btn-outline{ --bd: rgba(0,0,0,.18); }
 
-      // Build SO map for labels
-      const soIds = [...new Set(rows.map(r=>r.service_order_id).filter(Boolean))];
-      const soMap = new Map();
-      for(let i=0;i<soIds.length;i+=100){
-        const ids = soIds.slice(i,i+100);
-        const sUrl = `${NC_BASE}/tables/${TBL_SO}/records?limit=${ids.length}&where=${encodeURIComponent(`(id,in,${ids.join(',')})`)}`;
-        const sRows = await fetch(sUrl,{headers:H()}).then(r=>r.json());
-        sRows.forEach(s=> soMap.set(s.id, s));
-      }
+    /* ====== Inputs ====== */
+    .input,.select,.textarea{ width:100%; padding:10px 12px; background:#fff; color:var(--text); border:1px solid var(--border); border-radius:10px; outline:none; transition:.12s ease; }
+    .textarea{ min-height:96px; resize:vertical; }
+    .input:focus,.select:focus,.textarea:focus{ border-color: rgba(37,99,235,.6); box-shadow: 0 0 0 3px rgba(37,99,235,.18); }
+    .label{ display:block; margin-bottom:6px; font-weight:500; color:var(--text-muted); }
 
-      // Compute Δ since previous within current fetched set
-      const prevMap = new Map(); // last changed_at per SO (from later rows, as we render desc)
-      const list = rows.map(r=>{
-        const so = soMap.get(r.service_order_id);
-        const soLabel = so? (so.so_id || so.id) : (r.service_order_id || '—');
-        const user = r.users?.full_name || r.user_id || '';
-        let delta = '';
-        if(prevMap.has(r.service_order_id)){
-          const prev = new Date(prevMap.get(r.service_order_id));
-          const cur = new Date(r.changed_at);
-          const mins = Math.max(0, Math.round((prev-cur)/60000));
-          const h=Math.floor(mins/60), m=mins%60; delta = `${h}h ${String(m).padStart(2,'0')}m`;
-        }
-        prevMap.set(r.service_order_id, r.changed_at);
-        return { id:r.id, when:r.changed_at, status:r.status, soLabel, soId: r.service_order_id, user, delta };
-      });
-
-      renderTimeline(list);
-      renderPager();
-      $('#summary').textContent = `${state.total} events`;
-    }
-
-    function renderTimeline(rows){
-      const wrap = $('#timeline'); wrap.innerHTML='';
-      rows.forEach(r=>{
-        const div = document.createElement('div'); div.className='tl-row';
-        div.innerHTML = `
-          <div>${fmtDT(r.when)}</div>
-          <div class="hide-sm"><span class="badge status-${r.status}">${r.status}</span></div>
-          <div><a href="#" data-view-so data-id="${r.soId}" class="mono">${r.soLabel}</a></div>
-          <div class="hide-sm">${r.user||''}</div>
-          <div class="hide-sm">${r.delta||''}</div>`;
-        wrap.appendChild(div);
-      });
-      if(!rows.length){ wrap.innerHTML = `<div class="muted" style="text-align:center;padding:20px 0">No events found for this range.</div>`; }
-    }
-
-    function renderPager(){
-      const pager = $('#pager'); pager.innerHTML='';
-      const pages = Math.max(1, Math.ceil(state.total/state.limit));
-      for(let i=1;i<=pages;i++){
-        const a = document.createElement('a'); a.href='#'; a.className='page' + (i===state.page?' active':''); a.textContent = i;
-        a.addEventListener('click', e=>{ e.preventDefault(); state.page=i; fetchHistory(); });
-        pager.appendChild(a);
-      }
-    }
-
-    // ---------------------- Slide-over: view one SO ---------------------------
-    let d_current = null;
-    function openDetail(){ $('#detailSO').classList.add('show'); }
-    function closeDetail(){ $('#detailSO').classList.remove('show'); }
-
-    async function viewSO(id){
-      d_current = await fetch(`${NC_BASE}/tables/${TBL_SO}/records/${id}`,{headers:H()}).then(r=>r.json());
-      $('#d_soid').textContent = d_current.so_id || d_current.id;
-      $('#d_sched').textContent = d_current.scheduled_at ? fmtDT(d_current.scheduled_at) : '—';
-      $('#d_done').textContent  = d_current.completed_at ? fmtDT(d_current.completed_at) : '—';
-      const tech = techMap.get(d_current.technician_id);
-      $('#d_tech').textContent  = tech?.full_name || tech?.email_address || (d_current.technician_id || '—');
-      $('#d_type').textContent  = d_current.intervention_types?.intervention_name || d_current.intervention_type_id || '—';
-      // defaults for add event
-      $('#d_new_when').value = nowLocalDT();
-      $('#d_new_status').value = (d_current.status || 'assigned');
-      await loadUsers();
-      await loadSOHistory(id);
-      openDetail();
-    }
-
-    async function loadSOHistory(id){
-      const url = `${NC_BASE}/tables/${TBL_SOSH}/records?limit=1000&orderBy=changed_at&order=asc&where=${encodeURIComponent(`(service_order_id,eq,${id})`)} `;
-      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
-      const tb = document.querySelector('#tblSO tbody'); tb.innerHTML='';
-      rows.forEach(r=>{
-        const who = r.users?.full_name || r.user_id || '';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${fmtDT(r.changed_at)}</td><td><span class="badge status-${r.status}">${r.status}</span></td><td>${who}</td>`;
-        tb.appendChild(tr);
-      });
-    }
-
-    async function addEvent(){
-      if(!d_current) return;
-      const body = {
-        service_order_id: d_current.id,
-        status: $('#d_new_status').value,
-        changed_at: new Date($('#d_new_when').value).toISOString().slice(0,19),
-        user_id: $('#d_new_user').value || undefined,
-      };
-      const r = await fetch(`${NC_BASE}/tables/${TBL_SOSH}/records`,{ method:'POST', headers:H(), body: JSON.stringify(body) });
-      if(!r.ok) return alert('Failed to add event');
-      await loadSOHistory(d_current.id); fetchHistory();
-    }
-
-    // ---------------------- Export -------------------------------------------
-    function csvEscape(s){ return '"'+ String(s??'').replaceAll('"','""') +'"'; }
-    async function exportCSV(){
-      // Export with current filters (up to 10000 rows)
-      let whereParts=[]; if(state.from) whereParts.push(`(changed_at,ge,${startOfDayISO(new Date(state.from))})`); if(state.to) whereParts.push(`(changed_at,le,${endOfDayISO(new Date(state.to))})`); if(state.status) whereParts.push(`(status,eq,${state.status})`);
-      let idSet = new Set(); if(state.q){ (await findSOIdsByQuery(state.q)).forEach(i=>idSet.add(i)); } if(state.tech){ (await findSOIdsByTech(state.tech)).forEach(i=>idSet.add(i)); }
-      if(idSet.size>0){ const ids=[...idSet]; whereParts.push(`(service_order_id,in,${ids.join(',')})`); }
-      const where = whereParts.join('~and');
-      let url = `${NC_BASE}/tables/${TBL_SOSH}/records?limit=10000&orderBy=changed_at&order=desc`; if(where) url += `&where=${encodeURIComponent(where)}`;
-      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
-      const cols=['id','service_order_id','status','changed_at','user_id'];
-      const head=cols.join(','); const body=rows.map(r=> cols.map(c=>csvEscape(r[c])).join(',')).join('\n');
-      const a=document.createElement('a'); a.href = URL.createObjectURL(new Blob([head+'\n'+body],{type:'text/csv'})); a.download=`history_${Date.now()}.csv`; a.click();
-    }
-
-    // ---------------------- Settings & bindings -------------------------------
-    $('#btnSettings').addEventListener('click', ()=>{
-      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
-      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
-      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
-      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
-      location.reload();
-    });
-
-    $('#btnRefresh').addEventListener('click', fetchHistory);
-    $('#btnClearDates').addEventListener('click', ()=>{ $('#from').value=''; $('#to').value=''; state.from=''; state.to=''; fetchHistory(); });
-    $('#btnExport').addEventListener('click', exportCSV);
-
-    // Filter bindings
-    $('#q').addEventListener('input', e=>{ state.q=e.target.value.trim(); state.page=1; fetchHistory(); });
-    $('#from').addEventListener('change', e=>{ state.from=e.target.value; state.page=1; fetchHistory(); });
-    $('#to').addEventListener('change', e=>{ state.to=e.target.value; state.page=1; fetchHistory(); });
-    $('#status').addEventListener('change', e=>{ state.status=e.target.value; state.page=1; fetchHistory(); });
-    $('#tech').addEventListener('change', e=>{ state.tech=e.target.value; state.page=1; fetchHistory(); });
-
-    // Timeline click → detail panel
-    $('#timeline').addEventListener('click', (e)=>{
-      const a = e.target.closest('[data-view-so]'); if(!a) return; e.preventDefault(); viewSO(a.getAttribute('data-id'));
-    });
-
-    // Detail panel
-    $('#detailSO').addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')) closeDetail(); });
-    $('#d_add_event').addEventListener('click', addEvent);
-
-    // ---------------------- Init ---------------------------------------------
-    (async function init(){
-      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
-      await loadTechs();
-      // default to last 7 days
-      const d1=new Date(); const d0=new Date(Date.now()-6*86400000);
-      $('#from').value = toLocalDateInputValue(d0);
-      $('#to').value   = toLocalDateInputValue(d1);
-      state.from = $('#from').value; state.to = $('#to').value;
-      await fetchHistory();
-    })();
-  </script>
-</body>
-</html>
+    /* ====== Table ====== */
+    .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; }
+    table.table{ width:100%; border-collapse:collap
