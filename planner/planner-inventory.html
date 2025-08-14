@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- CSS kept exactly as you shared -->
   <style>
     :root{
       --bg:#f7f8fb;
@@ -36,7 +37,6 @@
       --focus: 0 0 0 3px rgba(37,99,235,.25);
       --text-sm: 12.5px;
     }
-
     *{ box-sizing: border-box; }
     html,body{ height:100%; }
     body{
@@ -45,48 +45,24 @@
     }
     a{ color:inherit; text-decoration:none; }
     .hide{ display:none !important; }
-
-    /* Layout */
-    .topbar{
-      position:sticky; top:0; z-index:40;
-      display:flex; align-items:center; gap:10px;
-      padding:12px 18px; border-bottom:1px solid var(--border);
-      background:var(--surface); box-shadow:var(--shadow-sm);
-    }
+    .topbar{ position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow-sm); }
     .title{ font-weight:700; }
     .muted{ color:var(--text-muted); }
-    .sidebar{
-      position:fixed; top:54px; left:0; bottom:0; width:240px;
-      padding:16px; border-right:1px solid var(--border); background:var(--surface);
-    }
+    .sidebar{ position:fixed; top:54px; left:0; bottom:0; width:240px; padding:16px; border-right:1px solid var(--border); background:var(--surface); }
     .sidebar .brand{ font-weight:700; margin:6px 0 12px; }
-    .sidebar a{
-      display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted);
-    }
+    .sidebar a{ display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted); }
     .sidebar a:hover{ background:var(--surface-2); color:var(--text); }
     .sidebar a.active{ background:rgba(37,99,235,.08); color:var(--primary); font-weight:600; }
     .main{ margin-left:240px; padding:24px; }
-
-    /* Cards */
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
     .card + .card{ margin-top:var(--space-6); }
-    .card-header{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:16px 18px; border-bottom:1px solid var(--border);
-    }
+    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid var(--border); }
     .card-body{ padding:18px; }
-
-    /* Inputs */
-    .input, .select, .textarea{
-      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
-      background:#fff; color:var(--text); outline:none; transition: box-shadow .15s, border-color .15s;
-    }
+    .input, .select, .textarea{ width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text); outline:none; transition: box-shadow .15s, border-color .15s; }
     .textarea{ min-height:98px; resize:vertical; }
     .input:focus, .select:focus, .textarea:focus{ border-color:var(--primary); box-shadow:var(--focus); }
     .label{ display:block; font-weight:600; margin-bottom:6px; }
     .help{ color:var(--text-muted); font-size:var(--text-sm); margin-top:6px; }
-
-    /* Form grid */
     .form-row{ display:flex; flex-wrap:wrap; gap:12px; }
     .col-12{ flex:0 0 100%; }
     .col-6{ flex:0 0 calc(50% - 6px); }
@@ -98,13 +74,7 @@
       .sidebar a{ text-align:center; }
       .main{ margin-left:72px; }
     }
-
-    /* Buttons */
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:8px;
-      padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer;
-      transition: transform .04s ease, box-shadow .15s, border-color .15s, background .15s;
-    }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; transition: transform .04s ease, box-shadow .15s, border-color .15s, background .15s; }
     .btn:hover{ background:var(--surface-2); }
     .btn:active{ transform:translateY(0.5px); }
     .btn-sm{ padding:6px 10px; border-radius:10px; font-size:var(--text-sm); }
@@ -113,8 +83,6 @@
     .btn-danger{ background:var(--danger); border-color:var(--danger); color:#fff; }
     .btn-outline{ background:#fff; color:var(--primary); border-color:rgba(37,99,235,.35); }
     .btn-outline:hover{ background:rgba(37,99,235,.06); }
-
-    /* Utilities */
     .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
     .grow{ flex:1 1 auto; }
     .mini{ font-size:var(--text-sm); color:var(--text-muted); }
@@ -124,66 +92,39 @@
     .grid{ display:grid; } .grid-2{ grid-template-columns: 1fr 1fr; }
     .text-right{ text-align:right; }
     .fw-600{ font-weight:600; }
-
-    /* Table */
     .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; }
     table.table{ width:100%; border-collapse:separate; border-spacing:0; min-width:880px; }
-    .table thead th{
-      text-align:left; padding:12px; border-bottom:1px solid var(--border);
-      font-weight:600; color:var(--text-muted); background:var(--surface-2);
-    }
+    .table thead th{ text-align:left; padding:12px; border-bottom:1px solid var(--border); font-weight:600; color:var(--text-muted); background:var(--surface-2); }
     .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
     .table tbody tr:hover{ background:#fafafa; }
     .actions{ display:inline-flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; }
-
-    /* Badges */
     .badge{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; }
     .badge.success{ background: #ecfdf5; border-color:#bbf7d0; color:#166534; }
     .badge.info{ background: #e0f2fe; border-color:#bae6fd; color:#075985; }
     .badge.warning{ background: #fff7ed; border-color:#fed7aa; color:#9a3412; }
     .badge.danger{ background: #fee2e2; border-color:#fecaca; color:#991b1b; }
-
-    /* Pagination */
     .pagination{ display:flex; gap:8px; }
-    .pagination .page{
-      display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px;
-      border:1px solid var(--border); border-radius:10px; background:#fff;
-    }
+    .pagination .page{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid var(--border); border-radius:10px; background:#fff; }
     .pagination .page:hover{ background:var(--surface-2); }
     .pagination .page.active{ background:var(--primary); color:#fff; border-color:var(--primary); }
-
-    /* Modal */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.4); display:none; align-items:flex-end; justify-content:center; padding:24px; }
     .modal-backdrop.show{ display:flex; }
     .modal{ width:min(880px, 96vw); max-height:90vh; overflow:auto; background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-lg); }
     .modal header, .modal footer{ padding:16px 18px; border-bottom:1px solid var(--border); }
     .modal footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
     .modal .content{ padding:18px; }
-
-    /* Slide-over (detail panel) */
     .slideover{ position:fixed; inset:0; display:none; }
     .slideover.show{ display:block; }
     .slideover .backdrop{ position:absolute; inset:0; background:rgba(15,23,42,.4); }
-    .slideover .panel{
-      position:absolute; top:0; right:0; height:100%; width:min(860px, 96vw);
-      background:var(--surface); border-left:1px solid var(--border); box-shadow:var(--shadow-lg);
-      display:flex; flex-direction:column;
-    }
+    .slideover .panel{ position:absolute; top:0; right:0; height:100%; width:min(860px, 96vw); background:var(--surface); border-left:1px solid var(--border); box-shadow:var(--shadow-lg); display:flex; flex-direction:column; }
     .slideover header, .slideover footer{ padding:16px 18px; border-bottom:1px solid var(--border); }
     .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
     .slideover .content{ padding:18px; overflow:auto; }
-
-    /* Tabs */
     .tabs{ display:flex; gap:6px; border-bottom:1px solid var(--border); }
     .tab{ padding:8px 12px; border:1px solid transparent; border-radius:10px 10px 0 0; cursor:pointer; color:var(--text-muted); }
     .tab.active{ color:var(--text); background:#fff; border-color:var(--border); border-bottom-color:#fff; }
-
-    /* Dropdown */
     .dropdown{ position:relative; }
-    .dropdown-menu{
-      position:absolute; right:0; top:calc(100% + 6px); min-width:180px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-md);
-      display:none; overflow:hidden;
-    }
+    .dropdown-menu{ position:absolute; right:0; top:calc(100% + 6px); min-width:180px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-md); display:none; overflow:hidden; }
     .dropdown.open .dropdown-menu{ display:block; }
     .dropdown-menu a{ display:block; padding:8px 12px; color:var(--text); }
     .dropdown-menu a:hover{ background:var(--surface-2); }
@@ -388,9 +329,9 @@
 
   <script>
     // ---------------------- Embedded Config -----------------------------------
-    // If you prefer, hardcode your base below. PAT is visible client-side.
-    const NC_BASE = 'https://app.nocodb.com/api/v2';      // ← your NocoDB base
-    const NC_PAT  = 'REPLACE_WITH_PAT';                   // ← your PAT
+    // Hard-coded base + PAT (client-visible). Replace the PAT below with yours.
+    const NC_BASE = 'https://app.nocodb.com/api/v2';   // ← your NocoDB base
+    const NC_PAT  = 'REPLACE_WITH_PAT';                // ← paste your PAT
 
     const TBL_INV = 'mu70y5tmw0pqflp';    // inventory
     const TBL_ASN = 'mt71bvrpbemeziu';    // inventory_assignment
@@ -404,7 +345,7 @@
     // ---------------------- State --------------------------------------------
     let state = { page:1, limit:10, total:0, q:'', cat:'', status:'' };
     let techList = [];
-    let current = null; // current inventory for detail panel
+    let current = null;
 
     // ---------------------- Helpers ------------------------------------------
     function fmtDT(v){ if(!v) return ''; const d = new Date(v); return d.toLocaleString(); }
@@ -595,9 +536,7 @@
       $('#d_model').value = current.model||'';
       $('#d_serial').value = current.serial_number||'';
       $('#d_sim').value = current.sim_number||'';
-      // assignment defaults
       $('#as_qty').value = 1; $('#as_date').value = nowLocalDT();
-      // alert defaults
       $('#al_type').value = ''; $('#al_date').value = nowLocalDT(); $('#al_rem').value = '';
       await loadAssignments(); await loadAlerts();
       openSlide('detailPanel');
