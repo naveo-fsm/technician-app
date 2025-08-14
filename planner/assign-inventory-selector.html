@@ -1,158 +1,363 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <title>Planner • Assign Inventory to SO/Vehicle</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="../assets/js/noco.js"></script>
-  <script src="../assets/js/auth-lite.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Naveo FSM — Assign Inventory</title>
+  <!-- Global stylesheet (adjust path if this file is inside a subfolder) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="technician-app/assets/naveo.css" />
   <style>
-    :root{--primary:#0056b3;--bg:#f5f7fb;--card:#fff;--border:#e5e7eb}
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Poppins,Arial,sans-serif}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
-    h1{font-size:18px;margin:0}
-    .wrap{max-width:980px;margin:16px auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);padding:16px}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    label{font-weight:600;font-size:.9rem} input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px}
-    .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn.secondary{background:#e9eef7;color:#111}
-    table{width:100%;border-collapse:collapse;margin-top:12px} thead th,tbody td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+    .two-col { display:grid; grid-template-columns: 1.2fr .8fr; gap: var(--space-6); }
+    @media (max-width: 1100px){ .two-col { grid-template-columns: 1fr; } }
+    .pill { padding: 4px 8px; border:1px solid var(--border); border-radius:999px; }
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grow { flex:1 1 auto; }
+    .subtle { background: var(--surface-muted); border: 1px dashed var(--border); }
+    .totals { display:flex; gap:16px; align-items:center; }
   </style>
 </head>
 <body>
-  <script>Auth.ensureRole(['planner']);</script>
-
-  <header>
-    <h1>Assign Inventory</h1>
-    <div class="row">
-      <a class="btn secondary" href="./planner-jobs.html">Back to Jobs</a>
-    </div>
-  </header>
-  <script>document.addEventListener('DOMContentLoaded', ()=> Auth.injectRoleBadge('header'));</script>
-
-  <div class="wrap">
-    <div class="grid">
-      <div>
-        <label>Service Order</label>
-        <select id="so" onchange="onSOChange()"></select>
-      </div>
-      <div>
-        <label>Vehicle</label>
-        <select id="veh"></select>
-      </div>
-      <div class="grid" style="grid-column:1/-1">
-        <div>
-          <label>Search Inventory</label>
-          <div style="display:flex;gap:8px">
-            <input id="q" placeholder="Item name contains…">
-            <button class="btn secondary" onclick="searchInventory()">Search</button>
-          </div>
-        </div>
-        <div>
-          <label>Inventory Item</label>
-          <select id="inv"></select>
-        </div>
-      </div>
-      <div>
-        <label>Qty</label>
-        <input id="qty" type="number" value="1" min="1">
-      </div>
-      <div>
-        <label>Override Serial # (optional)</label>
-        <input id="sn" placeholder="SN override">
-      </div>
-      <div>
-        <label>Override SIM # (optional)</label>
-        <input id="sim" placeholder="SIM override">
-      </div>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-      <button class="btn" onclick="assignInv()">Add Line</button>
-      <div id="msg" style="color:#0056b3"></div>
-    </div>
-
-    <div style="overflow:auto">
-      <table>
-        <thead><tr><th>Vehicle</th><th>Inventory Item</th><th>Qty</th><th>Serial</th><th>SIM</th><th></th></tr></thead>
-        <tbody id="rows"><tr><td colspan="6">—</td></tr></tbody>
-      </table>
-    </div>
+  <div class="topbar">
+    <div class="title">Naveo FSM</div>
+    <span class="muted">Assign Inventory</span>
+    <div class="grow"></div>
+    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
+  <aside class="sidebar">
+    <div class="brand">Naveo</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a class="active" href="#">Assign Inventory</a>
+    <a href="planner-jobs.html">Service Orders</a>
+    <a href="planner-inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+  </aside>
+
+  <main class="main">
+    <div class="kpi">
+      <div class="kpi-item"><div class="kpi-label">Service Order</div><div class="kpi-value" id="kpiSO">—</div></div>
+      <div class="kpi-item"><div class="kpi-label">Technician</div><div class="kpi-value" id="kpiTech">—</div></div>
+      <div class="kpi-item"><div class="kpi-label">Scheduled</div><div class="kpi-value" id="kpiSched">—</div></div>
+      <div class="kpi-item"><div class="kpi-label">Vehicle</div><div class="kpi-value" id="kpiVeh">—</div></div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h2>Select Inventory</h2>
+        <div class="toolbar">
+          <input id="q" class="input" placeholder="Search item/serial/SIM/make/model…" style="min-width:300px" />
+          <select id="cat" class="select">
+            <option value="">All categories</option>
+            <option value="tracker">tracker</option>
+            <option value="sensor">sensor</option>
+            <option value="sim">sim</option>
+            <option value="cable">cable</option>
+            <option value="accessory">accessory</option>
+          </select>
+          <select id="status" class="select">
+            <option value="available">available</option>
+            <option value="assigned">assigned</option>
+            <option value="installed">installed</option>
+            <option value="maintenance">maintenance</option>
+            <option value="retired">retired</option>
+            <option value="">All status</option>
+          </select>
+          <button class="btn" id="btnRefresh">↻ Refresh</button>
+          <div class="grow"></div>
+          <label class="control-inline"><input type="checkbox" id="chkUpdateInv" checked /><span>Mark inventory status as <b>assigned</b> after linking</span></label>
+        </div>
+      </div>
+
+      <div class="card-body two-col">
+        <!-- LEFT: inventory browser -->
+        <div>
+          <div class="table-wrap">
+            <table class="table" id="tblInv">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Make/Model</th>
+                  <th style="width:140px">Serial</th>
+                  <th style="width:120px">SIM</th>
+                  <th style="width:120px">Category</th>
+                  <th style="width:120px">Status</th>
+                  <th class="text-right" style="width:120px">Action</th>
+                </tr>
+              </thead>
+              <tbody id="invBody"></tbody>
+            </table>
+          </div>
+          <div class="flex justify-between items-center mt-4">
+            <div class="muted" id="invMeta">0 items</div>
+            <div class="pagination" id="invPager"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: selection cart -->
+        <div>
+          <div class="card subtle">
+            <div class="card-header"><h3>Selected items</h3></div>
+            <div class="card-body">
+              <div class="form">
+                <div class="form-row">
+                  <div class="col-12">
+                    <label class="label">Link to vehicle</label>
+                    <select id="vehicleSelect" class="select"></select>
+                    <div class="help">Optional — attaches each line to a specific vehicle</div>
+                  </div>
+                </div>
+              </div>
+              <div class="table-wrap mt-4">
+                <table class="table" id="tblSel">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th style="width:92px">Qty</th>
+                      <th style="width:160px">Serial override</th>
+                      <th style="width:140px">SIM override</th>
+                      <th class="text-right" style="width:90px">Remove</th>
+                    </tr>
+                  </thead>
+                  <tbody id="selBody">
+                    <tr><td colspan="5" class="muted">Nothing added yet. Use the <b>Add</b> buttons on the left.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex justify-between items-center mt-4">
+                <div class="totals">
+                  <span class="muted">Total items:</span>
+                  <span class="badge" id="totalItems">0</span>
+                </div>
+                <div>
+                  <button class="btn" id="btnClear">Clear</button>
+                  <button class="btn btn-primary" id="btnAssign">Assign to Service Order</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script>
-    const { T } = NC, api = NCAPI;
-    function setMsg(t){ document.getElementById('msg').textContent = t||''; }
+    // ---------------------- Config -------------------------------------------
+    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
+    const TBL_SOV  = 'mvn2do01qdif4yt';   // service_order_vehicles
+    const TBL_INV  = 'mu70y5tmw0pqflp';   // inventory
+    const TBL_SOI  = 'm40n0bb2o41gfxp';   // service_order_inventory
 
-    async function loadSO(){
-      const res = await api.list(T.service_orders, 'limit=500&sort=-scheduled_at&select=id,so_id,technician_id,scheduled_at');
-      const html = res.list.map(r=> `<option value="${r.id}">${r.so_id||('SO #'+r.id)}</option>`).join('');
-      document.querySelector('#so').innerHTML = html;
-      await onSOChange();
-      await listSOInv();
-    }
-    async function onSOChange(){
-      const soId = +gv('#so');
-      if(!soId){ document.querySelector('#veh').innerHTML=''; return; }
-      const res = await api.list(T.service_order_vehicles, `filter=(service_order_id,eq,${soId})&limit=500`);
-      document.querySelector('#veh').innerHTML = res.list.map(v=> `<option value="${v.id}">${v.vehicle_no}</option>`).join('');
-      await listSOInv();
-    }
-    async function searchInventory(){
-      const q = gv('#q').trim();
-      let cond = 'limit=200&sort=item_name';
-      if(q) cond += `&filter=(item_name,like,${encodeURIComponent('%'+q+'%')})`;
-      const res = await api.list(T.inventory, cond);
-      document.querySelector('#inv').innerHTML = res.list.map(i=> `<option value="${i.id}">${i.item_name} ${i.serial_number? '• SN:'+i.serial_number:''} ${i.sim_number? '• SIM:'+i.sim_number:''} (${i.status||'unknown'})</option>`).join('');
-    }
-    async function assignInv(){
-      try{
-        setMsg('');
-        const soId  = +gv('#so');
-        const vehId = +gv('#veh');
-        const invId = +gv('#inv');
-        const qty   = +gv('#qty') || 1;
-        const sn    = gv('#sn').trim();
-        const sim   = gv('#sim').trim();
-        if(!soId || !vehId || !invId) return setMsg('Pick SO, Vehicle, and Inventory');
+    const $ = (s, p=document) => p.querySelector(s);
+    const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
+    const H = () => ({ 'Content-Type':'application/json','xc-token':NC_PAT });
+    const fmtDT=(v)=> v? new Date(v).toLocaleString():'';
 
-        const inv = await api.read(T.inventory, invId);
-        if((inv.status||'').toLowerCase() === 'unavailable') return setMsg('Item is not available');
+    // ---------------------- Params -------------------------------------------
+    const params = new URLSearchParams(location.search);
+    const soParam = params.get('so') || params.get('service_order_id') || '';
+    const vehicleParam = params.get('vehicle_id') || '';
 
-        await api.create(T.service_order_inventory, {
-          service_order_id: soId,
-          service_order_vehicle_id: vehId,
-          inventory_item_id: invId,
-          qty: qty,
-          serial_number: sn || inv.serial_number || null,
-          sim_number: sim || inv.sim_number || null
-        });
-        setMsg('Added.');
-        await listSOInv();
-      }catch(e){
-        console.error(e); setMsg('Error: '+e.message);
+    // ---------------------- State --------------------------------------------
+    const invState = { page:1, limit:10, total:0, q:'', cat:'', status:'available' };
+    const cart = new Map(); // key: inventory.id, value: {id,item_name,qty,serial_override,sim_override}
+    let currentSO = null;    // service order row
+    let vehicles = [];       // vehicles for that SO
+
+    // ---------------------- Load SO ------------------------------------------
+    async function loadSO() {
+      if(!soParam) return alert('Missing ?so= (service order id or so_id).');
+      // Try direct GET by id, else fallback by so_id
+      let row=null, id=soParam;
+      let r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records/${encodeURIComponent(id)}`,{headers:H()});
+      if(r.ok) row = await r.json();
+      if(!row){
+        const url = `${NC_BASE}/tables/${TBL_SO}/records?limit=1&where=(so_id,eq,${encodeURIComponent(soParam)})`;
+        const arr = await fetch(url,{headers:H()}).then(x=>x.json());
+        row = arr[0];
       }
+      if(!row) { alert('Service order not found'); return; }
+      currentSO = row;
+      $('#kpiSO').textContent = row.so_id || row.id;
+      $('#kpiTech').textContent = row.technicians?.full_name || row.technician_id || '—';
+      $('#kpiSched').textContent = fmtDT(row.scheduled_at || row.date);
+      $('#kpiVeh').textContent = '—';
+      await loadVehicles(row.id);
+      if(vehicleParam){ $('#vehicleSelect').value = vehicleParam; updateKpiVehicle(); }
     }
-    async function listSOInv(){
-      const soId = +gv('#so'); if(!soId) return;
-      const res = await api.list(T.service_order_inventory, `filter=(service_order_id,eq,${soId})&limit=1000`);
-      document.querySelector('#rows').innerHTML = res.list.map(r=>`
-        <tr>
-          <td>${r.service_order_vehicle_id||''}</td>
-          <td>${r.inventory_item_id||''}</td>
-          <td>${r.qty||''}</td>
+
+    async function loadVehicles(soId){
+      const url = `${NC_BASE}/tables/${TBL_SOV}/records?limit=1000&where=(service_order_id,eq,${encodeURIComponent(soId)})`;
+      vehicles = await fetch(url,{headers:H()}).then(r=>r.json());
+      const sel = $('#vehicleSelect'); sel.innerHTML = '<option value="">None</option>' + vehicles.map(v=>`<option value="${v.id}">${v.vehicle_no}</option>`).join('');
+      updateKpiVehicle();
+    }
+    function updateKpiVehicle(){
+      const vId = $('#vehicleSelect').value;
+      const v = vehicles.find(x=>String(x.id)===String(vId));
+      $('#kpiVeh').textContent = v? v.vehicle_no : '—';
+    }
+
+    // ---------------------- Inventory list -----------------------------------
+    async function fetchInventory(){
+      const {page,limit,q,cat,status} = invState; const offset=(page-1)*limit;
+      let url = `${NC_BASE}/tables/${TBL_INV}/records?limit=${limit}&offset=${offset}&orderBy=updated_at&order=desc`;
+      const filters=[];
+      if(q) filters.push(`(item_name,like,${encodeURIComponent('%'+q+'%')})~or(serial_number,like,${encodeURIComponent('%'+q+'%')})~or(sim_number,like,${encodeURIComponent('%'+q+'%')})~or(make,like,${encodeURIComponent('%'+q+'%')})~or(model,like,${encodeURIComponent('%'+q+'%')})`);
+      if(cat) filters.push(`(category,eq,${cat})`);
+      if(status) filters.push(`(status,eq,${status})`);
+      if(filters.length) url += `&where=${filters.join('~and')}`;
+      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      // count
+      let cUrl = `${NC_BASE}/tables/${TBL_INV}/records/count`; if(filters.length) cUrl += `?where=${filters.join('~and')}`;
+      const c = await fetch(cUrl,{headers:H()}).then(r=>r.json()); invState.total = c?.count || rows.length;
+      renderInventory(rows); renderInvPager();
+    }
+
+    function renderInventory(rows){
+      const body = $('#invBody'); body.innerHTML='';
+      rows.forEach(r=>{
+        const badge = r.status==='available' ? 'badge success' : (r.status==='assigned'?'badge info':'badge');
+        const disabled = r.status!=='available' ? 'disabled' : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><div class="fw-600">${r.item_name||''}</div><div class="muted text-sm">#${r.id}</div></td>
+          <td>${[r.make,r.model].filter(Boolean).join(' ')}</td>
           <td>${r.serial_number||''}</td>
           <td>${r.sim_number||''}</td>
-          <td><button onclick="delInv(${r.id})">Remove</button></td>
-        </tr>`).join('') || '<tr><td colspan="6">No lines</td></tr>';
+          <td>${r.category||''}</td>
+          <td><span class="${badge}">${r.status||''}</span></td>
+          <td class="text-right">
+            <button class="btn btn-sm" data-add data-id="${r.id}" ${disabled}>Add</button>
+          </td>`;
+        tr.dataset.row = JSON.stringify(r);
+        body.appendChild(tr);
+      });
+      $('#invMeta').textContent = `${invState.total} items`;
     }
-    async function delInv(id){
-      if(!confirm('Remove inventory line?')) return;
-      await api.del(T.service_order_inventory, id);
-      await listSOInv();
-    }
-    function gv(sel){ const e=document.querySelector(sel); return e? e.value : ''; }
 
-    document.addEventListener('DOMContentLoaded', ()=> { loadSO(); searchInventory(); });
+    function renderInvPager(){
+      const pager = $('#invPager'); pager.innerHTML='';
+      const pages = Math.max(1, Math.ceil(invState.total/invState.limit));
+      for(let i=1;i<=pages;i++){
+        const a = document.createElement('a'); a.href='#'; a.className='page' + (i===invState.page?' active':''); a.textContent = i;
+        a.addEventListener('click', e=>{ e.preventDefault(); invState.page=i; fetchInventory(); });
+        pager.appendChild(a);
+      }
+    }
+
+    // ---------------------- Cart management ----------------------------------
+    function renderCart(){
+      const body = $('#selBody'); body.innerHTML='';
+      if(cart.size===0){ body.innerHTML='<tr><td colspan="5" class="muted">Nothing added yet. Use the <b>Add</b> buttons on the left.</td></tr>'; }
+      else {
+        for(const [id, it] of cart){
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><div class="fw-600">${it.item_name}</div><div class="muted text-sm">#${id} ${it.make||''} ${it.model||''}</div></td>
+            <td><input type="number" class="input" min="1" value="${it.qty||1}" data-qty data-id="${id}" style="max-width:92px"></td>
+            <td><input class="input" placeholder="${it.serial_number||''}" value="${it.serial_override||''}" data-serial data-id="${id}"></td>
+            <td><input class="input" placeholder="${it.sim_number||''}" value="${it.sim_override||''}" data-sim data-id="${id}"></td>
+            <td class="text-right"><button class="btn btn-danger btn-sm" data-remove data-id="${id}">Remove</button></td>`;
+          body.appendChild(tr);
+        }
+      }
+      $('#totalItems').textContent = [...cart.values()].reduce((s, x)=> s + (Number(x.qty)||1), 0);
+    }
+
+    function addToCart(row){
+      const id = row.id; const existing = cart.get(id);
+      if(existing){ existing.qty = Number(existing.qty||1) + 1; }
+      else { cart.set(id, { id, item_name: row.item_name, make: row.make, model: row.model, serial_number: row.serial_number, sim_number: row.sim_number, qty: 1 }); }
+      renderCart();
+    }
+
+    function removeFromCart(id){ cart.delete(id); renderCart(); }
+
+    // ---------------------- Assign -------------------------------------------
+    async function assignAll(){
+      if(!currentSO){ alert('No service order loaded'); return; }
+      if(cart.size===0){ alert('Add at least one item'); return; }
+      const vehicleId = $('#vehicleSelect').value || null;
+      const markAssigned = $('#chkUpdateInv').checked;
+
+      const payload = [];
+      for(const [id, it] of cart){
+        payload.push({
+          service_order_id: currentSO.id,
+          service_order_vehicle_id: vehicleId || undefined,
+          inventory_item_id: id,
+          qty: Number(it.qty||1),
+          serial_number: it.serial_override || undefined,
+          sim_number: it.sim_override || undefined,
+        });
+      }
+
+      // Create SOI lines in bulk (PATCH-style not supported; use POST per line or loop)
+      let okAll = true;
+      for(const rec of payload){
+        const r = await fetch(`${NC_BASE}/tables/${TBL_SOI}/records`,{ method:'POST', headers:H(), body: JSON.stringify(rec) });
+        if(!r.ok){ okAll=false; console.error('assign failed', rec, await r.text()); }
+        else if(markAssigned){
+          // best effort: update inventory.status = assigned
+          await fetch(`${NC_BASE}/tables/${TBL_INV}/records`,{ method:'PATCH', headers:H(), body: JSON.stringify({ records:[{ id: rec.inventory_item_id, status:'assigned' }] }) }).catch(()=>{});
+        }
+      }
+
+      if(okAll){
+        alert('Inventory assigned successfully.');
+        cart.clear(); renderCart(); fetchInventory();
+      } else {
+        alert('Some items failed to assign. Check console for details.');
+      }
+    }
+
+    // ---------------------- Events -------------------------------------------
+    $('#btnSettings').addEventListener('click', ()=>{
+      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
+      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
+      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
+      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
+      location.reload();
+    });
+
+    $('#vehicleSelect').addEventListener('change', updateKpiVehicle);
+
+    $('#q').addEventListener('input', e=>{ invState.q = e.target.value.trim(); invState.page=1; fetchInventory(); });
+    $('#cat').addEventListener('change', e=>{ invState.cat = e.target.value; invState.page=1; fetchInventory(); });
+    $('#status').addEventListener('change', e=>{ invState.status = e.target.value; invState.page=1; fetchInventory(); });
+    $('#btnRefresh').addEventListener('click', fetchInventory);
+
+    $('#invBody').addEventListener('click', (e)=>{
+      const t = e.target; if(!t.hasAttribute('data-add')) return; e.preventDefault();
+      const tr = t.closest('tr'); const row = JSON.parse(tr.dataset.row);
+      addToCart(row);
+    });
+
+    $('#selBody').addEventListener('input', (e)=>{
+      const t = e.target; const id = t.getAttribute('data-id'); if(!cart.has(Number(id))) return;
+      const it = cart.get(Number(id));
+      if(t.hasAttribute('data-qty')) it.qty = Math.max(1, Number(t.value||1));
+      if(t.hasAttribute('data-serial')) it.serial_override = t.value.trim();
+      if(t.hasAttribute('data-sim')) it.sim_override = t.value.trim();
+      $('#totalItems').textContent = [...cart.values()].reduce((s, x)=> s + (Number(x.qty)||1), 0);
+    });
+    $('#selBody').addEventListener('click', (e)=>{ const t=e.target; if(t.hasAttribute('data-remove')){ removeFromCart(Number(t.getAttribute('data-id'))); } });
+
+    $('#btnClear').addEventListener('click', ()=>{ cart.clear(); renderCart(); });
+    $('#btnAssign').addEventListener('click', assignAll);
+
+    // ---------------------- Init ---------------------------------------------
+    (async function init(){
+      if(!NC_PAT){ alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.'); }
+      await loadSO();
+      await fetchInventory();
+      renderCart();
+    })();
   </script>
 </body>
 </html>
