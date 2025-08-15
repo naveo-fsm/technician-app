@@ -317,6 +317,9 @@
     const $ = (s, p=document) => p.querySelector(s);
     const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
 
+    // Normalize NocoDB list responses (either an array or { list: [...] })
+    const asList = (d) => (Array.isArray(d) ? d : (d && Array.isArray(d.list) ? d.list : []));
+
     // ---------------------- Helpers ------------------------------------------
     function newSoId(){
       const d = new Date();
@@ -334,34 +337,50 @@
     let intList = []; // cached interventions
 
     async function loadTechs(){
-      // Try several safe query variants to avoid 422s due to missing columns/case
-      const makeUrl = (params) => `${NC_BASE}/tables/${TBL_TECH}/records${params}`;
-      const activeWhere = encodeURIComponent('(status,eq,Active)~or(status,eq,active)');
-      const tries = [
-        `?limit=1000&where=${activeWhere}&orderBy=full_name&order=asc`,
-        `?limit=1000&where=${activeWhere}&orderBy=email_address&order=asc`,
-        `?limit=1000&orderBy=full_name&order=asc`,
-        `?limit=1000`
-      ];
+      const base = `${NC_BASE}/tables/${TBL_TECH}/records`;
       let rows = [];
-      for (const p of tries){
-        try{
-          const r = await fetch(makeUrl(p), { headers: H() });
-          if (!r.ok) { console.warn('loadTechs try failed:', p, r.status, await r.text()); continue; }
+
+      // 1) Plain list first (avoids 422/filters issues)
+      try{
+        const r = await fetch(`${base}?limit=1000`, { headers: H() });
+        if (r.ok) {
           const data = await r.json();
-          if (Array.isArray(data)) { rows = data; break; }
-        }catch(err){ console.warn('loadTechs error:', err); }
+          rows = asList(data);
+        } else {
+          console.warn('loadTechs plain list failed:', r.status, await r.text());
+        }
+      }catch(err){ console.warn('loadTechs plain list error:', err); }
+
+      // 2) If still empty, try ordered variants and status filter (Active/active)
+      if (!rows.length) {
+        const tries = [
+          `?limit=1000&orderBy=full_name&order=asc`,
+          `?limit=1000&orderBy=email_address&order=asc`,
+          `?limit=1000&where=${encodeURIComponent('(status,eq,Active)~or(status,eq,active)')}`
+        ];
+        for (const p of tries) {
+          try {
+            const r = await fetch(base + p, { headers: H() });
+            if (!r.ok) { console.warn('loadTechs try failed:', p, r.status, await r.text()); continue; }
+            const data = await r.json();
+            const arr = asList(data);
+            if (arr.length) { rows = arr; break; }
+          } catch (err) { console.warn('loadTechs try error:', err); }
+        }
       }
-      const label = (t) => t.full_name || t.name || t.display_name || t.email_address || t.phone || t.phone_number || (`Tech #${t.id}`);
-      if (!rows.length) console.warn('No technicians returned from mzw1focsec0tekg.');
-      const html = rows.map(t => `<option value="${t.id}">${label(t)}</option>`).join('');
-      $('#technician_id').innerHTML = html || '<option value="">(no technicians)</option>';
+
+      const label = (t) => t.full_name || t.name || t.display_name || t.email_address || t.role || t.phone || t.phone_number || (`Tech #${t.id}`);
+      const opts = rows.map(t => `<option value="${t.id}">${label(t)}</option>`).join('');
+      $('#technician_id').innerHTML = rows.length ? (`<option value="">Select technician…</option>` + opts) : '<option value="">(no technicians)</option>';
     }
 
     async function loadInterventions(){
-      const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&where=(status,eq,active)&orderBy=intervention_name&order=asc`;
-      const r = await fetch(url,{headers:H()});
-      intList = r.ok ? await r.json() : [];
+      const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&orderBy=intervention_name&order=asc`;
+      try{
+        const r = await fetch(url,{headers:H()});
+        const data = r.ok ? await r.json() : [];
+        intList = asList(data);
+      }catch(err){ console.warn('loadInterventions error:', err); intList = []; }
       $$('#vehList select[data-int]').forEach(sel => applyInterventionOptions(sel));
     }
 
