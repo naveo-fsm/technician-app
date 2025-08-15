@@ -42,16 +42,19 @@
     }
     a{ color: var(--primary); text-decoration:none; }
     a:hover{ text-decoration:underline; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     .fw-600{ font-weight:600; }
     .text-sm{ font-size: var(--text-sm); }
     .muted{ color: var(--text-muted); }
-    .mt-2{ margin-top:8px; } .mt-3{ margin-top:12px; } .mt-4{ margin-top:16px; }
-    .mb-4{ margin-bottom:16px; }
+    .hide{ display:none !important; }
+    .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
+    .mb-4{ margin-bottom:var(--space-4); }
     .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
-    .gap-4{ gap: 16px; }
+    .gap-4{ gap: var(--space-4); }
     .grow{ flex:1 1 auto; }
     .grid{ display:grid; }
     .grid-3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .gap-4{ gap: var(--space-4); }
     hr{ border:0; height:1px; background:var(--border); margin:16px 0; }
 
     /* ======= App layout ======= */
@@ -67,6 +70,7 @@
       background:var(--surface); border-right:1px solid var(--border); overflow:auto;
       display:flex; flex-direction:column;
     }
+    .sidebar .brand{ font-weight:700; margin-bottom:10px; }
     .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
     .sidebar a:hover{ background:rgba(37,99,235,.06); }
     .sidebar a.active{ background:rgba(37,99,235,.12); border:1px solid rgba(37,99,235,.35); }
@@ -76,54 +80,62 @@
     .main{ margin-left:240px; padding: 18px; }
 
     /* ======= Cards / containers ======= */
-    .card{ background:var(--surface); border:1px solid var(--border); border-radius: 16px; box-shadow:0 1px 2px rgba(2,6,23,.06); }
-    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 16px 20px; border-bottom:1px solid var(--border); }
-    .card-body{ padding: 20px; }
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .card-body{ padding: var(--space-5); }
 
-    /* Buttons */
+    /* ======= Toolbar ======= */
+    .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+
+    /* ======= Buttons ======= */
     .btn{
       --bg:transparent; --bd:var(--border); --fg:var(--text);
       display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
       border:1px solid var(--bd); background:var(--bg); color:var(--fg);
-      border-radius:10px; cursor:pointer; transition: .15s ease;
+      border-radius:10px; cursor:pointer; user-select:none; transition: .15s ease;
     }
-    .btn:hover{ background: rgba(2,6,23,.03); }
-    .btn-sm{ padding:6px 10px; font-size: .875rem; border-radius:8px; }
-    .btn-primary{ --bg: linear-gradient(135deg, var(--primary), var(--accent)); --bd: rgba(2,6,23,.08); --fg:#fff; color:#fff; }
-    .btn-danger{ --bd: rgba(220,38,38,.4); color:#991b1b; }
+    .btn:hover{ filter: brightness(0.98); background: rgba(2,6,23,.03); }
+    .btn:active{ transform: translateY(1px); }
+    .btn-sm{ padding:6px 10px; font-size: var(--text-sm); border-radius:8px; }
+    .btn-primary{ --bg: linear-gradient(135deg, var(--primary), var(--accent)); --bd: rgba(2,6,23,.08); --fg:#fff; box-shadow: var(--shadow-sm); }
+    .btn-outline{ --bg: transparent; --bd: rgba(2,6,23,.16); }
+    .btn-danger{ --bg: transparent; --bd: rgba(220,38,38,.4); color:#991b1b; }
 
-    /* Inputs */
+    /* ======= Inputs ======= */
     .input,.select,.textarea{
-      width:100%; padding:10px 12px; background:#fff; color:var(--text);
+      width:100%; padding:10px 12px; background: #fff; color:var(--text);
       border:1px solid var(--border); border-radius:10px; outline:none; transition:.12s ease;
     }
     .textarea{ min-height:96px; resize:vertical; }
     .input:focus,.select:focus,.textarea:focus{ border-color: rgba(37,99,235,.6); box-shadow: 0 0 0 3px rgba(37,99,235,.18); }
     .label{ display:block; margin-bottom:6px; font-weight:500; color:var(--text-muted); }
-    .help{ margin-top:6px; color:var(--text-muted); font-size: .875rem; }
+    .help{ margin-top:6px; color:var(--text-muted); font-size: var(--text-sm); }
 
+    .form{ display:block; }
     .form-row{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
     .col-12{ grid-column: span 12; } .col-9{ grid-column: span 9; }
     .col-8{ grid-column: span 8; } .col-6{ grid-column: span 6; } .col-4{ grid-column: span 4; } .col-3{ grid-column: span 3; } .col-2{ grid-column: span 2; }
     .control-inline{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
 
-    /* Badges */
-    .badge{ display:inline-block; padding:4px 8px; border-radius:999px; background:#fff; border:1px solid var(--border); font-size:.875rem; }
+    /* ======= Badges / chips ======= */
+    .badge{ display:inline-block; padding:4px 8px; border-radius:999px; background:#fff; border:1px solid var(--border); font-size:var(--text-sm); }
     .badge.success{ background:rgba(22,163,74,.10); border-color:rgba(22,163,74,.35); color:#166534; }
+    .badge.warning{ background:rgba(217,119,6,.10); border-color:rgba(217,119,6,.35); color:#92400e; }
     .badge[class*="status-"]{ background:rgba(37,99,235,.10); border-color:rgba(37,99,235,.35); color:#1e40af; }
-    .mini{ font-size:.875rem; color: var(--text-muted); }
+    .chip{ display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); }
+    .mini{ font-size: var(--text-sm); color: var(--text-muted); }
 
-    /* Modals */
+    /* ======= Modal ======= */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.4); display:none; align-items:center; justify-content:center; z-index:60; }
     .modal-backdrop.show{ display:flex; }
-    .modal{ width:min(720px, 96vw); background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 18px 48px rgba(2,6,23,.10); }
-    .modal header{ padding: 16px 20px; border-bottom:1px solid var(--border); }
-    .modal .content{ padding: 20px; max-height:65vh; overflow:auto; }
-    .modal footer{ padding: 16px 20px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+    .modal{ width:min(720px, 96vw); background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg); }
+    .modal header{ padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .modal .content{ padding: var(--space-5); max-height:65vh; overflow:auto; }
+    .modal footer{ padding: var(--space-4) var(--space-5); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
 
     @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
     @media (max-width: 760px){
-      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);}
+      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);} 
       .main{ margin-left:0; }
     }
   </style>
@@ -136,7 +148,9 @@
     <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
+  <!-- Uniform sidebar with pinned Logout -->
   <aside class="sidebar">
+    <div class="brand">Naveo</div>
     <a href="dashboard.html">Dashboard</a>
     <a href="planner-jobs.html">Service Orders</a>
     <a class="active" href="assign-job-enhanced.html">Assign Job</a>
@@ -145,7 +159,9 @@
     <a href="realtime-map.html">Live Map</a>
     <a href="admin-intervention-master.html">Admin · Intervention Types</a>
     <a href="admin-tech-master.html">Admin · Technicians</a>
-    <div class="footer"><button class="btn logout" id="btnLogout">Log out</button></div>
+    <div class="footer">
+      <button class="btn logout" id="btnLogout">Log out</button>
+    </div>
   </aside>
 
   <main class="main">
@@ -165,7 +181,6 @@
               <input id="so_id" class="input" placeholder="auto e.g. SO-20250814-123456" />
               <div class="help">Leave empty to auto-generate.</div>
             </div>
-
             <div class="col-4">
               <label class="label">Technician</label>
               <div class="flex" style="gap:10px;">
@@ -176,7 +191,6 @@
               <input type="hidden" id="technician_id" />
               <div class="help">Pick from the suggestions to lock in the technician.</div>
             </div>
-
             <div class="col-4">
               <label class="label">Scheduled at</label>
               <input id="scheduled_at" type="datetime-local" class="input" required />
@@ -314,7 +328,7 @@
   </div>
 
   <script>
-    // ---------------------- Config ---------------------
+    // ---------------------- Config (HARD-CODED for demo) ---------------------
     const NC_BASE = 'https://app.nocodb.com/api/v2';
     const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
 
@@ -326,30 +340,42 @@
     const TBL_SOC  = 'mibtqjiulezywtx';   // service_order_checklist (lines)
     const TBL_CLIENTS = 'm5f6kp73u19gitz';// tbl_clients
 
-    // Headers + tiny helpers
+    // Updated headers: include Accept for better error bodies
     const H = () => ({ 'Accept': 'application/json', 'Content-Type': 'application/json', 'xc-token': NC_PAT });
-    const $  = (s, p=document) => p.querySelector(s);
+    const $ = (s, p=document) => p.querySelector(s);
     const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
+
+    // Normalize NocoDB list responses (either an array or { list: [...] })
     const asList = (d) => (Array.isArray(d) ? d : (d && Array.isArray(d.list) ? d.list : []));
 
-    // ---------------------- Misc helpers ---------------------
+    // ---------------------- Helpers ------------------------------------------
     function newSoId(){
       const d = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       return `SO-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
     }
-    function logout(){ try{ localStorage.removeItem('NC_PAT'); localStorage.removeItem('NC_BASE'); }catch(e){} location.href = 'login.html'; }
 
-    // ---------------------- Lookups ---------------------
-    let intList = [];
-    let techIndex = [];
+    // Uniform logout
+    function logout(){
+      try{ localStorage.removeItem('NC_PAT'); localStorage.removeItem('NC_BASE'); }catch(e){}
+      location.href = 'login.html';
+    }
+
+    // ---------------------- Lookups ------------------------------------------
+    let intList = []; // cached interventions
+    let techIndex = []; // [{ id, label }] for technician typeahead
 
     async function loadTechs(){
       const base = `${NC_BASE}/tables/${TBL_TECH}/records`;
       let rows = [];
       try{
         const r = await fetch(`${base}?limit=1000`, { headers: H() });
-        if (r.ok) rows = asList(await r.json());
+        if (r.ok) {
+          const data = await r.json();
+          rows = asList(data);
+        } else {
+          console.warn('loadTechs plain list failed:', r.status, await r.text());
+        }
       }catch(err){ console.warn('loadTechs plain list error:', err); }
 
       if (!rows.length) {
@@ -361,20 +387,21 @@
         for (const p of tries) {
           try {
             const r = await fetch(base + p, { headers: H() });
-            if (!r.ok) continue;
-            const arr = asList(await r.json());
+            if (!r.ok) { console.warn('loadTechs try failed:', p, r.status, await r.text()); continue; }
+            const data = await r.json();
+            const arr = asList(data);
             if (arr.length) { rows = arr; break; }
-          } catch (err) {}
+          } catch (err) { console.warn('loadTechs try error:', err); }
         }
       }
 
       const labelOf = (t) => t.full_name || t.name || t.display_name || t.email_address || t.phone || (`Tech #${t.id}`);
       techIndex = rows.map(t => ({ id: t.id, label: labelOf(t) }));
 
-      // Fill datalist
-      $('#techList').innerHTML = techIndex.map(t => `<option value="${t.label}"></option>`).join('');
+      const dl = $('#techList');
+      dl.innerHTML = techIndex.map(t => `<option value="${t.label}"></option>`).join('');
 
-      // Prefill if exactly one tech
+      // If only one tech, prefill
       if (techIndex.length === 1){
         $('#technician_name').value = techIndex[0].label;
         $('#technician_id').value = techIndex[0].id;
@@ -382,10 +409,12 @@
     }
 
     async function loadInterventions(){
+      const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&orderBy=intervention_name&order=asc`;
       try{
-        const r = await fetch(`${NC_BASE}/tables/${TBL_INT}/records?limit=1000&orderBy=intervention_name&order=asc`, {headers:H()});
-        intList = asList(r.ok ? await r.json() : []);
-      }catch(err){ intList = []; }
+        const r = await fetch(url,{headers:H()});
+        const data = r.ok ? await r.json() : [];
+        intList = asList(data);
+      }catch(err){ console.warn('loadInterventions error:', err); intList = []; }
       $$('#vehList select[data-int]').forEach(sel => applyInterventionOptions(sel));
     }
 
@@ -395,12 +424,13 @@
       return r.ok ? r.json() : [];
     }
 
-    // ---------------------- Vehicles UI ---------------------
+    // ---------------------- Vehicles UI --------------------------------------
     function applyInterventionOptions(selectEl, selected=''){
       const opts = ['<option value="">Select intervention…</option>']
         .concat(intList.map(it => `<option value="${it.id}" ${String(it.id)===String(selected)?'selected':''}>${it.intervention_name}</option>`));
       selectEl.innerHTML = opts.join('');
     }
+
     function vehRowTpl(value='', intId=''){
       const row = document.createElement('div');
       row.className = 'veh-row';
@@ -411,34 +441,57 @@
         <input class="input" placeholder="Vehicle number / plate" value="${value}">
         <select class="select" data-int></select>
         <button class="btn btn-danger" title="Remove">✖</button>`;
-      applyInterventionOptions(row.querySelector('select[data-int]'), intId);
-      row.querySelector('button').addEventListener('click', ()=> row.remove());
+      const sel = row.querySelector('select[data-int]');
+      applyInterventionOptions(sel, intId);
+      row.querySelector('button').addEventListener('click', ()=>{ row.remove(); });
       return row;
     }
-    function addVeh(value='', intId=''){ $('#vehList').appendChild(vehRowTpl(value, intId)); }
+
+    function addVeh(value='', intId=''){
+      const row = vehRowTpl(value, intId);
+      $('#vehList').appendChild(row);
+    }
+
     function getVehValues(){
       const values = [];
       $$('#vehList .veh-row').forEach(r=>{
         const vehicle_no = r.querySelector('input').value.trim();
         const intervention_type_id = r.querySelector('select[data-int]').value;
-        if(vehicle_no || intervention_type_id) values.push({ vehicle_no, intervention_type_id });
+        if(vehicle_no || intervention_type_id){
+          values.push({ vehicle_no, intervention_type_id });
+        }
       });
       return values;
     }
 
-    // ---------------------- Client search/create ---------------------
+    // ---------------------- Client picker ------------------------------------
+    // Safer: name-only search and robust error handling to avoid 422s
     async function searchClientsByName(q=''){
       if(!q) return [];
       const like = encodeURIComponent('%'+q+'%');
       const url = `${NC_BASE}/tables/${TBL_CLIENTS}/records?limit=20&orderBy=name&order=asc&where=(name,like,${like})`;
       try{
         const r = await fetch(url, {headers:H()});
-        return asList(r.ok ? await r.json() : []);
-      }catch(err){ return []; }
+        if(!r.ok){ console.warn('searchClientsByName failed:', r.status, await r.text()); return []; }
+        const data = await r.json();
+        return asList(data);
+      }catch(err){ console.warn('searchClientsByName error:', err); return []; }
     }
+    
+
     function renderClientResults(rows){
       const box = $('#c_results');
       if(!rows.length){ box.innerHTML = `<div class="muted">No matches.</div>`; return; }
+      box.innerHTML = rows.map(r=>`
+        <div class="card" data-select-client="${r.id}" style="padding:12px;border-radius:10px; cursor:pointer;">
+          <div class="fw-600">${r.name||'(no name)'}</div>
+          <div class="mini">${r.address||''}</div>
+          <div class="mini">${r.contact_person||''} ${r.contact_phone? ' · '+r.contact_phone : ''}</div>
+          <div class="mt-2">
+            <button class="btn btn-sm">Select</button>
+          </div>
+        </div>`).join('');
+    }
       box.innerHTML = rows.map(r=>`
         <div class="card" style="padding:12px;border-radius:10px;">
           <div class="fw-600">${r.name||'(no name)'}</div>
@@ -449,28 +502,72 @@
           </div>
         </div>`).join('');
     }
+
     function selectClient(c){
       $('#client_id').value = c.id;
       $('#client_name').value = c.name || '';
-      if(!$('#address').value)        $('#address').value = c.address || '';
-      if(!$('#contact_person').value) $('#contact_person').value = c.contact_person || '';
-      if(!$('#contact_phone').value)  $('#contact_phone').value = c.contact_phone || '';
+      // Always overwrite with selected client's details
+      $('#address').value = c.address || '';
+      $('#contact_person').value = c.contact_person || '';
+      $('#contact_phone').value = c.contact_phone || '';
       closeClientModal();
     }
+
     async function openClientModal(seed=''){
       $('#clientModal').classList.add('show');
       const v = (seed || '').trim();
       $('#c_q').value = v;
-      renderClientResults(v ? await searchClientsByName(v) : []);
+      if (v) {
+        const rows = await searchClientsByName(v);
+        renderClientResults(rows);
+      } else {
+        renderClientResults([]);
+      }
       $('#c_q').focus();
     }
     function closeClientModal(){ $('#clientModal').classList.remove('show'); }
+
     function openClientCreateModal(){
       openClientModal('');
-      $('#c_name').value = ''; $('#c_address').value = ''; $('#c_person').value = '';
-      $('#c_phone').value = ''; $('#c_email').value = '';
+      // Clear fields and focus name
+      $('#c_name').value = '';
+      $('#c_address').value = '';
+      $('#c_person').value = '';
+      $('#c_phone').value = '';
+      $('#c_email').value = '';
       setTimeout(()=> $('#c_name').focus(), 0);
     }
+
+    function openTechCreateModal(){
+      $('#techModal').classList.add('show');
+      $('#t_full_name').value = '';
+      $('#t_email').value = '';
+      $('#t_phone').value = '';
+      $('#t_status').value = 'Active';
+      setTimeout(()=> $('#t_full_name').focus(), 0);
+    }
+    function closeTechModal(){ $('#techModal').classList.remove('show'); }
+
+    async function createTechInline(){
+      const full_name = ($('#t_full_name')?.value || '').trim();
+      const email_address = ($('#t_email')?.value || '').trim() || undefined;
+      const phone = ($('#t_phone')?.value || '').trim() || undefined;
+      const status = ($('#t_status')?.value || 'Active');
+      if(!full_name){ alert('Full name is required'); return; }
+      const payload = { full_name, email_address, phone, status };
+      try{
+        const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records`, { method:'POST', headers:H(), body: JSON.stringify(payload) });
+        const row = await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(row?.msg || row?.message || `HTTP ${r.status}`);
+        // refresh list and select new tech
+        await loadTechs();
+        const label = (row.full_name || row.name || row.display_name || row.email_address || row.phone || `Tech #${row.id}`);
+        $('#technician_name').value = label; $('#technician_id').value = row.id;
+        closeTechModal();
+      }catch(err){ console.error('Create tech error:', err); alert('Create technician failed: ' + err.message); }
+    }
+
+    // Robust create with try/catch + defaults for status/date_created
     async function createClientInline(){
       const body = {
         name: ($('#c_name').value||'').trim(),
@@ -482,51 +579,36 @@
         date_created: new Date().toISOString()
       };
       if(!body.name){ alert('Client name is required'); return; }
+
+      // duplicate check by NAME only
       const dup = await searchClientsByName(body.name);
       if(dup.find(x => (x.name||'').toLowerCase() === body.name.toLowerCase())){
-        if(!confirm('A client with the same name exists. Create anyway?')) return;
+        const cont = confirm('A client with the same name exists. Create anyway?');
+        if(!cont) return;
       }
+
       try{
-        const r = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records`, { method:'POST', headers:H(), body: JSON.stringify(body) });
-        const c = r.ok ? await r.json() : await r.json().catch(()=>({}));
+        const r = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records`, {
+          method:'POST', headers:H(), body: JSON.stringify(body)
+        });
+        const c = await r.json().catch(()=>({}));
         if(!r.ok) throw new Error(c?.msg || c?.message || `HTTP ${r.status}`);
         selectClient(c);
-      }catch(err){ alert('Client create failed: ' + err.message); }
+      }catch(err){
+        console.error('Client create error:', err);
+        alert('Client create failed: ' + err.message);
+      }
     }
 
-    // ---------------------- Technician create ---------------------
-    function openTechCreateModal(){
-      $('#techModal').classList.add('show');
-      $('#t_full_name').value = ''; $('#t_email').value = ''; $('#t_phone').value = '';
-      $('#t_status').value = 'Active';
-      setTimeout(()=> $('#t_full_name').focus(), 0);
-    }
-    function closeTechModal(){ $('#techModal').classList.remove('show'); }
-    async function createTechInline(){
-      const full_name = ($('#t_full_name')?.value || '').trim();
-      const email_address = ($('#t_email')?.value || '').trim() || undefined;
-      const phone = ($('#t_phone')?.value || '').trim() || undefined;
-      const status = ($('#t_status')?.value || 'Active');
-      if(!full_name){ alert('Full name is required'); return; }
-      const payload = { full_name, email_address, phone, status };
-      try{
-        const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records`, { method:'POST', headers:H(), body: JSON.stringify(payload) });
-        const row = r.ok ? await r.json() : await r.json().catch(()=>({}));
-        if(!r.ok) throw new Error(row?.msg || row?.message || `HTTP ${r.status}`);
-        await loadTechs();
-        const label = (row.full_name || row.name || row.display_name || row.email_address || row.phone || `Tech #${row.id}`);
-        $('#technician_name').value = label; $('#technician_id').value = row.id;
-        closeTechModal();
-      }catch(err){ alert('Create technician failed: ' + err.message); }
-    }
-
-    // ---------------------- Create SO ---------------------
+    // ---------------------- Create flow --------------------------------------
     async function createSO(){
       const vehs = getVehValues();
       if(vehs.length===0){ alert('Please add at least one vehicle and select its intervention type.'); return; }
-      if(vehs.some(v => !v.vehicle_no || !v.intervention_type_id)){ alert('Each vehicle row must have a Vehicle number and an Intervention type.'); return; }
+      if(vehs.some(v => !v.vehicle_no || !v.intervention_type_id)){
+        alert('Each vehicle row must have a Vehicle number and an Intervention type.'); return;
+      }
 
-      // Resolve technician
+      // resolve technician
       const techName = ($('#technician_name')?.value || '').trim();
       let techId = $('#technician_id').value;
       if (!techId && techName){
@@ -551,6 +633,7 @@
         return_visit_required: $('#return_visit_required').checked || undefined,
         follow_up_of_so_id: $('#follow_up_of_so_id').value || undefined,
       };
+
       const minimal = {
         so_id: bodyFull.so_id,
         technician_id: bodyFull.technician_id,
@@ -567,7 +650,7 @@
       }
       if(!so){ alert('Failed to create Service Order. Check required columns exist.'); return; }
 
-      // Vehicles
+      // Vehicles (+ per-vehicle intervention)
       const createdVehs = [];
       for(const v of vehs){
         const payloadFull = { service_order_id: so.id, vehicle_no: v.vehicle_no, intervention_type_id: v.intervention_type_id };
@@ -597,9 +680,9 @@
           <div class="card-header"><h3>Created <span class="badge status-assigned">${so.status||'assigned'}</span></h3></div>
           <div class="card-body">
             <div class="grid grid-3 gap-4">
-              <div><div class="mini muted">SO_ID</div><div class="fw-600">${so.so_id || so.id}</div></div>
-              <div><div class="mini muted">Technician</div><div>${techName || '—'}</div></div>
-              <div><div class="mini muted">Scheduled</div><div>${$('#scheduled_at').value}</div></div>
+              <div><div class="muted mini">SO_ID</div><div class="fw-600">${so.so_id || so.id}</div></div>
+              <div><div class="muted mini">Technician</div><div>${techName || '—'}</div></div>
+              <div><div class="muted mini">Scheduled</div><div>${$('#scheduled_at').value}</div></div>
             </div>
             <hr>
             <div class="flex gap-4">
@@ -611,8 +694,30 @@
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
-    // ---------------------- UI wiring ---------------------
-    // Client type-to-search
+    // ---------------------- Checklist preview --------------------------------
+    async function openPreview(){
+      const vehs = getVehValues().filter(v=> v.vehicle_no && v.intervention_type_id);
+      if(vehs.length===0){ $('#ckPreview').innerHTML = '<div class="muted">Add at least one vehicle with an intervention.</div>'; $('#ckModal').classList.add('show'); return; }
+
+      let html = '';
+      for(const v of vehs){
+        const it = intList.find(x=> String(x.id)===String(v.intervention_type_id));
+        const itName = it?.intervention_name || v.intervention_type_id;
+        const ck = await fetchChecklist(v.intervention_type_id);
+        const list = ck.map(x=>`<li>${x.checklist_item} ${x.is_required? '<span class="badge success">required</span>':''}</li>`).join('');
+        html += `
+          <div class="mb-4">
+            <div class="fw-600">Vehicle: ${v.vehicle_no}</div>
+            <div class="mini">Intervention: ${itName} — ${ck.length} items</div>
+            <ul style="display:grid; gap:8px; margin-top:8px;">${list || '<li class="muted">No checklist items.</li>'}</ul>
+          </div>`;
+      }
+      $('#ckPreview').innerHTML = html;
+      $('#ckModal').classList.add('show');
+    }
+
+    // ---------------------- Settings & modal ---------------------------------
+    // When typing into the Client field, open the modal and seed the search
     let clientTypeTimer = null;
     $('#client_name').addEventListener('input', (e)=>{
       const val = e.target.value.trim();
@@ -627,35 +732,31 @@
       if(val) openClientModal(val);
     });
 
-    // Settings + misc
-    $('#btnSettings').addEventListener('click', ()=> alert('Demo config:\\nAPI: '+NC_BASE+'\\nPAT: '+NC_PAT.slice(0,6)+'…'));
+    // ---------------------- Settings & modal ---------------------------------
+    $('#btnSettings').addEventListener('click', ()=>{
+      alert('This demo is hard-coded to the test NocoDB.\nAPI: '+NC_BASE+'\nPAT: '+NC_PAT.slice(0,6)+'…');
+    });
+
     $('#btnLogout').addEventListener('click', logout);
     $('#btnNewId').addEventListener('click', ()=>{ const id=newSoId(); $('#so_id').value=id; $('#soPreview').textContent=id; });
 
-    // Modals
     $('#btnPreviewChecklist').addEventListener('click', (e)=>{ e.preventDefault(); openPreview(); });
     $('#ckModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) $('#ckModal').classList.remove('show'); });
+
+    $('#btnAddVeh').addEventListener('click', ()=> addVeh('', ''));
+    $('#btnCreate').addEventListener('click', (e)=>{ e.preventDefault(); createSO(); });
+
+    $('#btnPickClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); });
+    $('#btnQuickCreateClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientCreateModal(); });
     $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
     $('#techModal').addEventListener('click',   (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeTechModal(); });
 
-    // Buttons
-    $('#btnAddVeh').addEventListener('click', ()=> addVeh('', ''));
-    $('#btnCreate').addEventListener('click', (e)=>{ e.preventDefault(); createSO(); });
-    $('#btnPickClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); });
-    $('#btnQuickCreateClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientCreateModal(); });
-    $('#btnQuickCreateTech').addEventListener('click', (e)=>{ e.preventDefault(); openTechCreateModal(); });
+    // use name-only search (updated)
+    $('#c_q').addEventListener('input', async (e)=>{ const rows = await searchClientsByName(e.target.value.trim()); renderClientResults(rows); });
+    // Enter selects the first result quickly
+    $('#c_q').addEventListener('keydown', async (e)=>{ if(e.key==='Enter'){ e.preventDefault(); const q=$('#c_q').value.trim(); const rows=await searchClientsByName(q); if(rows[0]) selectClient(rows[0]); }}); renderClientResults(rows); });
 
-    // Client search results
-    $('#c_q').addEventListener('input', async (e)=>{ renderClientResults(await searchClientsByName(e.target.value.trim())); });
-    $('#c_results').addEventListener('click', async (e)=>{
-      const btn = e.target.closest('[data-select-client]'); if(!btn) return;
-      const id = btn.getAttribute('data-select-client');
-      const row = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records/${id}`, {headers:H()}).then(r=>r.json());
-      selectClient(row);
-    });
-    $('#c_create').addEventListener('click', (e)=>{ e.preventDefault(); createClientInline(); });
-
-    // Technician typeahead -> set hidden id when exact option chosen
+    // Technician input -> set hidden id when exact option chosen
     $('#technician_name').addEventListener('change', ()=>{
       const val = ($('#technician_name')?.value || '').trim().toLowerCase();
       const hit = techIndex.find(t => t.label.toLowerCase() === val);
@@ -663,10 +764,18 @@
     });
     $('#technician_name').addEventListener('input', ()=>{ if ($('#technician_id').value) $('#technician_id').value = ''; });
 
-    // Create technician
+    $('#c_results').addEventListener('click', async (e)=>{
+      const btn = e.target.closest('[data-select-client]'); if(!btn) return;
+      const id = btn.getAttribute('data-select-client');
+      const row = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records/${id}`, {headers:H()}).then(r=>r.json());
+      selectClient(row);
+    });
+
+    $('#c_create').addEventListener('click', (e)=>{ e.preventDefault(); createClientInline(); });
+    $('#btnQuickCreateTech').addEventListener('click', (e)=>{ e.preventDefault(); openTechCreateModal(); });
     $('#t_create').addEventListener('click', (e)=>{ e.preventDefault(); createTechInline(); });
 
-    // ---------------------- Init ---------------------
+    // ---------------------- Init ---------------------------------------------
     (async function init(){
       $('#soPreview').textContent = '—';
       addVeh('', ''); // start with 1 row
