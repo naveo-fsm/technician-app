@@ -10,63 +10,49 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Global (optional) -->
-  <!-- If you already have assets/naveo.css, you can keep it. The styles below will ensure modern light look either way. -->
-  <!-- <link rel="stylesheet" href="assets/naveo.css"/> -->
-
   <!-- Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* === Modern Light Theme (same system used on other screens) ================= */
+    /* === Modern Light Theme =================================================== */
     :root{
-      --bg:#f7f8fb;
-      --text:#0f172a;
-      --text-muted:#64748b;
-      --surface:#ffffff;
-      --surface-2:#f2f4f8;
-      --border:#e5e7eb;
-      --radius-sm:8px;
-      --radius-md:12px;
-      --radius-lg:16px;
-      --shadow-sm:0 1px 2px rgba(16,24,40,.06);
-      --shadow-md:0 2px 10px rgba(16,24,40,.08);
-      --shadow-lg:0 8px 24px rgba(16,24,40,.12);
+      --bg:#f7f8fb; --text:#0f172a; --text-muted:#64748b; --surface:#ffffff; --surface-2:#f2f4f8; --border:#e5e7eb;
+      --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
+      --shadow-sm:0 1px 2px rgba(16,24,40,.06); --shadow-md:0 2px 10px rgba(16,24,40,.08); --shadow-lg:0 8px 24px rgba(16,24,40,.12);
       --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
-      --primary:#2563eb; --primary-ink:#0b3aa4;
-      --danger:#ef4444; --success:#16a34a; --warning:#f59e0b; --info:#0ea5e9;
+      --primary:#2563eb; --primary-ink:#0b3aa4; --danger:#ef4444; --success:#16a34a; --warning:#f59e0b; --info:#0ea5e9;
       --focus: 0 0 0 3px rgba(37,99,235,.25);
       --text-sm: 12.5px;
     }
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
-    body{
-      margin:0; font-family:Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-      background:var(--bg); color:var(--text);
-    }
+    body{ margin:0; font-family:Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; background:var(--bg); color:var(--text); }
     a{ color:inherit; text-decoration:none; }
     .hide{ display:none !important; }
 
     /* Layout */
     .topbar{
-      position:sticky; top:0; z-index:40;
-      display:flex; align-items:center; gap:10px;
-      padding:12px 18px; border-bottom:1px solid var(--border);
-      background:var(--surface); box-shadow:var(--shadow-sm);
+      position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:10px;
+      padding:12px 18px; border-bottom:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow-sm);
     }
     .title{ font-weight:700; }
     .muted{ color:var(--text-muted); }
-    .sidebar{
-      position:fixed; top:54px; left:0; bottom:0; width:240px;
-      padding:16px; border-right:1px solid var(--border); background:var(--surface);
-    }
+
+    /* Global sidebar (identical across pages) */
+    .sidebar{ position:fixed; top:54px; left:0; bottom:0; width:240px; border-right:1px solid var(--border); background:var(--surface); }
+    .sidebar-inner{ height:100%; display:flex; flex-direction:column; padding:16px; }
     .sidebar .brand{ font-weight:700; margin:6px 0 12px; }
+    .nav-links{ flex:1 1 auto; overflow:auto; padding-right:4px; }
     .sidebar a{ display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted); }
     .sidebar a:hover{ background:var(--surface-2); color:var(--text); }
     .sidebar a.active{ background:rgba(37,99,235,.08); color:var(--primary); font-weight:600; }
+    .sidebar-footer{ border-top:1px solid var(--border); padding-top:12px; }
+    .btn-block{ width:100%; }
+
     .main{ margin-left:240px; padding:24px; }
+
     @media (max-width: 900px){
-      .sidebar{ width:72px; padding:12px; }
+      .sidebar{ width:72px; }
       .sidebar a{ text-align:center; }
       .main{ margin-left:72px; }
     }
@@ -79,8 +65,7 @@
 
     /* Inputs */
     .input, .select, .textarea{
-      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
-      background:#fff; color:var(--text); outline:none; transition: box-shadow .15s, border-color .15s;
+      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text); outline:none; transition: box-shadow .15s, border-color .15s;
     }
     .textarea{ min-height:98px; resize:vertical; }
     .input:focus, .select:focus, .textarea:focus{ border-color:var(--primary); box-shadow:var(--focus); }
@@ -88,17 +73,14 @@
     .help{ color:var(--text-muted); font-size:var(--text-sm); margin-top:6px; }
 
     /* Buttons */
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:8px;
-      padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer;
-      transition: transform .04s ease, box-shadow .15s, border-color .15s, background .15s;
-    }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; transition: transform .04s ease, box-shadow .15s, border-color .15s, background .15s; }
     .btn:hover{ background:var(--surface-2); }
     .btn:active{ transform:translateY(0.5px); }
     .btn-sm{ padding:6px 10px; border-radius:10px; font-size:var(--text-sm); }
     .btn-primary{ background:var(--primary); border-color:var(--primary); color:#fff; }
     .btn-primary:hover{ background:#1e54c6; border-color:#1e54c6; }
     .btn-outline{ background:#fff; color:var(--primary); border-color:rgba(37,99,235,.35); }
+    .btn-danger{ background:var(--danger); border-color:var(--danger); color:#fff; }
 
     /* Utilities */
     .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
@@ -139,19 +121,29 @@
     <div class="title">Naveo FSM</div>
     <span class="muted">Reports & Analytics</span>
     <div class="grow"></div>
-    <!-- Settings button removed: config is embedded below -->
   </div>
 
+  <!-- Global sidebar (identical everywhere) -->
   <aside class="sidebar">
-    <div class="brand">Naveo</div>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="planner-jobs.html">Service Orders</a>
-    <a href="assign-job-enhanced.html">Assign Job</a>
-    <a href="planner-inventory.html">Inventory</a>
-    <a class="active" href="reports.html">Reports</a>
-    <a href="realtime-map.html">Live Map</a>
-    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
-    <a href="admin-tech-master.html">Admin · Technicians</a>
+    <div class="sidebar-inner">
+      <div class="brand">Naveo</div>
+      <nav class="nav-links" id="navLinks">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="planner.html">Planner</a>
+        <a href="planner-jobs.html">Service Orders</a>
+        <a href="assign-job-enhanced.html">Assign Job</a>
+        <a href="assign-inventory-selector.html">Assign Inventory</a>
+        <a href="planner-inventory.html">Inventory</a>
+        <a class="active" href="reports.html">Reports</a>
+        <a href="realtime-map.html">Live Map</a>
+        <a href="history.html">History</a>
+        <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+        <a href="admin-tech-master.html">Admin · Technicians</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btnLogout" class="btn btn-danger btn-sm btn-block">Logout</button>
+      </div>
+    </div>
   </aside>
 
   <main class="main">
@@ -232,12 +224,33 @@
     </div>
   </main>
 
+  <!-- Global config + sidebar behavior -->
   <script>
-    // ---------------------- Embedded NocoDB config ----------------------------
-    // Replace with your actual base + PAT (PAT is visible client-side).
-    const NC_BASE = 'https://app.nocodb.com/api/v2';  // ← your NocoDB base
-    const NC_PAT  = 'REPLACE_WITH_PAT';               // ← your PAT
+    // Hardcoded NocoDB config (mirrored to localStorage)
+    const NC_BASE = 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
+    localStorage.setItem('NC_BASE', NC_BASE);
+    localStorage.setItem('NC_PAT',  NC_PAT);
 
+    // Auto-highlight active link + Logout
+    (function setupSidebar(){
+      const path = (location.pathname.split('/').pop() || '').toLowerCase();
+      document.querySelectorAll('#navLinks a').forEach(a=>{
+        const href = (a.getAttribute('href')||'').toLowerCase();
+        if (href && path && href.endsWith(path)) a.classList.add('active');
+        if (!path && /index\.html|login\.html/i.test(href)) a.classList.add('active');
+      });
+      document.getElementById('btnLogout').addEventListener('click', ()=>{
+        localStorage.removeItem('NC_PAT');
+        localStorage.removeItem('NC_BASE');
+        location.href = 'login.html';
+        setTimeout(()=>{ location.href = 'index.html'; }, 400);
+      });
+    })();
+  </script>
+
+  <script>
+    // ---------------------- Tables & helpers ----------------------------------
     const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
     const TBL_TECH = 'mzw1focsec0tekg';   // technicians
     const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
@@ -247,13 +260,13 @@
     const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
     const $ = (s, p=document) => p.querySelector(s);
 
-    // ---------------------- Date helpers -------------------------------------
+    // Date helpers
     const pad=(n)=> String(n).padStart(2,'0');
     function toLocalDateInputValue(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
     function startOfDayISO(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,19); }
     function endOfDayISO(d){ const x=new Date(d); x.setHours(23,59,59,999); return x.toISOString().slice(0,19); }
 
-    // ---------------------- Load lookups -------------------------------------
+    // Lookups
     async function loadTechs(){
       const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&orderBy=full_name&order=asc`;
       const rows = await fetch(url,{headers:H()}).then(r=>r.json());
@@ -267,7 +280,7 @@
       return new Map(rows.map(r=>[r.id, r]));
     }
 
-    // ---------------------- Fetch SOs ----------------------------------------
+    // Fetch SOs
     function buildWhere(from,to,status,tech,itype){
       const wh=[]; if(from) wh.push(`(scheduled_at,ge,${startOfDayISO(new Date(from))})`);
       if(to) wh.push(`(scheduled_at,le,${endOfDayISO(new Date(to))})`);
@@ -282,7 +295,7 @@
       return fetch(url,{headers:H()}).then(r=>r.json());
     }
 
-    // ---------------------- Inventory usage ----------------------------------
+    // Inventory usage
     async function fetchInventoryUsage(soIds){
       if(!soIds.length) return { used:0, byCat:new Map() };
       const chunks = []; for(let i=0;i<soIds.length;i+=100) chunks.push(soIds.slice(i,i+100));
@@ -301,8 +314,7 @@
         const rows = await fetch(url,{headers:H()}).then(r=>r.json());
         rows.forEach(r=> invMap.set(r.id, r));
       }
-      const byCat = new Map();
-      let used = 0;
+      const byCat = new Map(); let used = 0;
       allSOI.forEach(x=>{
         const inv = invMap.get(x.inventory_item_id) || {};
         const cat = inv.category || 'unknown';
@@ -313,7 +325,7 @@
       return { used, byCat };
     }
 
-    // ---------------------- Calculations -------------------------------------
+    // Calcs
     function minutesBetween(a,b){ if(!a||!b) return null; const A=new Date(a), B=new Date(b); return Math.max(0, Math.round((B-A)/60000)); }
     function hmn(min){ if(min==null) return '0h 00m'; const h=Math.floor(min/60), m=min%60; return `${h}h ${String(m).padStart(2,'0')}m`; }
 
@@ -348,7 +360,7 @@
       const completed = rows.filter(r=>r.status==='completed' && r.completed_at);
       const done = completed.length;
 
-      // avg cycle time
+      // avg cycle
       let totalMin=0, have=0; const breaches=[];
       completed.forEach(r=>{
         const end=r.completed_at; const start=r.actual_start || r.scheduled_at;
@@ -384,36 +396,24 @@
       };
     }
 
-    // ---------------------- Charts -------------------------------------------
+    // Charts
     function renderBar(el, labels, data, label){
       if(window[el]) window[el].destroy?.();
       const ctx=document.getElementById(el).getContext('2d');
-      window[el]= new Chart(ctx,{
-        type:'bar',
-        data:{ labels, datasets:[{ label, data }] },
-        options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
-      });
+      window[el]= new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ label, data }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } } });
     }
     function renderLine(el, labels, data, label){
       if(window[el]) window[el].destroy?.();
       const ctx=document.getElementById(el).getContext('2d');
-      window[el]= new Chart(ctx,{
-        type:'line',
-        data:{ labels, datasets:[{ label, data, fill:false }] },
-        options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
-      });
+      window[el]= new Chart(ctx,{ type:'line', data:{ labels, datasets:[{ label, data, fill:false }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } } });
     }
     function renderDoughnut(el, labels, data){
       if(window[el]) window[el].destroy?.();
       const ctx=document.getElementById(el).getContext('2d');
-      window[el]= new Chart(ctx,{
-        type:'doughnut',
-        data:{ labels, datasets:[{ data }] },
-        options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } }
-      });
+      window[el]= new Chart(ctx,{ type:'doughnut', data:{ labels, datasets:[{ data }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } } });
     }
 
-    // ---------------------- Recent & breaches tables --------------------------
+    // Tables
     function renderRecent(rows, techMap, itypeMap){
       const tb = document.querySelector('#tblRecent tbody'); tb.innerHTML='';
       rows
@@ -445,17 +445,15 @@
       }
     }
 
-    // ---------------------- Export -------------------------------------------
+    // Export
     function csvEscape(s){ return '"'+ String(s??'').replaceAll('"','""') +'"'; }
     function exportCSV(rows){
       const cols=['id','so_id','technician_id','intervention_type_id','scheduled_at','actual_start','completed_at','priority','status','return_visit_required'];
-      const head=cols.join(',');
-      const body=rows.map(r=> cols.map(c=>csvEscape(r[c])).join(',')).join('\n');
-      const csv=head+'\n'+body;
-      const a=document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`report_${Date.now()}.csv`; a.click();
+      const head=cols.join(','); const body=rows.map(r=> cols.map(c=>csvEscape(r[c])).join(',')).join('\n');
+      const a=document.createElement('a'); a.href = URL.createObjectURL(new Blob([head+'\n'+body],{type:'text/csv'})); a.download=`report_${Date.now()}.csv`; a.click();
     }
 
-    // ---------------------- Main loader --------------------------------------
+    // Main loader
     async function refreshAll(){
       const from = $('#from').value; const to = $('#to').value; const st = $('#status').value; const tech = $('#tech').value; const it = $('#itype').value;
 
@@ -494,15 +492,12 @@
       document.getElementById('btnExport').onclick = ()=> exportCSV(rows);
     }
 
-    // ---------------------- Bindings -----------------------------------------
+    // Bindings
     document.getElementById('btnRefresh').addEventListener('click', refreshAll);
     document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
 
-    // ---------------------- Init ---------------------------------------------
+    // Init
     (async function init(){
-      if(!NC_PAT || NC_PAT === 'REPLACE_WITH_PAT'){
-        alert('NocoDB PAT is not set. Open the HTML and replace REPLACE_WITH_PAT with your token.');
-      }
       // Default last 7 days
       const d1=new Date(); const d0=new Date(Date.now()-6*86400000);
       document.getElementById('from').value = toLocalDateInputValue(d0);
