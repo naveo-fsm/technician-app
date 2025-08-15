@@ -4,11 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Naveo FSM — Inventory</title>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- CSS kept exactly as you shared -->
+  <!-- Page CSS (kept from your version, with tiny additions for pinned logout) -->
   <style>
     :root{
       --bg:#f7f8fb;
@@ -17,23 +19,13 @@
       --surface:#ffffff;
       --surface-2:#f2f4f8;
       --border:#e5e7eb;
-      --radius-sm:8px;
-      --radius-md:12px;
-      --radius-lg:16px;
+      --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
       --shadow-sm:0 1px 2px rgba(16,24,40,.06);
       --shadow-md:0 2px 10px rgba(16,24,40,.08);
       --shadow-lg:0 8px 24px rgba(16,24,40,.12);
-      --space-2:8px;
-      --space-3:12px;
-      --space-4:16px;
-      --space-5:20px;
-      --space-6:24px;
-      --primary:#2563eb;
-      --primary-ink:#0b3aa4;
-      --danger:#ef4444;
-      --success:#16a34a;
-      --warning:#f59e0b;
-      --info:#0ea5e9;
+      --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+      --primary:#2563eb; --primary-ink:#0b3aa4;
+      --danger:#ef4444; --success:#16a34a; --warning:#f59e0b; --info:#0ea5e9;
       --focus: 0 0 0 3px rgba(37,99,235,.25);
       --text-sm: 12.5px;
     }
@@ -48,32 +40,40 @@
     .topbar{ position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:10px; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow-sm); }
     .title{ font-weight:700; }
     .muted{ color:var(--text-muted); }
-    .sidebar{ position:fixed; top:54px; left:0; bottom:0; width:240px; padding:16px; border-right:1px solid var(--border); background:var(--surface); }
+
+    /* Sidebar + pinned logout */
+    .sidebar{ position:fixed; top:54px; left:0; bottom:0; width:240px; border-right:1px solid var(--border); background:var(--surface); }
+    .sidebar-inner{ height:100%; display:flex; flex-direction:column; padding:16px; }
     .sidebar .brand{ font-weight:700; margin:6px 0 12px; }
+    .nav-links{ flex:1 1 auto; overflow:auto; padding-right:4px; }
     .sidebar a{ display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted); }
     .sidebar a:hover{ background:var(--surface-2); color:var(--text); }
     .sidebar a.active{ background:rgba(37,99,235,.08); color:var(--primary); font-weight:600; }
+    .sidebar-footer{ border-top:1px solid var(--border); padding-top:12px; }
+    .btn-block{ width:100%; }
+
     .main{ margin-left:240px; padding:24px; }
+    @media (max-width: 900px){
+      .sidebar{ width:72px; }
+      .sidebar a{ text-align:center; }
+      .main{ margin-left:72px; }
+    }
+
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
     .card + .card{ margin-top:var(--space-6); }
     .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid var(--border); }
     .card-body{ padding:18px; }
+
     .input, .select, .textarea{ width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text); outline:none; transition: box-shadow .15s, border-color .15s; }
     .textarea{ min-height:98px; resize:vertical; }
     .input:focus, .select:focus, .textarea:focus{ border-color:var(--primary); box-shadow:var(--focus); }
     .label{ display:block; font-weight:600; margin-bottom:6px; }
     .help{ color:var(--text-muted); font-size:var(--text-sm); margin-top:6px; }
+
     .form-row{ display:flex; flex-wrap:wrap; gap:12px; }
-    .col-12{ flex:0 0 100%; }
-    .col-6{ flex:0 0 calc(50% - 6px); }
-    .col-4{ flex:0 0 calc(33.333% - 8px); }
-    .col-3{ flex:0 0 calc(25% - 9px); }
-    @media (max-width: 900px){
-      .col-6,.col-4,.col-3{ flex-basis:100%; }
-      .sidebar{ width:72px; padding:12px; }
-      .sidebar a{ text-align:center; }
-      .main{ margin-left:72px; }
-    }
+    .col-12{ flex:0 0 100%; } .col-6{ flex:0 0 calc(50% - 6px); }
+    .col-4{ flex:0 0 calc(33.333% - 8px); } .col-3{ flex:0 0 calc(25% - 9px); }
+
     .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; transition: transform .04s ease, box-shadow .15s, border-color .15s, background .15s; }
     .btn:hover{ background:var(--surface-2); }
     .btn:active{ transform:translateY(0.5px); }
@@ -83,6 +83,7 @@
     .btn-danger{ background:var(--danger); border-color:var(--danger); color:#fff; }
     .btn-outline{ background:#fff; color:var(--primary); border-color:rgba(37,99,235,.35); }
     .btn-outline:hover{ background:rgba(37,99,235,.06); }
+
     .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
     .grow{ flex:1 1 auto; }
     .mini{ font-size:var(--text-sm); color:var(--text-muted); }
@@ -92,27 +93,32 @@
     .grid{ display:grid; } .grid-2{ grid-template-columns: 1fr 1fr; }
     .text-right{ text-align:right; }
     .fw-600{ font-weight:600; }
+
     .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; }
     table.table{ width:100%; border-collapse:separate; border-spacing:0; min-width:880px; }
     .table thead th{ text-align:left; padding:12px; border-bottom:1px solid var(--border); font-weight:600; color:var(--text-muted); background:var(--surface-2); }
     .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
     .table tbody tr:hover{ background:#fafafa; }
+
     .actions{ display:inline-flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; }
     .badge{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:12px; }
-    .badge.success{ background: #ecfdf5; border-color:#bbf7d0; color:#166534; }
-    .badge.info{ background: #e0f2fe; border-color:#bae6fd; color:#075985; }
-    .badge.warning{ background: #fff7ed; border-color:#fed7aa; color:#9a3412; }
-    .badge.danger{ background: #fee2e2; border-color:#fecaca; color:#991b1b; }
+    .badge.success{ background:#ecfdf5; border-color:#bbf7d0; color:#166534; }
+    .badge.info{ background:#e0f2fe; border-color:#bae6fd; color:#075985; }
+    .badge.warning{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+    .badge.danger{ background:#fee2e2; border-color:#fecaca; color:#991b1b; }
+
     .pagination{ display:flex; gap:8px; }
     .pagination .page{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid var(--border); border-radius:10px; background:#fff; }
     .pagination .page:hover{ background:var(--surface-2); }
     .pagination .page.active{ background:var(--primary); color:#fff; border-color:var(--primary); }
+
     .modal-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.4); display:none; align-items:flex-end; justify-content:center; padding:24px; }
     .modal-backdrop.show{ display:flex; }
     .modal{ width:min(880px, 96vw); max-height:90vh; overflow:auto; background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-lg); }
     .modal header, .modal footer{ padding:16px 18px; border-bottom:1px solid var(--border); }
     .modal footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
     .modal .content{ padding:18px; }
+
     .slideover{ position:fixed; inset:0; display:none; }
     .slideover.show{ display:block; }
     .slideover .backdrop{ position:absolute; inset:0; background:rgba(15,23,42,.4); }
@@ -120,14 +126,19 @@
     .slideover header, .slideover footer{ padding:16px 18px; border-bottom:1px solid var(--border); }
     .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
     .slideover .content{ padding:18px; overflow:auto; }
+
     .tabs{ display:flex; gap:6px; border-bottom:1px solid var(--border); }
     .tab{ padding:8px 12px; border:1px solid transparent; border-radius:10px 10px 0 0; cursor:pointer; color:var(--text-muted); }
     .tab.active{ color:var(--text); background:#fff; border-color:var(--border); border-bottom-color:#fff; }
+
     .dropdown{ position:relative; }
     .dropdown-menu{ position:absolute; right:0; top:calc(100% + 6px); min-width:180px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-md); display:none; overflow:hidden; }
     .dropdown.open .dropdown-menu{ display:block; }
     .dropdown-menu a{ display:block; padding:8px 12px; color:var(--text); }
     .dropdown-menu a:hover{ background:var(--surface-2); }
+
+    .control-inline{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+    .control-inline input[type=checkbox]{ width:16px; height:16px; }
   </style>
 </head>
 <body>
@@ -135,19 +146,28 @@
     <div class="title">Naveo FSM</div>
     <span class="muted">Inventory</span>
     <div class="grow"></div>
-    <!-- Settings removed since API + PAT are embedded -->
   </div>
 
+  <!-- Global sidebar (inline, with pinned Logout) -->
   <aside class="sidebar">
-    <div class="brand">Naveo</div>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="planner-jobs.html">Service Orders</a>
-    <a href="assign-job-enhanced.html">Assign Job</a>
-    <a class="active" href="planner-inventory.html">Inventory</a>
-    <a href="reports.html">Reports</a>
-    <a href="realtime-map.html">Live Map</a>
-    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
-    <a href="admin-tech-master.html">Admin · Technicians</a>
+    <div class="sidebar-inner">
+      <div class="brand">Naveo</div>
+      <nav class="nav-links" id="navLinks">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="planner-jobs.html">Service Orders</a>
+        <a href="assign-job-enhanced.html">Assign Job</a>
+        <a href="assign-inventory-selector.html">Assign Inventory</a>
+        <a href="planner-inventory.html">Inventory</a>
+        <a href="reports.html">Reports</a>
+        <a href="realtime-map.html">Live Map</a>
+        <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+        <a href="admin-tech-master.html">Admin · Technicians</a>
+        <a href="history.html">History</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btnLogout" class="btn btn-danger btn-sm btn-block">Logout</button>
+      </div>
+    </div>
   </aside>
 
   <main class="main">
@@ -328,40 +348,64 @@
   </div>
 
   <script>
-    // ---------------------- Embedded Config -----------------------------------
-    // Hard-coded base + PAT (client-visible). Replace the PAT below with yours.
-    const NC_BASE = 'https://app.nocodb.com/api/v2';   // ← your NocoDB base
-    const NC_PAT  = 'REPLACE_WITH_PAT';                // ← paste your PAT
+    // ================== Global Config (hardcoded) ==================
+    const NC_BASE = 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
 
-    const TBL_INV = 'mu70y5tmw0pqflp';    // inventory
-    const TBL_ASN = 'mt71bvrpbemeziu';    // inventory_assignment
-    const TBL_ALT = 'mol0oedvhajviux';    // inventory_alerts
-    const TBL_TECH = 'mzw1focsec0tekg';   // technicians
+    // also mirror into localStorage so other pages can read it (logout clears these)
+    localStorage.setItem('NC_BASE', NC_BASE);
+    localStorage.setItem('NC_PAT', NC_PAT);
+
+    // Sidebar: auto-highlight active & handle logout
+    (function setupSidebar(){
+      const path = (location.pathname.split('/').pop() || '').toLowerCase();
+      document.querySelectorAll('#navLinks a').forEach(a=>{
+        const href = (a.getAttribute('href')||'').toLowerCase();
+        if (href && path && href.endsWith(path)) a.classList.add('active');
+        // highlight default route if path empty (e.g., index)
+        if (!path && /index\.html|login\.html/i.test(href)) a.classList.add('active');
+      });
+
+      document.getElementById('btnLogout').addEventListener('click', ()=>{
+        // clear tokens (even if this page uses hardcoded constants)
+        localStorage.removeItem('NC_PAT');
+        localStorage.removeItem('NC_BASE');
+        // best-effort redirect
+        location.href = 'login.html';
+        setTimeout(()=>{ location.href = 'index.html'; }, 400);
+      });
+    })();
+  </script>
+
+  <script>
+    // ================== Page-specific JS (unchanged logic) ==================
+    const TBL_INV  = 'mu70y5tmw0pqflp';    // inventory
+    const TBL_ASN  = 'mt71bvrpbemeziu';    // inventory_assignment
+    const TBL_ALT  = 'mol0oedvhajviux';    // inventory_alerts
+    const TBL_TECH = 'mzw1focsec0tekg';    // technicians
 
     const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
     const $ = (s, p=document) => p.querySelector(s);
     const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
 
-    // ---------------------- State --------------------------------------------
     let state = { page:1, limit:10, total:0, q:'', cat:'', status:'' };
     let techList = [];
     let current = null;
 
-    // ---------------------- Helpers ------------------------------------------
     function fmtDT(v){ if(!v) return ''; const d = new Date(v); return d.toLocaleString(); }
     function nowLocalDT(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+
     function buildWhere(){
       const w=[];
       if(state.q){
-        const q=encodeURIComponent('%'+state.q+'%');
+        const q = `%${state.q}%`;
         w.push(`(item_name,like,${q})~or(serial_number,like,${q})~or(sim_number,like,${q})~or(make,like,${q})~or(model,like,${q})`);
       }
-      if(state.cat) w.push(`(category,eq,${state.cat})`);
-      if(state.status) w.push(`(status,eq,${state.status})`);
-      return w.join('~and');
+      if(state.cat)   w.push(`(category,eq,${state.cat})`);
+      if(state.status)w.push(`(status,eq,${state.status})`);
+      return w.length ? encodeURIComponent(w.join('~and')) : '';
     }
 
-    // ---------------------- Loaders ------------------------------------------
     async function loadTechs(){
       const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&orderBy=full_name&order=asc`;
       techList = await fetch(url,{headers:H()}).then(r=>r.json());
@@ -373,7 +417,6 @@
       let url = `${NC_BASE}/tables/${TBL_INV}/records?limit=${state.limit}&offset=${offset}&orderBy=updated_at&order=desc`;
       const where = buildWhere(); if(where) url += `&where=${where}`;
       const rows = await fetch(url,{headers:H()}).then(r=>r.json());
-      // count
       let cUrl = `${NC_BASE}/tables/${TBL_INV}/records/count`; if(where) cUrl += `?where=${where}`;
       const c = await fetch(cUrl,{headers:H()}).then(r=>r.json()); state.total = c?.count || rows.length;
       renderTable(rows); renderPager();
@@ -381,6 +424,12 @@
 
     function renderTable(rows){
       const tbody = $('#tbody'); tbody.innerHTML='';
+      if(!rows.length){
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td colspan="8" class="mini" style="text-align:center;padding:18px">No inventory matches your filters.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
       rows.forEach(r=>{
         const st = (r.status||'available').toLowerCase();
         const tr = document.createElement('tr');
@@ -423,7 +472,6 @@
       }
     }
 
-    // ---------------------- Create / Edit ------------------------------------
     async function openEdit(id){
       $('#editTitle').textContent = id? 'Edit Inventory Item' : 'New Inventory Item';
       $('#inv_id').value = id || '';
@@ -472,7 +520,6 @@
       fetchInv();
     }
 
-    // ---------------------- Bulk status --------------------------------------
     async function bulkApply(){
       const ids = $$('.rowChk:checked').map(x=>x.getAttribute('data-id')); const val = $('#bulkStatus').value; if(!val || !ids.length) return;
       const records = ids.map(id=>({ id, status: val }));
@@ -481,7 +528,6 @@
       fetchInv(); $('#chkAll').checked=false; $('#bulkStatus').value='';
     }
 
-    // ---------------------- CSV Import / Export ------------------------------
     function toCSV(rows){
       const cols = ['id','item_name','category','status','make','model','serial_number','sim_number','created_at','updated_at'];
       const esc = s => ('"'+ String(s??'').replaceAll('"','""') +'"');
@@ -489,6 +535,7 @@
       const body = rows.map(r=> cols.map(c=>esc(r[c])).join(',')).join('\n');
       return head+'\n'+body;
     }
+
     async function exportCSV(){
       let url = `${NC_BASE}/tables/${TBL_INV}/records?limit=10000&orderBy=updated_at&order=desc`;
       const where = buildWhere(); if(where) url += `&where=${where}`;
@@ -496,26 +543,54 @@
       const csv = toCSV(rows);
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = `inventory_${Date.now()}.csv`; a.click();
     }
+
+    // robust CSV parser (handles quoted commas/newlines)
+    function parseCSV(text){
+      const rows=[]; let row=[], val='', inQ=false;
+      for(let i=0;i<text.length;i++){
+        const c=text[i], n=text[i+1];
+        if(inQ){
+          if(c === '"' && n === '"'){ val+='"'; i++; }
+          else if(c === '"'){ inQ=false; }
+          else { val += c; }
+        }else{
+          if(c === '"'){ inQ=true; }
+          else if(c === ','){ row.push(val); val=''; }
+          else if(c === '\n'){ row.push(val); rows.push(row); row=[]; val=''; }
+          else if(c === '\r'){ /* ignore */ }
+          else { val += c; }
+        }
+      }
+      row.push(val); rows.push(row);
+      return rows.filter(r => r.some(x=>String(x).trim()!==''));
+    }
+
     function importCSV(file){
       const reader = new FileReader();
       reader.onload = async () => {
-        const text = reader.result; const lines = text.split(/\r?\n/).filter(Boolean);
-        if(!lines.length) return alert('Empty CSV');
-        const headers = lines[0].split(',').map(h=>h.trim());
-        const idx = (k)=> headers.findIndex(h=> h.replace(/\"/g,'').toLowerCase()===k);
+        const rows = parseCSV(String(reader.result||''));
+        if(!rows.length) return alert('Empty CSV');
+        const headers = rows[0].map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
+        const idx = k => headers.indexOf(k);
+
         let ok=0, fail=0;
-        for(let i=1;i<lines.length;i++){
-          const cols = lines[i].split(',');
-          const rec = {
-            item_name: cols[idx('item_name')]?.replace(/^\"|\"$/g,'') || undefined,
-            status: cols[idx('status')]?.replace(/^\"|\"$/g,'') || 'available',
-            category: cols[idx('category')]?.replace(/^\"|\"$/g,'') || undefined,
-            make: cols[idx('make')]?.replace(/^\"|\"$/g,'') || undefined,
-            model: cols[idx('model')]?.replace(/^\"|\"$/g,'') || undefined,
-            serial_number: cols[idx('serial_number')]?.replace(/^\"|\"$/g,'') || undefined,
-            sim_number: cols[idx('sim_number')]?.replace(/^\"|\"$/g,'') || undefined,
+        for(let i=1;i<rows.length;i++){
+          const cols = rows[i];
+          const grab = k => {
+            const j = idx(k);
+            const v = j>=0 ? String(cols[j]??'').replace(/^"|"$/g,'').trim() : '';
+            return v || undefined;
           };
-          if(!rec.item_name) { fail++; continue; }
+          const rec = {
+            item_name:     grab('item_name'),
+            status:        grab('status') || 'available',
+            category:      grab('category'),
+            make:          grab('make'),
+            model:         grab('model'),
+            serial_number: grab('serial_number'),
+            sim_number:    grab('sim_number'),
+          };
+          if(!rec.item_name){ fail++; continue; }
           const r = await fetch(`${NC_BASE}/tables/${TBL_INV}/records`,{ method:'POST', headers:H(), body: JSON.stringify(rec) });
           r.ok ? ok++ : fail++;
         }
@@ -525,7 +600,6 @@
       reader.readAsText(file);
     }
 
-    // ---------------------- Detail panel: view & history ---------------------
     async function openDetail(id){
       current = await fetch(`${NC_BASE}/tables/${TBL_INV}/records/${id}`,{headers:H()}).then(r=>r.json());
       $('#d_title').textContent = `${current.item_name||''}  (#${current.id})`;
@@ -610,13 +684,13 @@
       await loadAlerts();
     }
 
-    // ---------------------- UI helpers ---------------------------------------
+    // UI helpers
     function openModal(id){ document.getElementById(id).classList.add('show'); }
     function closeModal(id){ document.getElementById(id).classList.remove('show'); }
     function openSlide(id){ document.getElementById(id).classList.add('show'); }
     function closeSlide(id){ document.getElementById(id).classList.remove('show'); }
 
-    // ---------------------- Bindings -----------------------------------------
+    // Bindings
     $('#btnAdd').addEventListener('click', ()=> openEdit(null));
     $('#btnSave').addEventListener('click', saveEdit);
     document.getElementById('editModal').addEventListener('click', e=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeModal('editModal'); });
@@ -635,6 +709,13 @@
       else if(t.hasAttribute('data-set-status')){ e.preventDefault(); setStatus(t.getAttribute('data-id'), t.getAttribute('data-val')); }
     });
 
+    // close open dropdowns when clicking elsewhere
+    document.addEventListener('click', (e)=>{
+      document.querySelectorAll('.dropdown.open').forEach(d=>{
+        if(!d.contains(e.target)) d.classList.remove('open');
+      });
+    });
+
     async function setStatus(id,val){
       const r = await fetch(`${NC_BASE}/tables/${TBL_INV}/records`,{ method:'PATCH', headers:H(), body: JSON.stringify({ records:[{ id, status: val }] }) });
       if(!r.ok) return alert('Status update failed');
@@ -648,13 +729,11 @@
     $('#btnImport').addEventListener('click', ()=> $('#fileCSV').click());
     $('#fileCSV').addEventListener('change', (e)=>{ if(e.target.files?.[0]) importCSV(e.target.files[0]); e.target.value=''; });
 
-    // detail panel
     document.getElementById('detailPanel').addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')) closeSlide('detailPanel'); });
     $('#d_save').addEventListener('click', saveDetail);
     $('#as_submit').addEventListener('click', submitAssign);
     $('#al_submit').addEventListener('click', submitAlert);
 
-    // tabs
     document.querySelector('.tabs').addEventListener('click', (e)=>{
       const t = e.target.closest('.tab'); if(!t) return;
       $$('.tab').forEach(x=> x.classList.remove('active'));
@@ -664,11 +743,7 @@
       $('#tab_alerts').classList.toggle('hide', name!=='alerts');
     });
 
-    // ---------------------- Init ---------------------------------------------
     (async function init(){
-      if(!NC_PAT || NC_PAT === 'REPLACE_WITH_PAT'){
-        alert('NocoDB PAT is not set. Open the HTML and replace REPLACE_WITH_PAT with your token.');
-      }
       await loadTechs();
       await fetchInv();
     })();
