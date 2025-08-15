@@ -9,179 +9,104 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Inline, modern minimal LIGHT theme CSS (no external naveo.css) -->
+  <!-- Inline, modern minimal LIGHT theme CSS -->
   <style>
-    /* ======= Design tokens (Light) ======= */
     :root{
-      --bg: #f7fafc;              /* page background */
-      --surface: #ffffff;         /* cards, panels */
-      --surface-2: #f3f4f6;       /* subtle striping / alt areas */
-      --text: #111827;            /* main text */
-      --text-muted: #6b7280;      /* secondary text */
-      --primary: #2563eb;         /* brand primary */
-      --accent: #7c3aed;          /* secondary accent */
-      --success: #16a34a;
-      --warning: #d97706;
-      --danger: #dc2626;
-      --border: rgba(17,24,39,.12);
-
-      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-      --shadow-md: 0 6px 16px rgba(0,0,0,.08);
-      --shadow-lg: 0 18px 60px rgba(0,0,0,.10);
-
-      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
-      --text-sm: .875rem; --text-xs: .78rem;
+      --bg:#f7fafc; --surface:#fff; --surface-2:#f3f4f6;
+      --text:#111827; --text-muted:#6b7280;
+      --primary:#2563eb; --accent:#7c3aed;
+      --success:#16a34a; --warning:#d97706; --danger:#dc2626;
+      --border:rgba(17,24,39,.12);
+      --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
+      --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+      --shadow-md:0 6px 16px rgba(0,0,0,.08);
+      --shadow-lg:0 18px 60px rgba(0,0,0,.10);
+      --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+      --text-sm:.875rem; --text-xs:.78rem;
     }
-
-    /* ======= Base ======= */
     *,*::before,*::after{ box-sizing:border-box; }
     html,body{ height:100%; }
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font: 400 16px/1.5 Poppins, ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    }
-    a{ color:var(--primary); text-decoration:none; }
-    a:hover{ text-decoration:underline; }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .fw-600{ font-weight:600; }
-    .text-sm{ font-size: var(--text-sm); }
-    .muted{ color: var(--text-muted); }
-    .hide{ display:none !important; }
-    .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
-    .mb-4{ margin-bottom:var(--space-4); }
-    .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
-    .grid{ display:grid; } .grid-2{ grid-template-columns: repeat(2, minmax(0,1fr)); gap: var(--space-4); }
-    .text-right{ text-align:right; }
+    body{ margin:0; background:var(--bg); color:var(--text);
+      font:400 16px/1.5 Poppins,ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
+    a{ color:var(--primary); text-decoration:none; } a:hover{ text-decoration:underline; }
+    .fw-600{ font-weight:600; } .text-sm{ font-size:var(--text-sm); } .muted{ color:var(--text-muted); }
+    .mt-2{ margin-top:var(--space-2);} .mt-4{ margin-top:var(--space-4);} .flex{ display:flex;}
+    .justify-between{ justify-content:space-between;} .items-center{ align-items:center;}
+    .grow{ flex:1 1 auto; } .text-right{ text-align:right; }
 
-    /* ======= App layout ======= */
-    .topbar{
-      position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px;
-      padding: 10px 16px; background: #fff;
-      border-bottom:1px solid var(--border);
-      backdrop-filter: saturate(180%) blur(4px);
-    }
+    .topbar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px;
+      padding:10px 16px; background:#fff; border-bottom:1px solid var(--border); backdrop-filter:saturate(180%) blur(4px);}
     .topbar .title{ font-weight:700; letter-spacing:.3px; }
 
-    .sidebar{
-      position:fixed; inset:56px auto 0 0; width:240px; padding:16px;
+    .sidebar{ position:fixed; inset:56px auto 0 0; width:240px; padding:16px;
       background:#fff; border-right:1px solid var(--border); overflow:auto;
-    }
+      display:flex; flex-direction:column; }
     .sidebar .brand{ font-weight:700; margin-bottom:10px; }
-    .sidebar a{
-      display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none;
-    }
+    .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
     .sidebar a:hover{ background:#f3f4f6; }
-    .sidebar a.active{
-      background:rgba(37,99,235,.10); border:1px solid rgba(37,99,235,.30);
-    }
-    .main{ margin-left:240px; padding: 18px; }
+    .sidebar a.active{ background:rgba(37,99,235,.10); border:1px solid rgba(37,99,235,.30); }
+    .sidebar .footer{ margin-top:auto; padding-top:8px; }
+    .sidebar .logout{ width:100%; display:flex; justify-content:center; }
 
-    /* ======= Cards / containers ======= */
-    .card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); box-shadow:var(--shadow-sm); }
-    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
-    .card-body{ padding: var(--space-5); }
+    .main{ margin-left:240px; padding:18px; }
 
-    /* ======= Toolbar ======= */
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .card-body{ padding:var(--space-5); }
+
     .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .grow{ flex:1 1 auto; }
 
-    /* ======= Buttons ======= */
-    .btn{
-      --bg:#fff; --bd:#e5e7eb; --fg:var(--text);
+    .btn{ --bg:#fff; --bd:#e5e7eb; --fg:var(--text);
       display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
       border:1px solid var(--bd); background:var(--bg); color:var(--fg);
-      border-radius:10px; cursor:pointer; user-select:none; transition: background .15s ease, transform .05s ease;
-    }
-    .btn:hover{ background:#f9fafb; }
-    .btn:active{ transform: translateY(1px); }
-    .btn-sm{ padding:6px 10px; font-size: var(--text-sm); border-radius:8px; }
-    .btn-primary{
-      --bg: linear-gradient(135deg, var(--primary), #3b82f6);
-      --bd: rgba(0,0,0,.05); --fg:#fff; box-shadow: var(--shadow-sm);
-    }
-    .btn-outline{ --bg: #fff; --bd: #d1d5db; }
-    .btn-danger{ --bg: #fff; --bd: rgba(220,38,38,.5); color:#b91c1c; }
+      border-radius:10px; cursor:pointer; user-select:none; transition:background .15s, transform .05s; }
+    .btn:hover{ background:#f9fafb; } .btn:active{ transform:translateY(1px); }
+    .btn-sm{ padding:6px 10px; font-size:var(--text-sm); border-radius:8px; }
+    .btn-primary{ --bg:linear-gradient(135deg,var(--primary),#3b82f6); --bd:rgba(0,0,0,.05); --fg:#fff; box-shadow:var(--shadow-sm);}
+    .btn-outline{ --bg:#fff; --bd:#d1d5db; } .btn-danger{ --bg:#fff; --bd:rgba(220,38,38,.5); color:#b91c1c; }
 
-    /* ======= Inputs ======= */
-    .input,.select,.textarea{
-      width:100%; padding:10px 12px; background: #fff; color:var(--text);
-      border:1px solid #e5e7eb; border-radius:10px; outline:none; transition:.12s ease;
-    }
+    .input,.select,.textarea{ width:100%; padding:10px 12px; background:#fff; color:var(--text);
+      border:1px solid #e5e7eb; border-radius:10px; outline:none; transition:.12s; }
     .textarea{ min-height:96px; resize:vertical; }
-    .input:focus,.select:focus,.textarea:focus{
-      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.18);
-    }
+    .input:focus,.select:focus,.textarea:focus{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.18); }
     .label{ display:block; margin-bottom:6px; font-weight:500; color:var(--text-muted); }
+    .form{ display:block; } .form-row{ display:grid; grid-template-columns:repeat(12,1fr); gap:12px; }
+    .col-12{ grid-column:span 12; } .col-6{ grid-column:span 6; } .col-4{ grid-column:span 4; } .col-3{ grid-column:span 3; }
 
-    .form{ display:block; }
-    .form-row{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
-    .col-12{ grid-column: span 12; } .col-6{ grid-column: span 6; } .col-4{ grid-column: span 4; } .col-3{ grid-column: span 3; }
-    .control-inline{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
-    .control-inline input[type=checkbox]{ width:16px; height:16px; }
-
-    /* ======= Table ======= */
     .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; background:#fff; }
     table.table{ width:100%; border-collapse:collapse; }
-    .table thead th{
-      background: #f9fafb; color:var(--text-muted); font-weight:600; text-align:left;
-      padding:12px; border-bottom:1px solid var(--border); white-space:nowrap;
-    }
+    .table thead th{ background:#f9fafb; color:var(--text-muted); font-weight:600; text-align:left; padding:12px; border-bottom:1px solid var(--border); white-space:nowrap;}
     .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:top; }
     .table tbody tr:hover{ background:#f8fbff; }
 
-    /* ======= Badges & pagination ======= */
     .badge{ display:inline-block; padding:4px 8px; border-radius:999px; background:#f3f4f6; border:1px solid #e5e7eb; font-size:var(--text-sm); color:#374151; }
     .badge.success{ background:rgba(22,163,74,.10); border-color:rgba(22,163,74,.25); color:#065f46; }
     .badge.warning{ background:rgba(217,119,6,.10); border-color:rgba(217,119,6,.25); color:#7c2d12; }
 
     .pagination{ display:flex; gap:8px; }
-    .page{
-      display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px;
-      border:1px solid var(--border); border-radius:10px; color:inherit; text-decoration:none; background:#fff;
-    }
-    .page.active{ background:#eff6ff; border-color: rgba(37,99,235,.35); }
+    .page{ display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px;
+      border:1px solid var(--border); border-radius:10px; color:inherit; text-decoration:none; background:#fff; }
+    .page.active{ background:#eff6ff; border-color:rgba(37,99,235,.35); }
 
-    /* ======= Dropdown (unused here, harmless) ======= */
-    .dropdown{ position:relative; display:inline-block; }
-    .dropdown-menu{
-      position:absolute; top:calc(100% + 6px); right:0; min-width:180px; padding:6px;
-      background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow-md); display:none;
-    }
-    .dropdown.open .dropdown-menu{ display:block; }
-    .dropdown-menu a{ display:block; padding:8px 10px; border-radius:8px; color:inherit; text-decoration:none; }
-    .dropdown-menu a:hover{ background:#f3f4f6; }
-
-    /* ======= Modal ======= */
-    .modal-backdrop{
-      position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:60;
-    }
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:60; }
     .modal-backdrop.show{ display:flex; }
-    .modal{
-      width:min(720px, 96vw); background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg);
-    }
-    .modal header{ padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
-    .modal .content{ padding: var(--space-5); max-height:65vh; overflow:auto; }
-    .modal footer{ padding: var(--space-4) var(--space-5); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+    .modal{ width:min(720px,96vw); background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg); }
+    .modal header{ padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .modal .content{ padding:var(--space-5); max-height:65vh; overflow:auto; }
+    .modal footer{ padding:var(--space-4) var(--space-5); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
 
-    /* ======= Slideover (checklist panel) ======= */
     .slideover{ position:fixed; inset:0; display:none; z-index:55; }
     .slideover.show{ display:block; }
     .slideover .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.45); }
-    .slideover .panel{
-      position:absolute; top:0; right:0; height:100%; width:min(720px, 96vw);
-      background:#fff; border-left:1px solid var(--border); box-shadow:var(--shadow-lg);
-      display:flex; flex-direction:column;
-    }
-    .slideover header, .slideover footer{ padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
+    .slideover .panel{ position:absolute; top:0; right:0; height:100%; width:min(720px,96vw);
+      background:#fff; border-left:1px solid var(--border); box-shadow:var(--shadow-lg); display:flex; flex-direction:column; }
+    .slideover header,.slideover footer{ padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
     .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
     .slideover .content{ padding:var(--space-5); overflow:auto; }
 
-    @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
-    @media (max-width: 760px){
-      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border); }
-      .main{ margin-left:0; }
-    }
+    @media (max-width:980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
+    @media (max-width:760px){ .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);} .main{ margin-left:0; } }
   </style>
 </head>
 <body>
@@ -192,14 +117,20 @@
     <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
+  <!-- Uniform sidebar (with pinned Logout) -->
   <aside class="sidebar">
     <div class="brand">Naveo</div>
     <a href="dashboard.html">Dashboard</a>
     <a href="planner-jobs.html">Service Orders</a>
+    <a href="assign-job-enhanced.html">Assign Job</a>
     <a href="planner-inventory.html">Inventory</a>
     <a href="reports.html">Reports</a>
+    <a href="realtime-map.html">Live Map</a>
     <a class="active" href="admin-intervention-master.html">Admin · Intervention Types</a>
     <a href="admin-tech-master.html">Admin · Technicians</a>
+    <div class="footer">
+      <button class="btn logout" id="btnLogout">Log out</button>
+    </div>
   </aside>
 
   <main class="main">
@@ -318,51 +249,48 @@
   </div>
 
   <script>
-    // --- Config & helpers ----------------------------------------------------
-    // Embedded defaults (overridable via localStorage if you click ⚙️ Settings)
-    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT')  || '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
+    // --- Hard-coded NocoDB demo config ---------------------------------------
+    const NC_BASE = 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
 
     const TBL_INTERVENTIONS = 'mb4yox88hd24r0h'; // intervention_types
     const TBL_CHECKLISTS    = 'ma917pno6w5e1ed'; // checklists
 
-    const modal   = document.getElementById('editModal');
-    const ckSO    = document.getElementById('ckSO');
+    const modal = document.getElementById('editModal');
+    const ckSO  = document.getElementById('ckSO');
 
-    function headers() { return { 'Content-Type': 'application/json', 'xc-token': NC_PAT }; }
-    function fmtDT(v){ if(!v) return ''; const d = new Date(v); return d.toLocaleString(); }
-    function el(html){ const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+    function headers(){ return { 'Content-Type':'application/json', 'xc-token':NC_PAT }; }
+    function fmtDT(v){ if(!v) return ''; const d=new Date(v); return d.toLocaleString(); }
+    function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild; }
+    function logout(){ try{ localStorage.removeItem('NC_PAT'); localStorage.removeItem('NC_BASE'); }catch(e){} location.href='login.html'; }
 
     // --- List & pagination ---------------------------------------------------
-    let state = { page: 1, limit: 10, total: 0, q: '', status: '' };
+    let state = { page:1, limit:10, total:0, q:'', status:'' };
 
     async function fetchInterventions(){
-      const {page, limit, q, status} = state;
+      const {page,limit,q,status} = state;
       const offset = (page-1)*limit;
       let url = `${NC_BASE}/tables/${TBL_INTERVENTIONS}/records?limit=${limit}&offset=${offset}&orderBy=updated_at&order=desc`;
       const filters = [];
       if(q) filters.push(`(intervention_name,like,${encodeURIComponent('%'+q+'%')})~or(description,like,${encodeURIComponent('%'+q+'%')})`);
       if(status) filters.push(`(status,eq,${status})`);
       if(filters.length) url += `&where=${filters.join('~and')}`;
-      const r = await fetch(url,{ headers: headers() });
+      const r = await fetch(url,{headers:headers()});
       if(!r.ok){ throw new Error('Failed to load. Check PAT/BASE.'); }
       const rows = await r.json();
 
-      // count
       let countUrl = `${NC_BASE}/tables/${TBL_INTERVENTIONS}/records/count`;
       if(filters.length) countUrl += `?where=${filters.join('~and')}`;
-      const c = await fetch(countUrl,{ headers: headers() }).then(x=>x.json());
+      const c = await fetch(countUrl,{headers:headers()}).then(x=>x.json());
       state.total = c?.count || rows.length;
 
-      renderTable(rows);
-      renderPager();
+      renderTable(rows); renderPager();
     }
 
     function renderTable(rows){
-      const tbody = document.getElementById('tbody');
-      tbody.innerHTML = '';
+      const tbody = document.getElementById('tbody'); tbody.innerHTML='';
       rows.forEach((r,i)=>{
-        const badge = r.status === 'active' ? 'badge success' : 'badge warning';
+        const badge = r.status==='active' ? 'badge success' : 'badge warning';
         const tr = el(`<tr>
           <td>${(state.page-1)*state.limit + i + 1}</td>
           <td class="fw-600">${r.intervention_name||''}</td>
@@ -385,12 +313,10 @@
     }
 
     function renderPager(){
-      const pager = document.getElementById('pager');
-      pager.innerHTML = '';
+      const pager = document.getElementById('pager'); pager.innerHTML='';
       const pages = Math.max(1, Math.ceil(state.total/state.limit));
-      const mk = (n,active=false)=> el(`<a class="page ${active?'active':''}" href="#">${n}</a>`);
       for(let i=1;i<=pages;i++){
-        const a = mk(i, i===state.page);
+        const a = el(`<a class="page ${i===state.page?'active':''}" href="#">${i}</a>`);
         a.addEventListener('click', e=>{ e.preventDefault(); state.page=i; fetchInterventions(); });
         pager.appendChild(a);
       }
@@ -398,56 +324,52 @@
 
     // --- CRUD ----------------------------------------------------------------
     async function createOrUpdate(){
-      const id   = document.getElementById('int_id').value || null;
+      const id = document.getElementById('int_id').value || null;
       const body = {
         intervention_name: document.getElementById('int_name').value.trim(),
         description: document.getElementById('int_desc').value.trim(),
         sla_minutes: Number(document.getElementById('int_sla').value||0),
         status: document.getElementById('int_status').value
       };
-      if(!body.intervention_name) { alert('Name is required'); return; }
+      if(!body.intervention_name){ alert('Name is required'); return; }
 
       if(id){
         const r = await fetch(`${NC_BASE}/tables/${TBL_INTERVENTIONS}/records`,{
-          method:'PATCH', headers: headers(), body: JSON.stringify({ records:[{ id, ...body }] })
+          method:'PATCH', headers:headers(), body:JSON.stringify({records:[{id, ...body}]})
         });
         if(!r.ok) return alert('Update failed');
       } else {
         const r = await fetch(`${NC_BASE}/tables/${TBL_INTERVENTIONS}/records`,{
-          method:'POST', headers: headers(), body: JSON.stringify(body)
+          method:'POST', headers:headers(), body:JSON.stringify(body)
         });
         if(!r.ok) return alert('Create failed');
       }
-      closeModal();
-      await fetchInterventions();
+      closeModal(); await fetchInterventions();
     }
 
-    async function toggleStatus(id, next){
+    async function toggleStatus(id,next){
       const r = await fetch(`${NC_BASE}/tables/${TBL_INTERVENTIONS}/records`,{
-        method:'PATCH', headers: headers(), body: JSON.stringify({ records:[{ id, status: next }] })
+        method:'PATCH', headers:headers(), body:JSON.stringify({records:[{id, status:next}]})
       });
-      if(!r.ok) return alert('Update failed');
-      fetchInterventions();
+      if(!r.ok) return alert('Update failed'); fetchInterventions();
     }
 
     async function removeOne(id){
       if(!confirm('Delete this intervention?')) return;
-      const r = await fetch(`${NC_BASE}/tables/${TBL_INTERVENTIONS}/records/${id}`,{ method:'DELETE', headers: headers() });
-      if(!r.ok) return alert('Delete failed');
-      fetchInterventions();
+      const r = await fetch(`${NC_BASE}/tables/${TBL_INTERVENTIONS}/records/${id}`,{ method:'DELETE', headers:headers() });
+      if(!r.ok) return alert('Delete failed'); fetchInterventions();
     }
 
     async function openEdit(id){
-      document.getElementById('editTitle').textContent = id? 'Edit Intervention' : 'New Intervention';
+      document.getElementById('editTitle').textContent = id ? 'Edit Intervention' : 'New Intervention';
       document.getElementById('int_id').value = id||'';
       if(id){
-        const r = await fetch(`${NC_BASE}/tables/${TBL_INTERVENTIONS}/records/${id}`,{ headers: headers() });
-        const row = await r.json();
+        const row = await fetch(`${NC_BASE}/tables/${TBL_INTERVENTIONS}/records/${id}`,{headers:headers()}).then(r=>r.json());
         document.getElementById('int_name').value = row.intervention_name||'';
         document.getElementById('int_desc').value = row.description||'';
         document.getElementById('int_sla').value  = row.sla_minutes||0;
         document.getElementById('int_status').value = row.status||'active';
-      } else {
+      }else{
         document.getElementById('editForm').reset();
         document.getElementById('int_sla').value = 0;
         document.getElementById('int_status').value = 'active';
@@ -457,18 +379,13 @@
 
     // --- Checklist management ------------------------------------------------
     let ckState = { currentId:null };
-    function openChecklist(id, name){
-      ckState.currentId = id;
-      document.getElementById('ckInterventionName').textContent = decodeURIComponent(name);
-      ckSO.classList.add('show');
-      loadChecklist();
-    }
+    function openChecklist(id,name){ ckState.currentId=id; document.getElementById('ckInterventionName').textContent = decodeURIComponent(name); ckSO.classList.add('show'); loadChecklist(); }
     function closeChecklist(){ ckSO.classList.remove('show'); }
 
     async function loadChecklist(){
       const id = ckState.currentId; if(!id) return;
       const url = `${NC_BASE}/tables/${TBL_CHECKLISTS}/records?orderBy=sort_order&order=asc&where=(intervention_type_id,eq,${id})`;
-      const rows = await fetch(url,{ headers: headers() }).then(r=>r.json());
+      const rows = await fetch(url,{headers:headers()}).then(r=>r.json());
       const body = document.getElementById('ckBody'); body.innerHTML='';
       rows.forEach(r=>{
         const tr = el(`<tr>
@@ -480,7 +397,7 @@
             </div>
           </td>
           <td>${r.checklist_item||''}</td>
-          <td>${r.is_required? '<span class="badge success">required</span>':'<span class="badge">optional</span>'}</td>
+          <td>${r.is_required?'<span class="badge success">required</span>':'<span class="badge">optional</span>'}</td>
           <td class="text-right">
             <div class="actions">
               <button class="btn btn-sm" data-ckedit data-id="${r.id}">Edit</button>
@@ -496,36 +413,33 @@
       const txt = document.getElementById('ckNewText').value.trim();
       const req = document.getElementById('ckNewReq').checked;
       if(!txt) return;
-      const url = `${NC_BASE}/tables/${TBL_CHECKLISTS}/records?limit=1&orderBy=sort_order&order=desc&where=(intervention_type_id,eq,${ckState.currentId})`;
-      const last = await fetch(url,{ headers: headers() }).then(r=>r.json());
-      const nextOrder = (last[0]?.sort_order || 0) + 1;
+      const last = await fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records?limit=1&orderBy=sort_order&order=desc&where=(intervention_type_id,eq,${ckState.currentId})`,{headers:headers()}).then(r=>r.json());
+      const nextOrder = (last[0]?.sort_order||0)+1;
       const body = { intervention_type_id: ckState.currentId, checklist_item: txt, is_required: !!req, sort_order: nextOrder };
-      const r = await fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records`,{ method:'POST', headers: headers(), body: JSON.stringify(body) });
+      const r = await fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records`,{ method:'POST', headers:headers(), body:JSON.stringify(body) });
       if(!r.ok) return alert('Add failed');
       document.getElementById('ckNewText').value=''; document.getElementById('ckNewReq').checked=false;
       loadChecklist();
     }
 
-    async function moveChecklist(id, dir, current){
+    async function moveChecklist(id,dir,current){
       const delta = dir==='up' ? -1 : 1;
-      const newOrder = Math.max(1, (Number(current)||1)+delta);
-      const r = await fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records`,{ method:'PATCH', headers: headers(), body: JSON.stringify({ records:[{ id, sort_order: newOrder }] }) });
-      if(!r.ok) return alert('Reorder failed');
-      loadChecklist();
-    }
-    async function deleteChecklist(id){
-      if(!confirm('Delete this item?')) return;
-      const r = await fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records/${id}`,{ method:'DELETE', headers: headers() });
-      if(!r.ok) return alert('Delete failed');
-      loadChecklist();
+      const newOrder = Math.max(1,(Number(current)||1)+delta);
+      const r = await fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records`,{ method:'PATCH', headers:headers(), body:JSON.stringify({records:[{id, sort_order:newOrder}]}) });
+      if(!r.ok) return alert('Reorder failed'); loadChecklist();
     }
 
-    // --- Export ---------------------------------------------------------------
+    async function deleteChecklist(id){
+      if(!confirm('Delete this item?')) return;
+      const r = await fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records/${id}`,{ method:'DELETE', headers:headers() });
+      if(!r.ok) return alert('Delete failed'); loadChecklist();
+    }
+
+    // --- Export --------------------------------------------------------------
     function toCSV(rows){
       const cols = ['id','intervention_name','description','sla_minutes','status','updated_at'];
       const esc = s => ('"'+ String(s??'').replaceAll('"','""') +'"');
-      const head = cols.join(',');
-      const body = rows.map(r=> cols.map(c=>esc(r[c])).join(',')).join('\n');
+      const head = cols.join(','); const body = rows.map(r=>cols.map(c=>esc(r[c])).join(',')).join('\n');
       return head+'\n'+body;
     }
     async function exportCSV(){
@@ -534,72 +448,57 @@
       if(state.q) filters.push(`(intervention_name,like,${encodeURIComponent('%'+state.q+'%')})~or(description,like,${encodeURIComponent('%'+state.q+'%')})`);
       if(state.status) filters.push(`(status,eq,${state.status})`);
       if(filters.length) url += `&where=${filters.join('~and')}`;
-      const rows = await fetch(url,{ headers: headers() }).then(r=>r.json());
+      const rows = await fetch(url,{headers:headers()}).then(r=>r.json());
       const csv = toCSV(rows);
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-      a.download = `intervention_types_${Date.now()}.csv`;
-      a.click();
+      const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+      a.download=`intervention_types_${Date.now()}.csv`; a.click();
     }
 
-    // --- Settings -------------------------------------------------------------
+    // --- Settings / Modal helpers / Events ----------------------------------
     document.getElementById('btnSettings').addEventListener('click', ()=>{
-      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
-      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
-      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
-      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
-      alert('Saved. Reloading to apply overrides.'); location.reload();
+      alert('Demo credentials are hard-coded.\nAPI: '+NC_BASE+'\nPAT: '+NC_PAT.slice(0,6)+'…');
     });
+    document.getElementById('btnLogout').addEventListener('click', logout);
 
-    // --- Modal helpers --------------------------------------------------------
     function openModal(){ modal.classList.add('show'); }
     function closeModal(){ modal.classList.remove('show'); }
     modal.addEventListener('click', e=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeModal(); });
 
-    ckSO.addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')) closeChecklist(); });
+    ckSO.addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')) ckSO.classList.remove('show'); });
 
-    // --- Event bindings -------------------------------------------------------
     document.getElementById('btnAdd').addEventListener('click', ()=> openEdit(null));
     document.getElementById('btnRefresh').addEventListener('click', fetchInterventions);
     document.getElementById('btnSave').addEventListener('click', createOrUpdate);
     document.getElementById('btnExport').addEventListener('click', exportCSV);
-    document.getElementById('q').addEventListener('input', e=>{ state.q = e.target.value.trim(); state.page=1; fetchInterventions(); });
-    document.getElementById('statusFilter').addEventListener('change', e=>{ state.status = e.target.value; state.page=1; fetchInterventions(); });
+    document.getElementById('q').addEventListener('input', e=>{ state.q=e.target.value.trim(); state.page=1; fetchInterventions(); });
+    document.getElementById('statusFilter').addEventListener('change', e=>{ state.status=e.target.value; state.page=1; fetchInterventions(); });
 
-    // Delegate table actions
     document.getElementById('tbody').addEventListener('click', (e)=>{
       const t=e.target;
-      if(t.hasAttribute('data-edit')){ openEdit(t.getAttribute('data-id')); }
-      else if(t.hasAttribute('data-toggle')){ toggleStatus(t.getAttribute('data-id'), t.getAttribute('data-val')); }
-      else if(t.hasAttribute('data-del')){ removeOne(t.getAttribute('data-id')); }
-      else if(t.hasAttribute('data-ck')){ openChecklist(t.getAttribute('data-id'), t.getAttribute('data-name')); }
+      if(t.hasAttribute('data-edit')) openEdit(t.getAttribute('data-id'));
+      else if(t.hasAttribute('data-toggle')) toggleStatus(t.getAttribute('data-id'), t.getAttribute('data-val'));
+      else if(t.hasAttribute('data-del')) removeOne(t.getAttribute('data-id'));
+      else if(t.hasAttribute('data-ck')) openChecklist(t.getAttribute('data-id'), t.getAttribute('data-name'));
     });
 
-    // Checklist events
     document.getElementById('ckAdd').addEventListener('click', addChecklist);
     document.getElementById('ckRefresh').addEventListener('click', loadChecklist);
     document.getElementById('ckBody').addEventListener('click', (e)=>{
-      const t=e.target; if(t.hasAttribute('data-ckdel')){ deleteChecklist(t.getAttribute('data-id')); }
-      if(t.hasAttribute('data-move')){ moveChecklist(t.getAttribute('data-id'), t.getAttribute('data-dir'), t.getAttribute('data-order')); }
+      const t=e.target;
+      if(t.hasAttribute('data-ckdel')) deleteChecklist(t.getAttribute('data-id'));
+      if(t.hasAttribute('data-move'))  moveChecklist(t.getAttribute('data-id'), t.getAttribute('data-dir'), t.getAttribute('data-order'));
       if(t.hasAttribute('data-ckedit')){
-        const id = t.getAttribute('data-id');
-        const txt = prompt('Edit checklist text:');
+        const id=t.getAttribute('data-id'); const txt=prompt('Edit checklist text:');
         if(txt!==null){
           fetch(`${NC_BASE}/tables/${TBL_CHECKLISTS}/records`,{
-            method:'PATCH', headers: headers(), body: JSON.stringify({ records:[{ id, checklist_item: txt }]} )
+            method:'PATCH', headers:headers(), body:JSON.stringify({records:[{id, checklist_item:txt}]})
           }).then(()=>loadChecklist());
         }
       }
     });
 
     // --- Init ----------------------------------------------------------------
-    if(!NC_PAT){
-      alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
-    }
-    fetchInterventions().catch(err=>{
-      console.error(err);
-      alert('Failed to load interventions. Check NC_BASE / NC_PAT.');
-    });
+    fetchInterventions().catch(err=>{ console.error(err); alert('Failed to load interventions.'); });
   </script>
 </body>
 </html>
