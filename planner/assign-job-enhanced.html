@@ -19,11 +19,11 @@
       --surface-muted: #f4f6fb;
       --text: #0f172a;
       --text-muted: #6b7280;
-      --primary: #2563eb;            /* blue-600 */
-      --accent: #7c3aed;             /* violet-600 */
-      --success: #16a34a;            /* green-600 */
-      --warning: #d97706;            /* amber-600 */
-      --danger: #dc2626;             /* red-600 */
+      --primary: #2563eb;
+      --accent: #7c3aed;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
       --border: rgba(15,23,42,.12);
       --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
       --shadow-sm: 0 1px 2px rgba(2,6,23,.06);
@@ -50,6 +50,7 @@
     .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
     .mb-4{ margin-bottom:var(--space-4); }
     .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
+    .gap-4{ gap: var(--space-4); }
     .grow{ flex:1 1 auto; }
     .grid{ display:grid; }
     .grid-3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
@@ -67,11 +68,14 @@
     .sidebar{
       position:fixed; inset:56px auto 0 0; width:240px; padding:16px;
       background:var(--surface); border-right:1px solid var(--border); overflow:auto;
+      display:flex; flex-direction:column;
     }
     .sidebar .brand{ font-weight:700; margin-bottom:10px; }
     .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
     .sidebar a:hover{ background:rgba(37,99,235,.06); }
     .sidebar a.active{ background:rgba(37,99,235,.12); border:1px solid rgba(37,99,235,.35); }
+    .sidebar .footer{ margin-top:auto; padding-top:8px; }
+    .sidebar .logout{ width:100%; display:flex; justify-content:center; }
 
     .main{ margin-left:240px; padding: 18px; }
 
@@ -109,7 +113,8 @@
 
     .form{ display:block; }
     .form-row{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
-    .col-12{ grid-column: span 12; } .col-6{ grid-column: span 6; } .col-4{ grid-column: span 4; } .col-3{ grid-column: span 3; }
+    .col-12{ grid-column: span 12; } .col-9{ grid-column: span 9; }
+    .col-8{ grid-column: span 8; } .col-6{ grid-column: span 6; } .col-4{ grid-column: span 4; } .col-3{ grid-column: span 3; } .col-2{ grid-column: span 2; }
     .control-inline{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
 
     /* ======= Badges / chips ======= */
@@ -130,7 +135,7 @@
 
     @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
     @media (max-width: 760px){
-      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);} 
+      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);}
       .main{ margin-left:0; }
     }
   </style>
@@ -143,13 +148,20 @@
     <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
+  <!-- Uniform sidebar with pinned Logout -->
   <aside class="sidebar">
     <div class="brand">Naveo</div>
     <a href="dashboard.html">Dashboard</a>
-    <a class="active" href="assign-job-enhanced.html">Assign Job</a>
     <a href="planner-jobs.html">Service Orders</a>
+    <a class="active" href="assign-job-enhanced.html">Assign Job</a>
     <a href="planner-inventory.html">Inventory</a>
     <a href="reports.html">Reports</a>
+    <a href="realtime-map.html">Live Map</a>
+    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+    <a href="admin-tech-master.html">Admin · Technicians</a>
+    <div class="footer">
+      <button class="btn logout" id="btnLogout">Log out</button>
+    </div>
   </aside>
 
   <main class="main">
@@ -174,40 +186,38 @@
               <select id="technician_id" class="select" required></select>
             </div>
             <div class="col-4">
+              <label class="label">Scheduled at</label>
+              <input id="scheduled_at" type="datetime-local" class="input" required />
+            </div>
+
+            <!-- CLIENT (picker + hidden id) -->
+            <div class="col-6">
+              <label class="label">Client</label>
+              <div class="flex" style="gap:10px;">
+                <input id="client_name" class="input" placeholder="Pick a client…" readonly />
+                <button class="btn" id="btnPickClient" type="button">Find…</button>
+              </div>
+              <input type="hidden" id="client_id" />
+              <div class="help">Selecting a client will auto-fill address & contacts.</div>
+            </div>
+
+            <div class="col-3">
               <label class="label">Priority</label>
               <select id="priority" class="select">
                 <option>normal</option><option>high</option><option>urgent</option><option>low</option>
               </select>
             </div>
-
-            <div class="col-6">
-              <label class="label">Scheduled at</label>
-              <input id="scheduled_at" type="datetime-local" class="input" required />
-            </div>
-            <div class="col-6">
+            <div class="col-3">
               <label class="label">Status</label>
               <select id="status" class="select">
                 <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
               </select>
             </div>
 
-            <!-- Client association (autofills address & contacts) -->
-            <div class="col-8">
-              <label class="label">Client</label>
-              <div class="flex" style="gap:8px">
-                <input id="client_name" class="input" placeholder="Search or type client name" />
-                <input id="client_id" type="hidden" />
-                <button class="btn" id="btnPickClient" type="button">Find…</button>
-              </div>
-              <div class="help">Selecting an existing client will autofill address & contacts.</div>
-            </div>
-            <div class="col-4">
-              <label class="label">Contact phone</label>
-              <input id="contact_phone" class="input" />
-            </div>
-
-            <div class="col-6"><label class="label">Contact person</label><input id="contact_person" class="input" /></div>
-            <div class="col-6"><label class="label">Address</label><textarea id="address" class="textarea" required></textarea></div>
+            <div class="col-12"><label class="label">Address</label>
+              <textarea id="address" class="textarea" required placeholder="Will auto-fill from client if set"></textarea></div>
+            <div class="col-3"><label class="label">Contact person</label><input id="contact_person" class="input" placeholder="Auto-filled from client if set"/></div>
+            <div class="col-3"><label class="label">Contact phone</label><input id="contact_phone" class="input" placeholder="Auto-filled from client if set"/></div>
 
             <div class="col-12"><label class="label">Notes</label><textarea id="notes" class="textarea" placeholder="Optional notes for the technician"></textarea></div>
 
@@ -220,15 +230,17 @@
 
     <div class="card mt-4">
       <div class="card-header">
-        <h3>Vehicles</h3>
+        <h3>Vehicles & Interventions</h3>
         <div class="toolbar">
-          <span class="chip" id="ckEst">Estimated checklist lines: <strong id="ckEstimate">0</strong></span>
           <button class="btn" id="btnAddVeh">＋ Add vehicle</button>
         </div>
       </div>
       <div class="card-body">
         <div id="vehList"></div>
-        <div class="help mt-2">One row per vehicle (e.g., registration/plate). Each vehicle may have its own intervention type.</div>
+        <div class="help mt-2">
+          Add one row per vehicle (e.g., registration/plate). Select the <b>intervention type</b> for each vehicle.
+          Checklist lines will be created per vehicle based on the chosen intervention.
+        </div>
       </div>
     </div>
 
@@ -252,27 +264,45 @@
     </div>
   </div>
 
-  <!-- Client picker modal -->
+  <!-- Client picker / create modal -->
   <div class="modal-backdrop" id="clientModal">
     <div class="modal" role="dialog" aria-modal="true">
-      <header><h3>Select Client</h3></header>
+      <header><h3>Find or Create Client</h3></header>
       <div class="content">
-        <div class="flex" style="gap:8px; margin-bottom:12px">
-          <input id="clientSearch" class="input" placeholder="Search by name / phone" />
-          <button class="btn" id="btnClientSearch" type="button">Search</button>
+        <div class="form">
+          <div class="form-row">
+            <div class="col-12">
+              <label class="label">Search</label>
+              <input id="c_q" class="input" placeholder="Name or phone…" />
+              <div class="help">Results (max 20)</div>
+            </div>
+            <div class="col-12" id="c_results" style="display:grid;gap:10px;"></div>
+          </div>
         </div>
-        <div id="clientResults" class="grid" style="gap:8px"></div>
-        <div class="help">Tip: set your Clients table ID in Settings to enable search.</div>
+
+        <hr>
+        <div class="form">
+          <div class="form-row">
+            <div class="col-12"><h4 class="fw-600" style="margin:0;">New client</h4></div>
+            <div class="col-6"><label class="label">Name</label><input id="c_name" class="input" required></div>
+            <div class="col-6"><label class="label">Phone</label><input id="c_phone" class="input"></div>
+            <div class="col-12"><label class="label">Address</label><textarea id="c_address" class="textarea"></textarea></div>
+            <div class="col-6"><label class="label">Contact person</label><input id="c_person" class="input"></div>
+            <div class="col-6"><label class="label">Email (optional)</label><input id="c_email" class="input"></div>
+          </div>
+        </div>
       </div>
-      <footer><button class="btn" data-close>Close</button></footer>
+      <footer>
+        <button class="btn" data-close>Close</button>
+        <button class="btn btn-primary" id="c_create">Create client</button>
+      </footer>
     </div>
   </div>
 
   <script>
-    // ---------------------- Config -------------------------------------------
-    // Embedded defaults; can still be overridden via Settings (localStorage)
-    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT')  || '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
+    // ---------------------- Config (HARD-CODED for demo) ---------------------
+    const NC_BASE = 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
 
     const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
     const TBL_SOV  = 'mvn2do01qdif4yt';   // service_order_vehicles
@@ -280,7 +310,7 @@
     const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
     const TBL_CK   = 'ma917pno6w5e1ed';   // checklists (masters)
     const TBL_SOC  = 'mibtqjiulezywtx';   // service_order_checklist (lines)
-    const TBL_CLIENT = localStorage.getItem('TBL_CLIENT') || ''; // clients (optional)
+    const TBL_CLIENTS = 'm5f6kp73u19gitz';// tbl_clients
 
     const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
     const $ = (s, p=document) => p.querySelector(s);
@@ -290,26 +320,17 @@
     function newSoId(){
       const d = new Date();
       const pad = (n) => String(n).padStart(2, '0');
-      const id = `SO-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-      return id;
+      return `SO-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
     }
 
-    // Vehicle row template → now includes intervention type select
-    function vehRowTpl(value=''){
-      const row = document.createElement('div');
-      row.className = 'veh-row';
-      row.style.display = 'grid';
-      row.style.gridTemplateColumns = '1.2fr 1fr 48px';
-      row.style.gap = '10px';
-      row.innerHTML = `
-        <input class="input veh-no" placeholder="Vehicle number / plate" value="${value}">
-        <select class="select veh-itype"><option value="">Select intervention type…</option></select>
-        <button class="btn btn-danger" title="Remove">✖</button>`;
-      return row;
+    // Uniform logout
+    function logout(){
+      try{ localStorage.removeItem('NC_PAT'); localStorage.removeItem('NC_BASE'); }catch(e){}
+      location.href = 'login.html';
     }
 
     // ---------------------- Lookups ------------------------------------------
-    let interventions = [];
+    let intList = []; // cached interventions
 
     async function loadTechs(){
       const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&where=(status,eq,active)&orderBy=full_name&order=asc`;
@@ -319,15 +340,8 @@
 
     async function loadInterventions(){
       const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&where=(status,eq,active)&orderBy=intervention_name&order=asc`;
-      interventions = await fetch(url,{headers:H()}).then(r=>r.json());
-      // Fill any existing veh selects
-      $$('.veh-itype').forEach(sel=> fillItypeSelect(sel));
-      updateChecklistEstimate();
-    }
-
-    function fillItypeSelect(sel){
-      sel.innerHTML = '<option value="">Select intervention type…</option>' +
-        interventions.map(r=>`<option value="${r.id}">${r.intervention_name}</option>`).join('');
+      intList = await fetch(url,{headers:H()}).then(r=>r.json());
+      $$('#vehList select[data-int]').forEach(sel => applyInterventionOptions(sel));
     }
 
     async function fetchChecklist(interventionId){
@@ -336,92 +350,120 @@
     }
 
     // ---------------------- Vehicles UI --------------------------------------
-    const ckCountCache = new Map(); // itypeId → count
+    function applyInterventionOptions(selectEl, selected=''){
+      const opts = ['<option value="">Select intervention…</option>']
+        .concat(intList.map(it => `<option value="${it.id}" ${String(it.id)===String(selected)?'selected':''}>${it.intervention_name}</option>`));
+      selectEl.innerHTML = opts.join('');
+    }
 
-    function addVeh(value=''){
-      const row = vehRowTpl(value);
-      const delBtn = row.querySelector('button');
-      const sel = row.querySelector('.veh-itype');
-      fillItypeSelect(sel);
-      delBtn.addEventListener('click', ()=>{ row.remove(); updateChecklistEstimate(); });
-      sel.addEventListener('change', updateChecklistEstimate);
+    function vehRowTpl(value='', intId=''){
+      const row = document.createElement('div');
+      row.className = 'veh-row';
+      row.style.display = 'grid';
+      row.style.gridTemplateColumns = '1fr 1fr 48px';
+      row.style.gap = '10px';
+      row.innerHTML = `
+        <input class="input" placeholder="Vehicle number / plate" value="${value}">
+        <select class="select" data-int></select>
+        <button class="btn btn-danger" title="Remove">✖</button>`;
+      const sel = row.querySelector('select[data-int]');
+      applyInterventionOptions(sel, intId);
+      row.querySelector('button').addEventListener('click', ()=>{ row.remove(); });
+      return row;
+    }
+
+    function addVeh(value='', intId=''){
+      const row = vehRowTpl(value, intId);
       $('#vehList').appendChild(row);
     }
 
     function getVehValues(){
       const values = [];
-      let hasError = false;
       $$('#vehList .veh-row').forEach(r=>{
-        const no = r.querySelector('.veh-no').value.trim();
-        const it = r.querySelector('.veh-itype').value;
-        if(no){
-          if(!it){ hasError = true; r.querySelector('.veh-itype').style.borderColor = 'rgba(220,38,38,.6)'; }
-          values.push({ vehicle_no: no, intervention_type_id: it||null });
+        const vehicle_no = r.querySelector('input').value.trim();
+        const intervention_type_id = r.querySelector('select[data-int]').value;
+        if(vehicle_no || intervention_type_id){
+          values.push({ vehicle_no, intervention_type_id });
         }
       });
-      if(hasError) alert('Please select an intervention type for each vehicle.');
       return values;
     }
 
-    async function updateChecklistEstimate(){
-      const vehs = getVehValues();
-      let total = 0;
-      for(const v of vehs){
-        if(!v.intervention_type_id) continue;
-        if(!ckCountCache.has(v.intervention_type_id)){
-          const rows = await fetchChecklist(v.intervention_type_id);
-          ckCountCache.set(v.intervention_type_id, rows.length||0);
-        }
-        total += (ckCountCache.get(v.intervention_type_id)||0);
-      }
-      $('#ckEstimate').textContent = total;
-    }
-
     // ---------------------- Client picker ------------------------------------
-    async function searchClients(term){
-      if(!TBL_CLIENT) return [];
-      const q = encodeURIComponent('%'+term.replace(/\s+/g,' ').trim()+'%');
-      const where = `(name,like,${q})~or(contact_phone,like,${q})`;
-      const url = `${NC_BASE}/tables/${TBL_CLIENT}/records?limit=20&orderBy=name&order=asc&where=${encodeURIComponent(where)}`;
-      try{ return await fetch(url,{headers:H()}).then(r=>r.json()); }catch{ return []; }
+    async function searchClients(q=''){
+      let url = `${NC_BASE}/tables/${TBL_CLIENTS}/records?limit=20&orderBy=name&order=asc`;
+      if(q){
+        const like = encodeURIComponent('%'+q+'%');
+        const where = `(name,like,${like})~or(contact_phone,like,${like})`;
+        url += `&where=${where}`;
+      }
+      return fetch(url, {headers:H()}).then(r=>r.json());
     }
 
-    function openClientModal(){ $('#clientModal').classList.add('show'); $('#clientSearch').focus(); }
+    function renderClientResults(rows){
+      const box = $('#c_results');
+      if(!rows.length){ box.innerHTML = `<div class="muted">No matches.</div>`; return; }
+      box.innerHTML = rows.map(r=>`
+        <div class="card" style="padding:12px;border-radius:10px;">
+          <div class="fw-600">${r.name||'(no name)'}</div>
+          <div class="mini">${r.address||''}</div>
+          <div class="mini">${r.contact_person||''} ${r.contact_phone? ' · '+r.contact_phone : ''}</div>
+          <div class="mt-2">
+            <button class="btn btn-sm" data-select-client="${r.id}">Select</button>
+          </div>
+        </div>`).join('');
+    }
+
+    function selectClient(c){
+      $('#client_id').value = c.id;
+      $('#client_name').value = c.name || '';
+      if(!$('#address').value)        $('#address').value = c.address || '';
+      if(!$('#contact_person').value) $('#contact_person').value = c.contact_person || '';
+      if(!$('#contact_phone').value)  $('#contact_phone').value = c.contact_phone || '';
+      closeClientModal();
+    }
+
+    function openClientModal(){
+      $('#c_q').value = '';
+      renderClientResults([]);
+      $('#clientModal').classList.add('show');
+    }
     function closeClientModal(){ $('#clientModal').classList.remove('show'); }
 
-    async function runClientSearch(){
-      const term = $('#clientSearch').value; const list = await searchClients(term);
-      const wrap = $('#clientResults'); wrap.innerHTML='';
-      if(!TBL_CLIENT){ wrap.innerHTML = `<div class="muted">Clients table ID not set in Settings.</div>`; return; }
-      if(!list.length){ wrap.innerHTML = `<div class="muted">No clients found.</div>`; return; }
-      list.forEach(c=>{
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<div class="card-body">
-          <div class="fw-600">${c.name||'Unnamed client'}</div>
-          <div class="text-sm muted">${c.address||''}</div>
-          <div class="text-sm">${c.contact_person||''} · ${c.contact_phone||''}</div>
-          <div class="mt-2"><button class="btn btn-sm btn-primary">Select</button></div>
-        </div>`;
-        card.querySelector('button').addEventListener('click', ()=>{
-          $('#client_id').value = c.id;
-          $('#client_name').value = c.name||'';
-          $('#address').value = c.address||'';
-          $('#contact_person').value = c.contact_person||'';
-          $('#contact_phone').value = c.contact_phone||'';
-          closeClientModal();
-        });
-        wrap.appendChild(card);
-      });
+    async function createClientInline(){
+      const body = {
+        name: $('#c_name').value.trim(),
+        address: $('#c_address').value.trim() || undefined,
+        contact_person: $('#c_person').value.trim() || undefined,
+        contact_phone: $('#c_phone').value.trim() || undefined,
+        email: $('#c_email').value.trim() || undefined,
+      };
+      if(!body.name){ alert('Client name is required'); return; }
+      const dup = await searchClients(body.name);
+      if(dup.some(x => (x.name||'').toLowerCase() === body.name.toLowerCase())){
+        const cont = confirm('A client with the same name exists. Create anyway?'); if(!cont) return;
+      }
+      const r = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records`, { method:'POST', headers:H(), body: JSON.stringify(body) });
+      if(!r.ok){ alert('Create failed'); return; }
+      const c = await r.json();
+      selectClient(c);
     }
 
     // ---------------------- Create flow --------------------------------------
     async function createSO(){
+      const vehs = getVehValues();
+      if(vehs.length===0){ alert('Please add at least one vehicle and select its intervention type.'); return; }
+      if(vehs.some(v => !v.vehicle_no || !v.intervention_type_id)){
+        alert('Each vehicle row must have a Vehicle number and an Intervention type.'); return;
+      }
+
       const so_id = $('#so_id').value.trim() || newSoId();
       const bodyFull = {
         so_id,
         technician_id: $('#technician_id').value,
         scheduled_at: $('#scheduled_at').value,
+        client_id: $('#client_id').value || undefined,
+        client_name: $('#client_name').value || undefined,
         address: $('#address').value.trim(),
         contact_person: $('#contact_person').value.trim() || undefined,
         contact_phone: $('#contact_phone').value.trim() || undefined,
@@ -430,8 +472,6 @@
         notes: $('#notes').value.trim() || undefined,
         return_visit_required: $('#return_visit_required').checked || undefined,
         follow_up_of_so_id: $('#follow_up_of_so_id').value || undefined,
-        client_id: $('#client_id').value || undefined,
-        client_name: $('#client_name').value.trim() || undefined,
       };
 
       const minimal = {
@@ -450,29 +490,30 @@
       }
       if(!so){ alert('Failed to create Service Order. Check required columns exist.'); return; }
 
-      // Vehicles (with per-vehicle intervention type)
-      const vehs = getVehValues().filter(v=> !!v.vehicle_no);
+      // Vehicles (+ per-vehicle intervention)
       const createdVehs = [];
       for(const v of vehs){
-        // Try to include intervention_type_id at SOV level; if column missing, fall back.
-        let rec = null;
-        for(const payload of [ { service_order_id: so.id, vehicle_no: v.vehicle_no, intervention_type_id: v.intervention_type_id }, { service_order_id: so.id, vehicle_no: v.vehicle_no } ]){
-          const r = await fetch(`${NC_BASE}/tables/${TBL_SOV}/records`,{ method:'POST', headers:H(), body: JSON.stringify(payload) });
-          if(r.ok){ rec = await r.json(); break; }
+        const payloadFull = { service_order_id: so.id, vehicle_no: v.vehicle_no, intervention_type_id: v.intervention_type_id };
+        const payloadMinimal = { service_order_id: so.id, vehicle_no: v.vehicle_no };
+        let row = null;
+        for(const p of [payloadFull, payloadMinimal]){
+          const r = await fetch(`${NC_BASE}/tables/${TBL_SOV}/records`,{ method:'POST', headers:H(), body: JSON.stringify(p) });
+          if(r.ok){ row = await r.json(); break; }
         }
-        if(rec){ createdVehs.push({ ...rec, intervention_type_id: v.intervention_type_id }); }
+        if(row){ createdVehs.push({ ...row, _intervention_type_id: v.intervention_type_id }); }
       }
 
-      // Checklist instances per vehicle / intervention type
+      // Checklist instances per vehicle
       for(const v of createdVehs){
-        if(!v.intervention_type_id) continue;
-        const ck = await fetchChecklist(v.intervention_type_id);
+        const ck = await fetchChecklist(v._intervention_type_id);
         for(const item of ck){
-          await fetch(`${NC_BASE}/tables/${TBL_SOC}/records`,{ method:'POST', headers:H(), body: JSON.stringify({ service_order_id: so.id, service_order_vehicle_id: v.id, checklist_id: item.id, status: 'pending' }) });
+          await fetch(`${NC_BASE}/tables/${TBL_SOC}/records`,{
+            method:'POST', headers:H(),
+            body: JSON.stringify({ service_order_id: so.id, service_order_vehicle_id: v.id, checklist_id: item.id, status: 'pending' })
+          });
         }
       }
 
-      // Result card
       const linkAssign = `assign-inventory-selector.html?so=${encodeURIComponent(so.id)}`;
       $('#result').innerHTML = `
         <div class="card">
@@ -496,13 +537,20 @@
     // ---------------------- Checklist preview --------------------------------
     async function openPreview(){
       const vehs = getVehValues().filter(v=> v.vehicle_no && v.intervention_type_id);
-      if(!vehs.length){ $('#ckPreview').innerHTML = `<div class='muted'>Add vehicles and choose intervention types to preview checklist.</div>`; $('#ckModal').classList.add('show'); return; }
+      if(vehs.length===0){ $('#ckPreview').innerHTML = '<div class="muted">Add at least one vehicle with an intervention.</div>'; $('#ckModal').classList.add('show'); return; }
+
       let html = '';
       for(const v of vehs){
-        const it = interventions.find(x=> String(x.id)===String(v.intervention_type_id));
+        const it = intList.find(x=> String(x.id)===String(v.intervention_type_id));
+        const itName = it?.intervention_name || v.intervention_type_id;
         const ck = await fetchChecklist(v.intervention_type_id);
         const list = ck.map(x=>`<li>${x.checklist_item} ${x.is_required? '<span class="badge success">required</span>':''}</li>`).join('');
-        html += `<div class="mb-4"><div class="fw-600">${v.vehicle_no} · ${it?.intervention_name||''}</div><ul style="display:grid; gap:8px; margin-top:8px">${list || '<li class=\'muted\'>No checklist items for this intervention.</li>'}</ul></div>`;
+        html += `
+          <div class="mb-4">
+            <div class="fw-600">Vehicle: ${v.vehicle_no}</div>
+            <div class="mini">Intervention: ${itName} — ${ck.length} items</div>
+            <ul style="display:grid; gap:8px; margin-top:8px;">${list || '<li class="muted">No checklist items.</li>'}</ul>
+          </div>`;
       }
       $('#ckPreview').innerHTML = html;
       $('#ckModal').classList.add('show');
@@ -510,37 +558,35 @@
 
     // ---------------------- Settings & modal ---------------------------------
     $('#btnSettings').addEventListener('click', ()=>{
-      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
-      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
-      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
-      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
-      const tbl = prompt('Clients Table ID (optional, enables client search)', localStorage.getItem('TBL_CLIENT') || TBL_CLIENT || '');
-      if(tbl!==null) localStorage.setItem('TBL_CLIENT', tbl.trim());
-      location.reload();
+      alert('This demo is hard-coded to the test NocoDB.\nAPI: '+NC_BASE+'\nPAT: '+NC_PAT.slice(0,6)+'…');
     });
 
+    $('#btnLogout').addEventListener('click', logout);
     $('#btnNewId').addEventListener('click', ()=>{ const id=newSoId(); $('#so_id').value=id; $('#soPreview').textContent=id; });
+
     $('#btnPreviewChecklist').addEventListener('click', (e)=>{ e.preventDefault(); openPreview(); });
     $('#ckModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) $('#ckModal').classList.remove('show'); });
 
-    // client modal
-    $('#btnPickClient').addEventListener('click', ()=>{ openClientModal(); });
-    $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
-    $('#btnClientSearch').addEventListener('click', runClientSearch);
-    $('#clientSearch').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); runClientSearch(); } });
-
-    // vehicles
-    $('#btnAddVeh').addEventListener('click', ()=> addVeh(''));
+    $('#btnAddVeh').addEventListener('click', ()=> addVeh('', ''));
     $('#btnCreate').addEventListener('click', (e)=>{ e.preventDefault(); createSO(); });
+
+    $('#btnPickClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientModal(); });
+    $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
+    $('#c_q').addEventListener('input', async (e)=>{ const rows = await searchClients(e.target.value.trim()); renderClientResults(rows); });
+    $('#c_results').addEventListener('click', async (e)=>{
+      const btn = e.target.closest('[data-select-client]'); if(!btn) return;
+      const id = btn.getAttribute('data-select-client');
+      const row = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records/${id}`, {headers:H()}).then(r=>r.json());
+      selectClient(row);
+    });
+    $('#c_create').addEventListener('click', (e)=>{ e.preventDefault(); createClientInline(); });
 
     // ---------------------- Init ---------------------------------------------
     (async function init(){
-      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
       $('#soPreview').textContent = '—';
-      addVeh(''); // start with 1 row
+      addVeh('', ''); // start with 1 row
       await loadTechs();
       await loadInterventions();
-      // default schedule now + 2h
       const d=new Date(Date.now()+2*60*60*1000); const p=(n)=>String(n).padStart(2,'0');
       $('#scheduled_at').value = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
     })();
