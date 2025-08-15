@@ -11,35 +11,22 @@
 
   <!-- Inline modern LIGHT theme (no external naveo.css) -->
   <style>
-    /* ====== Design tokens (light) ====== */
     :root{
-      --bg:#f6f7fb;
-      --surface:#ffffff;
-      --surface-2:#f3f4f6;
-      --surface-muted:#f9fafb;
-      --text:#111827;
-      --text-muted:#6b7280;
-      --primary:#2563eb;
-      --accent:#7c3aed;
-      --success:#16a34a;
-      --warning:#d97706;
-      --danger:#dc2626;
-      --info:#0ea5e9;
+      --bg:#f6f7fb; --surface:#ffffff; --surface-2:#f3f4f6; --surface-muted:#f9fafb;
+      --text:#111827; --text-muted:#6b7280; --primary:#2563eb; --accent:#7c3aed;
+      --success:#16a34a; --warning:#d97706; --danger:#dc2626; --info:#0ea5e9;
       --border: rgba(0,0,0,.08);
       --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
-      --shadow-sm:0 1px 2px rgba(0,0,0,.08);
-      --shadow-md:0 6px 16px rgba(0,0,0,.12);
-      --shadow-lg:0 16px 40px rgba(0,0,0,.18);
+      --shadow-sm:0 1px 2px rgba(0,0,0,.08); --shadow-md:0 6px 16px rgba(0,0,0,.12); --shadow-lg:0 16px 40px rgba(0,0,0,.18);
       --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
       --text-sm:.875rem; --text-xs:.78rem;
     }
 
-    /* ====== Base ====== */
     *,*::before,*::after{ box-sizing:border-box; }
     html,body{ height:100%; }
-    body{ margin:0; background:var(--bg); color:var(--text); font:400 16px/1.45 Poppins,ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"; }
-    a{ color:#1e40af; text-decoration:none; }
-    a:hover{ text-decoration:underline; }
+    body{ margin:0; background:var(--bg); color:var(--text);
+      font:400 16px/1.45 Poppins,ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"; }
+    a{ color:#1e40af; text-decoration:none; } a:hover{ text-decoration:underline; }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
     .fw-600{ font-weight:600; }
     .text-sm{ font-size:var(--text-sm); }
@@ -52,70 +39,66 @@
     .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
 
     /* ====== App layout ====== */
-    .topbar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; padding:10px 16px; background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.7)); border-bottom:1px solid var(--border); backdrop-filter: blur(6px); }
+    .topbar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; padding:10px 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.7)); border-bottom:1px solid var(--border); backdrop-filter: blur(6px); }
     .topbar .title{ font-weight:700; letter-spacing:.3px; }
-    .sidebar{ position:fixed; inset:56px auto 0 0; width:240px; padding:16px; background:var(--surface); border-right:1px solid var(--border); overflow:auto; }
+
+    /* Uniform sidebar with pinned Logout */
+    .sidebar{
+      position:fixed; inset:56px auto 0 0; width:240px; padding:16px; background:var(--surface);
+      border-right:1px solid var(--border); overflow:auto; display:flex; flex-direction:column;
+    }
     .sidebar .brand{ font-weight:700; margin-bottom:10px; }
     .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
     .sidebar a:hover{ background:rgba(0,0,0,.03); }
     .sidebar a.active{ background:rgba(37,99,235,.10); border:1px solid rgba(37,99,235,.25); }
+    .sidebar .footer{ margin-top:auto; padding-top:8px; }
+    .sidebar .logout{ width:100%; display:flex; justify-content:center; }
+
     .main{ margin-left:240px; padding:18px; }
 
-    /* ====== Cards ====== */
+    /* ====== Cards / inputs / table ====== */
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
     .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
     .card-body{ padding: var(--space-5); }
 
-    /* ====== Toolbar ====== */
     .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
     .grow{ flex:1 1 auto; }
 
-    /* ====== Buttons ====== */
-    .btn{ --bg:transparent; --bd:var(--border); --fg:var(--text); display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid var(--bd); background:var(--bg); color:var(--fg); border-radius:10px; cursor:pointer; user-select:none; transition:.15s ease; }
+    .btn{ --bg:transparent; --bd:var(--border); --fg:var(--text); display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
+      border:1px solid var(--bd); background:var(--bg); color:var(--fg); border-radius:10px; cursor:pointer; user-select:none; transition:.15s ease; }
     .btn:hover{ filter:brightness(1.02); background:rgba(0,0,0,.03); }
     .btn:active{ transform: translateY(1px); }
     .btn-sm{ padding:6px 10px; font-size:var(--text-sm); border-radius:8px; }
     .btn-primary{ --bg: linear-gradient(135deg, var(--primary), var(--accent)); --bd: rgba(0,0,0,.06); --fg:#fff; background: var(--bg); color: var(--fg); box-shadow: var(--shadow-sm); }
     .btn-outline{ --bd: rgba(0,0,0,.18); }
 
-    /* ====== Inputs ====== */
     .input,.select,.textarea{ width:100%; padding:10px 12px; background:#fff; color:var(--text); border:1px solid var(--border); border-radius:10px; outline:none; transition:.12s ease; }
     .textarea{ min-height:96px; resize:vertical; }
     .input:focus,.select:focus,.textarea:focus{ border-color: rgba(37,99,235,.6); box-shadow: 0 0 0 3px rgba(37,99,235,.18); }
     .label{ display:block; margin-bottom:6px; font-weight:500; color:var(--text-muted); }
 
-    /* ====== Table ====== */
     .table-wrap{ overflow:auto; border:1px solid var(--border); border-radius:12px; }
     table.table{ width:100%; border-collapse:collapse; }
     .table thead th{ background: var(--surface-muted); color:var(--text-muted); font-weight:600; text-align:left; padding:12px; border-bottom:1px solid var(--border); white-space:nowrap; }
     .table tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:top; }
     .table tbody tr:hover{ background: rgba(0,0,0,.02); }
 
-    /* ====== Badges ====== */
     .badge{ display:inline-block; padding:4px 8px; border-radius:999px; background:rgba(0,0,0,.04); border:1px solid var(--border); font-size:var(--text-sm); }
     .badge.success{ background:rgba(22,163,74,.10); border-color:rgba(22,163,74,.35); color:#166534; }
     .badge.info{ background:rgba(14,165,233,.10); border-color:rgba(14,165,233,.35); color:#075985; }
     .badge.warning{ background:rgba(217,119,6,.10); border-color:rgba(217,119,6,.35); color:#92400e; }
     .badge.danger{ background:rgba(220,38,38,.10); border-color:rgba(220,38,38,.35); color:#991b1b; }
-    /* Status-specific */
     .badge.status-assigned{ background:rgba(37,99,235,.10); border-color:rgba(37,99,235,.35); color:#1e40af; }
     .badge.status-in_progress{ background:rgba(124,58,237,.10); border-color:rgba(124,58,237,.35); color:#5b21b6; }
     .badge.status-completed{ background:rgba(22,163,74,.10); border-color:rgba(22,163,74,.35); color:#166534; }
     .badge.status-cancelled{ background:rgba(0,0,0,.05); border-color:rgba(0,0,0,.12); color:#4b5563; }
 
-    /* ====== Pagination ====== */
     .pagination{ display:flex; gap:8px; }
     .page{ display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; color:inherit; text-decoration:none; background:#fff; }
     .page.active{ background: var(--surface-muted); }
 
-    /* ====== Dropdown (not used here but fine) ====== */
-    .dropdown{ position:relative; display:inline-block; }
-    .dropdown-menu{ position:absolute; top:calc(100% + 6px); right:0; min-width:180px; padding:6px; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow-md); display:none; }
-    .dropdown.open .dropdown-menu{ display:block; }
-    .dropdown-menu a{ display:block; padding:8px 10px; border-radius:8px; color:inherit; text-decoration:none; }
-    .dropdown-menu a:hover{ background:rgba(0,0,0,.04); }
-
-    /* ====== Modal ====== */
+    /* ====== Modal & Slideover ====== */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:60; }
     .modal-backdrop.show{ display:flex; }
     .modal{ width:min(720px, 96vw); background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg); }
@@ -123,7 +106,6 @@
     .modal .content{ padding: var(--space-5); max-height:65vh; overflow:auto; }
     .modal footer{ padding: var(--space-4) var(--space-5); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
 
-    /* ====== Slideover (this page uses it) ====== */
     .slideover { position: fixed; inset:0; display:none; }
     .slideover.show { display:block; }
     .slideover .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.5); }
@@ -132,7 +114,7 @@
     .slideover footer{ border-top:1px solid var(--border); border-bottom:0; display:flex; gap:10px; justify-content:flex-end; }
     .slideover .content{ padding:var(--space-5); overflow:auto; }
 
-    /* ====== Timeline bits for History ====== */
+    /* ====== Timeline layout ====== */
     .timeline { display:grid; gap:10px; }
     .tl-row { display:grid; grid-template-columns: 200px 140px 1fr 180px 120px; gap:12px; align-items:center; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); padding:10px 12px; }
     .tl-head { display:grid; grid-template-columns: 200px 140px 1fr 180px 120px; gap:12px; font-weight:600; color:var(--text-muted); padding:0 4px 8px; }
@@ -153,20 +135,25 @@
     <div class="title">Naveo FSM</div>
     <span class="muted">Status History</span>
     <div class="grow"></div>
-    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
+    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ API Settings</button>
   </div>
 
+  <!-- Uniform sidebar (matches other screens) + pinned Log out -->
   <aside class="sidebar">
     <div class="brand">Naveo</div>
     <a href="dashboard.html">Dashboard</a>
     <a href="planner-jobs.html">Service Orders</a>
     <a href="assign-job-enhanced.html">Assign Job</a>
+    <a href="assign-inventory-selector.html">Assign Inventory</a>
     <a href="planner-inventory.html">Inventory</a>
     <a href="reports.html">Reports</a>
     <a href="realtime-map.html">Live Map</a>
     <a href="admin-intervention-master.html">Admin · Intervention Types</a>
     <a href="admin-tech-master.html">Admin · Technicians</a>
     <a class="active" href="history.html">History</a>
+    <div class="footer">
+      <button class="btn logout" id="btnLogout">Log out</button>
+    </div>
   </aside>
 
   <main class="main">
@@ -277,10 +264,9 @@
   </div>
 
   <script>
-    // ---------------------- Config (embedded defaults + overridable) ----------
-    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT')  || 'YOUR_PAT_HERE'; // ← replace with your PAT
-    const HAS_PLACEHOLDER_PAT = NC_PAT === 'YOUR_PAT_HERE';
+    // ---------------------- Hard-coded API config -----------------------------
+    const NC_BASE = 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
 
     const TBL_SO    = 'm2dmcyfy30klv76';   // service_orders
     const TBL_SOSH  = 'mirdk2w4yjcny1b';   // service_order_status_history
@@ -290,6 +276,9 @@
     const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
     const $ = (s, p=document) => p.querySelector(s);
     const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
+
+    // Logout clears any overrides (if any) and redirects (optional)
+    function logout(){ try{ localStorage.removeItem('NC_BASE'); localStorage.removeItem('NC_PAT'); }catch(e){} location.href='login.html'; }
 
     // ---------------------- State --------------------------------------------
     let state = { page:1, limit:20, total:0, q:'', from:'', to:'', status:'', tech:'' };
@@ -366,7 +355,7 @@
       }
 
       // Compute Δ since previous within current fetched set
-      const prevMap = new Map(); // last changed_at per SO (from later rows, as we render desc)
+      const prevMap = new Map();
       const list = rows.map(r=>{
         const so = soMap.get(r.service_order_id);
         const soLabel = so? (so.so_id || so.id) : (r.service_order_id || '—');
@@ -461,7 +450,6 @@
     // ---------------------- Export -------------------------------------------
     function csvEscape(s){ return '"'+ String(s??'').replaceAll('"','""') +'"'; }
     async function exportCSV(){
-      // Export with current filters (up to 10000 rows)
       let whereParts=[]; if(state.from) whereParts.push(`(changed_at,ge,${startOfDayISO(new Date(state.from))})`); if(state.to) whereParts.push(`(changed_at,le,${endOfDayISO(new Date(state.to))})`); if(state.status) whereParts.push(`(status,eq,${state.status})`);
       let idSet = new Set(); if(state.q){ (await findSOIdsByQuery(state.q)).forEach(i=>idSet.add(i)); } if(state.tech){ (await findSOIdsByTech(state.tech)).forEach(i=>idSet.add(i)); }
       if(idSet.size>0){ const ids=[...idSet]; whereParts.push(`(service_order_id,in,${ids.join(',')})`); }
@@ -474,13 +462,10 @@
     }
 
     // ---------------------- Settings & bindings -------------------------------
-    $('#btnSettings').addEventListener('click', ()=>{
-      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
-      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
-      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
-      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
-      location.reload();
+    document.getElementById('btnSettings').addEventListener('click', ()=>{
+      alert('Demo credentials are hard-coded.\nAPI: '+NC_BASE+'\nPAT: '+NC_PAT.slice(0,6)+'…');
     });
+    document.getElementById('btnLogout').addEventListener('click', logout);
 
     $('#btnRefresh').addEventListener('click', fetchHistory);
     $('#btnClearDates').addEventListener('click', ()=>{ $('#from').value=''; $('#to').value=''; state.from=''; state.to=''; fetchHistory(); });
@@ -504,7 +489,6 @@
 
     // ---------------------- Init ---------------------------------------------
     (async function init(){
-      if(HAS_PLACEHOLDER_PAT){ alert('Heads up: replace YOUR_PAT_HERE in the script or set it via ⚙️ Settings.'); }
       await loadTechs();
       // default to last 7 days
       const d1=new Date(); const d0=new Date(Date.now()-6*86400000);
