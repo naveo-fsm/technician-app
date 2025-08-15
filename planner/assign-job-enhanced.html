@@ -194,7 +194,7 @@
             <div class="col-6">
               <label class="label">Client</label>
               <div class="flex" style="gap:10px;">
-                <input id="client_name" class="input" placeholder="Pick a client…" readonly />
+                <input id="client_name" class="input" placeholder="Type to search or pick…" />
                 <button class="btn" id="btnPickClient" type="button">Find…</button>
               </div>
               <input type="hidden" id="client_id" />
@@ -440,8 +440,9 @@
         const r = await fetch(url, {headers:H()});
         if(!r.ok){ console.warn('searchClientsByName failed:', r.status, await r.text()); return []; }
         const data = await r.json();
-        return Array.isArray(data) ? data : [];
+        return asList(data);
       }catch(err){ console.warn('searchClientsByName error:', err); return []; }
+    }catch(err){ console.warn('searchClientsByName error:', err); return []; }
     }
 
     function renderClientResults(rows){
@@ -467,10 +468,17 @@
       closeClientModal();
     }
 
-    function openClientModal(){
-      $('#c_q').value = '';
-      renderClientResults([]);
+    async function openClientModal(seed=''){
       $('#clientModal').classList.add('show');
+      const v = (seed || '').trim();
+      $('#c_q').value = v;
+      if (v) {
+        const rows = await searchClientsByName(v);
+        renderClientResults(rows);
+      } else {
+        renderClientResults([]);
+      }
+      $('#c_q').focus();
     }
     function closeClientModal(){ $('#clientModal').classList.remove('show'); }
 
@@ -615,6 +623,22 @@
     }
 
     // ---------------------- Settings & modal ---------------------------------
+    // When typing into the Client field, open the modal and seed the search
+    let clientTypeTimer = null;
+    $('#client_name').addEventListener('input', (e)=>{
+      const val = e.target.value.trim();
+      clearTimeout(clientTypeTimer);
+      clientTypeTimer = setTimeout(()=> openClientModal(val), 250);
+    });
+    $('#client_name').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') { e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); }
+    });
+    $('#client_name').addEventListener('focus', ()=>{
+      const val = ($('#client_name')?.value||'').trim();
+      if(val) openClientModal(val);
+    });
+
+    // ---------------------- Settings & modal ---------------------------------
     $('#btnSettings').addEventListener('click', ()=>{
       alert('This demo is hard-coded to the test NocoDB.\nAPI: '+NC_BASE+'\nPAT: '+NC_PAT.slice(0,6)+'…');
     });
@@ -628,7 +652,7 @@
     $('#btnAddVeh').addEventListener('click', ()=> addVeh('', ''));
     $('#btnCreate').addEventListener('click', (e)=>{ e.preventDefault(); createSO(); });
 
-    $('#btnPickClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientModal(); });
+    $('#btnPickClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); });
     $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
 
     // use name-only search (updated)
