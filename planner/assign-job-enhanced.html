@@ -130,7 +130,7 @@
 
     @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
     @media (max-width: 760px){
-      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);}
+      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);} 
       .main{ margin-left:0; }
     }
   </style>
@@ -174,34 +174,40 @@
               <select id="technician_id" class="select" required></select>
             </div>
             <div class="col-4">
-              <label class="label">Intervention Type</label>
-              <select id="intervention_type_id" class="select" required></select>
-              <div class="help"><span id="ckCount">0</span> checklist items will be added.</div>
+              <label class="label">Priority</label>
+              <select id="priority" class="select">
+                <option>normal</option><option>high</option><option>urgent</option><option>low</option>
+              </select>
             </div>
 
             <div class="col-6">
               <label class="label">Scheduled at</label>
               <input id="scheduled_at" type="datetime-local" class="input" required />
             </div>
-            <div class="col-3">
-              <label class="label">Priority</label>
-              <select id="priority" class="select">
-                <option>normal</option><option>high</option><option>urgent</option><option>low</option>
-              </select>
-            </div>
-            <div class="col-3">
+            <div class="col-6">
               <label class="label">Status</label>
               <select id="status" class="select">
                 <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
               </select>
             </div>
 
-            <div class="col-12"><label class="label">Address</label>
-              <textarea id="address" class="textarea" required></textarea></div>
-            <div class="col-3"><label class="label">Lat</label><input id="address_lat" class="input" type="number" step="0.000001" placeholder="optional"></div>
-            <div class="col-3"><label class="label">Lng</label><input id="address_lng" class="input" type="number" step="0.000001" placeholder="optional"></div>
-            <div class="col-3"><label class="label">Contact person</label><input id="contact_person" class="input" /></div>
-            <div class="col-3"><label class="label">Contact phone</label><input id="contact_phone" class="input" /></div>
+            <!-- Client association (autofills address & contacts) -->
+            <div class="col-8">
+              <label class="label">Client</label>
+              <div class="flex" style="gap:8px">
+                <input id="client_name" class="input" placeholder="Search or type client name" />
+                <input id="client_id" type="hidden" />
+                <button class="btn" id="btnPickClient" type="button">Find…</button>
+              </div>
+              <div class="help">Selecting an existing client will autofill address & contacts.</div>
+            </div>
+            <div class="col-4">
+              <label class="label">Contact phone</label>
+              <input id="contact_phone" class="input" />
+            </div>
+
+            <div class="col-6"><label class="label">Contact person</label><input id="contact_person" class="input" /></div>
+            <div class="col-6"><label class="label">Address</label><textarea id="address" class="textarea" required></textarea></div>
 
             <div class="col-12"><label class="label">Notes</label><textarea id="notes" class="textarea" placeholder="Optional notes for the technician"></textarea></div>
 
@@ -216,13 +222,13 @@
       <div class="card-header">
         <h3>Vehicles</h3>
         <div class="toolbar">
-          <label class="control-inline"><input type="checkbox" id="ckPerVehicle" /><span>Duplicate checklist per vehicle</span></label>
+          <span class="chip" id="ckEst">Estimated checklist lines: <strong id="ckEstimate">0</strong></span>
           <button class="btn" id="btnAddVeh">＋ Add vehicle</button>
         </div>
       </div>
       <div class="card-body">
         <div id="vehList"></div>
-        <div class="help mt-2">Add one row per vehicle (e.g., registration/plate). You can leave this empty if the job is not vehicle-specific.</div>
+        <div class="help mt-2">One row per vehicle (e.g., registration/plate). Each vehicle may have its own intervention type.</div>
       </div>
     </div>
 
@@ -246,6 +252,22 @@
     </div>
   </div>
 
+  <!-- Client picker modal -->
+  <div class="modal-backdrop" id="clientModal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <header><h3>Select Client</h3></header>
+      <div class="content">
+        <div class="flex" style="gap:8px; margin-bottom:12px">
+          <input id="clientSearch" class="input" placeholder="Search by name / phone" />
+          <button class="btn" id="btnClientSearch" type="button">Search</button>
+        </div>
+        <div id="clientResults" class="grid" style="gap:8px"></div>
+        <div class="help">Tip: set your Clients table ID in Settings to enable search.</div>
+      </div>
+      <footer><button class="btn" data-close>Close</button></footer>
+    </div>
+  </div>
+
   <script>
     // ---------------------- Config -------------------------------------------
     // Embedded defaults; can still be overridden via Settings (localStorage)
@@ -258,6 +280,7 @@
     const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
     const TBL_CK   = 'ma917pno6w5e1ed';   // checklists (masters)
     const TBL_SOC  = 'mibtqjiulezywtx';   // service_order_checklist (lines)
+    const TBL_CLIENT = localStorage.getItem('TBL_CLIENT') || ''; // clients (optional)
 
     const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
     const $ = (s, p=document) => p.querySelector(s);
@@ -271,20 +294,23 @@
       return id;
     }
 
+    // Vehicle row template → now includes intervention type select
     function vehRowTpl(value=''){
       const row = document.createElement('div');
       row.className = 'veh-row';
       row.style.display = 'grid';
-      row.style.gridTemplateColumns = '1fr 110px 48px';
+      row.style.gridTemplateColumns = '1.2fr 1fr 48px';
       row.style.gap = '10px';
       row.innerHTML = `
-        <input class="input" placeholder="Vehicle number / plate" value="${value}">
-        <select class="select"><option>—</option></select>
+        <input class="input veh-no" placeholder="Vehicle number / plate" value="${value}">
+        <select class="select veh-itype"><option value="">Select intervention type…</option></select>
         <button class="btn btn-danger" title="Remove">✖</button>`;
       return row;
     }
 
-    // ---------------------- Load data ----------------------------------------
+    // ---------------------- Lookups ------------------------------------------
+    let interventions = [];
+
     async function loadTechs(){
       const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&where=(status,eq,active)&orderBy=full_name&order=asc`;
       const rows = await fetch(url,{headers:H()}).then(r=>r.json());
@@ -293,9 +319,15 @@
 
     async function loadInterventions(){
       const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&where=(status,eq,active)&orderBy=intervention_name&order=asc`;
-      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
-      $('#intervention_type_id').innerHTML = rows.map(r=>`<option value="${r.id}">${r.intervention_name}</option>`).join('');
-      updateChecklistCount();
+      interventions = await fetch(url,{headers:H()}).then(r=>r.json());
+      // Fill any existing veh selects
+      $$('.veh-itype').forEach(sel=> fillItypeSelect(sel));
+      updateChecklistEstimate();
+    }
+
+    function fillItypeSelect(sel){
+      sel.innerHTML = '<option value="">Select intervention type…</option>' +
+        interventions.map(r=>`<option value="${r.id}">${r.intervention_name}</option>`).join('');
     }
 
     async function fetchChecklist(interventionId){
@@ -303,25 +335,84 @@
       return fetch(url,{headers:H()}).then(r=>r.json());
     }
 
-    async function updateChecklistCount(){
-      const id = $('#intervention_type_id').value; if(!id){ $('#ckCount').textContent = '0'; return; }
-      const rows = await fetchChecklist(id); $('#ckCount').textContent = rows.length;
-    }
-
     // ---------------------- Vehicles UI --------------------------------------
+    const ckCountCache = new Map(); // itypeId → count
+
     function addVeh(value=''){
       const row = vehRowTpl(value);
-      row.querySelector('button').addEventListener('click', ()=>{ row.remove(); });
+      const delBtn = row.querySelector('button');
+      const sel = row.querySelector('.veh-itype');
+      fillItypeSelect(sel);
+      delBtn.addEventListener('click', ()=>{ row.remove(); updateChecklistEstimate(); });
+      sel.addEventListener('change', updateChecklistEstimate);
       $('#vehList').appendChild(row);
     }
 
     function getVehValues(){
       const values = [];
+      let hasError = false;
       $$('#vehList .veh-row').forEach(r=>{
-        const v = r.querySelector('input').value.trim();
-        if(v) values.push(v);
+        const no = r.querySelector('.veh-no').value.trim();
+        const it = r.querySelector('.veh-itype').value;
+        if(no){
+          if(!it){ hasError = true; r.querySelector('.veh-itype').style.borderColor = 'rgba(220,38,38,.6)'; }
+          values.push({ vehicle_no: no, intervention_type_id: it||null });
+        }
       });
+      if(hasError) alert('Please select an intervention type for each vehicle.');
       return values;
+    }
+
+    async function updateChecklistEstimate(){
+      const vehs = getVehValues();
+      let total = 0;
+      for(const v of vehs){
+        if(!v.intervention_type_id) continue;
+        if(!ckCountCache.has(v.intervention_type_id)){
+          const rows = await fetchChecklist(v.intervention_type_id);
+          ckCountCache.set(v.intervention_type_id, rows.length||0);
+        }
+        total += (ckCountCache.get(v.intervention_type_id)||0);
+      }
+      $('#ckEstimate').textContent = total;
+    }
+
+    // ---------------------- Client picker ------------------------------------
+    async function searchClients(term){
+      if(!TBL_CLIENT) return [];
+      const q = encodeURIComponent('%'+term.replace(/\s+/g,' ').trim()+'%');
+      const where = `(name,like,${q})~or(contact_phone,like,${q})`;
+      const url = `${NC_BASE}/tables/${TBL_CLIENT}/records?limit=20&orderBy=name&order=asc&where=${encodeURIComponent(where)}`;
+      try{ return await fetch(url,{headers:H()}).then(r=>r.json()); }catch{ return []; }
+    }
+
+    function openClientModal(){ $('#clientModal').classList.add('show'); $('#clientSearch').focus(); }
+    function closeClientModal(){ $('#clientModal').classList.remove('show'); }
+
+    async function runClientSearch(){
+      const term = $('#clientSearch').value; const list = await searchClients(term);
+      const wrap = $('#clientResults'); wrap.innerHTML='';
+      if(!TBL_CLIENT){ wrap.innerHTML = `<div class="muted">Clients table ID not set in Settings.</div>`; return; }
+      if(!list.length){ wrap.innerHTML = `<div class="muted">No clients found.</div>`; return; }
+      list.forEach(c=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<div class="card-body">
+          <div class="fw-600">${c.name||'Unnamed client'}</div>
+          <div class="text-sm muted">${c.address||''}</div>
+          <div class="text-sm">${c.contact_person||''} · ${c.contact_phone||''}</div>
+          <div class="mt-2"><button class="btn btn-sm btn-primary">Select</button></div>
+        </div>`;
+        card.querySelector('button').addEventListener('click', ()=>{
+          $('#client_id').value = c.id;
+          $('#client_name').value = c.name||'';
+          $('#address').value = c.address||'';
+          $('#contact_person').value = c.contact_person||'';
+          $('#contact_phone').value = c.contact_phone||'';
+          closeClientModal();
+        });
+        wrap.appendChild(card);
+      });
     }
 
     // ---------------------- Create flow --------------------------------------
@@ -330,11 +421,8 @@
       const bodyFull = {
         so_id,
         technician_id: $('#technician_id').value,
-        intervention_type_id: $('#intervention_type_id').value,
         scheduled_at: $('#scheduled_at').value,
         address: $('#address').value.trim(),
-        address_lat: $('#address_lat').value ? Number($('#address_lat').value) : undefined,
-        address_lng: $('#address_lng').value ? Number($('#address_lng').value) : undefined,
         contact_person: $('#contact_person').value.trim() || undefined,
         contact_phone: $('#contact_phone').value.trim() || undefined,
         priority: $('#priority').value,
@@ -342,12 +430,13 @@
         notes: $('#notes').value.trim() || undefined,
         return_visit_required: $('#return_visit_required').checked || undefined,
         follow_up_of_so_id: $('#follow_up_of_so_id').value || undefined,
+        client_id: $('#client_id').value || undefined,
+        client_name: $('#client_name').value.trim() || undefined,
       };
 
       const minimal = {
         so_id: bodyFull.so_id,
         technician_id: bodyFull.technician_id,
-        intervention_type_id: bodyFull.intervention_type_id,
         scheduled_at: bodyFull.scheduled_at,
         address: bodyFull.address,
         priority: bodyFull.priority,
@@ -361,28 +450,25 @@
       }
       if(!so){ alert('Failed to create Service Order. Check required columns exist.'); return; }
 
-      // Vehicles
-      const vehs = getVehValues();
+      // Vehicles (with per-vehicle intervention type)
+      const vehs = getVehValues().filter(v=> !!v.vehicle_no);
       const createdVehs = [];
-      for(const vn of vehs){
-        const r = await fetch(`${NC_BASE}/tables/${TBL_SOV}/records`,{ method:'POST', headers:H(), body: JSON.stringify({ service_order_id: so.id, vehicle_no: vn }) });
-        if(r.ok){ createdVehs.push(await r.json()); }
+      for(const v of vehs){
+        // Try to include intervention_type_id at SOV level; if column missing, fall back.
+        let rec = null;
+        for(const payload of [ { service_order_id: so.id, vehicle_no: v.vehicle_no, intervention_type_id: v.intervention_type_id }, { service_order_id: so.id, vehicle_no: v.vehicle_no } ]){
+          const r = await fetch(`${NC_BASE}/tables/${TBL_SOV}/records`,{ method:'POST', headers:H(), body: JSON.stringify(payload) });
+          if(r.ok){ rec = await r.json(); break; }
+        }
+        if(rec){ createdVehs.push({ ...rec, intervention_type_id: v.intervention_type_id }); }
       }
 
-      // Checklist instances
-      const ck = await fetchChecklist($('#intervention_type_id').value);
-      const perVehicle = $('#ckPerVehicle').checked && createdVehs.length > 0;
-      if(ck.length){
-        if(perVehicle){
-          for(const v of createdVehs){
-            for(const item of ck){
-              await fetch(`${NC_BASE}/tables/${TBL_SOC}/records`,{ method:'POST', headers:H(), body: JSON.stringify({ service_order_id: so.id, service_order_vehicle_id: v.id, checklist_id: item.id, status: 'pending' }) });
-            }
-          }
-        } else {
-          for(const item of ck){
-            await fetch(`${NC_BASE}/tables/${TBL_SOC}/records`,{ method:'POST', headers:H(), body: JSON.stringify({ service_order_id: so.id, checklist_id: item.id, status: 'pending' }) });
-          }
+      // Checklist instances per vehicle / intervention type
+      for(const v of createdVehs){
+        if(!v.intervention_type_id) continue;
+        const ck = await fetchChecklist(v.intervention_type_id);
+        for(const item of ck){
+          await fetch(`${NC_BASE}/tables/${TBL_SOC}/records`,{ method:'POST', headers:H(), body: JSON.stringify({ service_order_id: so.id, service_order_vehicle_id: v.id, checklist_id: item.id, status: 'pending' }) });
         }
       }
 
@@ -409,9 +495,16 @@
 
     // ---------------------- Checklist preview --------------------------------
     async function openPreview(){
-      const ck = await fetchChecklist($('#intervention_type_id').value);
-      const list = ck.map(x=>`<li>${x.checklist_item} ${x.is_required? '<span class="badge success">required</span>':''}</li>`).join('');
-      $('#ckPreview').innerHTML = `<ul style="display:grid; gap:8px;">${list || '<li class=\'muted\'>No checklist items for this intervention.</li>'}</ul>`;
+      const vehs = getVehValues().filter(v=> v.vehicle_no && v.intervention_type_id);
+      if(!vehs.length){ $('#ckPreview').innerHTML = `<div class='muted'>Add vehicles and choose intervention types to preview checklist.</div>`; $('#ckModal').classList.add('show'); return; }
+      let html = '';
+      for(const v of vehs){
+        const it = interventions.find(x=> String(x.id)===String(v.intervention_type_id));
+        const ck = await fetchChecklist(v.intervention_type_id);
+        const list = ck.map(x=>`<li>${x.checklist_item} ${x.is_required? '<span class="badge success">required</span>':''}</li>`).join('');
+        html += `<div class="mb-4"><div class="fw-600">${v.vehicle_no} · ${it?.intervention_name||''}</div><ul style="display:grid; gap:8px; margin-top:8px">${list || '<li class=\'muted\'>No checklist items for this intervention.</li>'}</ul></div>`;
+      }
+      $('#ckPreview').innerHTML = html;
       $('#ckModal').classList.add('show');
     }
 
@@ -421,14 +514,22 @@
       if(base!==null) localStorage.setItem('NC_BASE', base.trim());
       const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
       if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
+      const tbl = prompt('Clients Table ID (optional, enables client search)', localStorage.getItem('TBL_CLIENT') || TBL_CLIENT || '');
+      if(tbl!==null) localStorage.setItem('TBL_CLIENT', tbl.trim());
       location.reload();
     });
 
     $('#btnNewId').addEventListener('click', ()=>{ const id=newSoId(); $('#so_id').value=id; $('#soPreview').textContent=id; });
-    $('#intervention_type_id').addEventListener('change', updateChecklistCount);
     $('#btnPreviewChecklist').addEventListener('click', (e)=>{ e.preventDefault(); openPreview(); });
     $('#ckModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) $('#ckModal').classList.remove('show'); });
 
+    // client modal
+    $('#btnPickClient').addEventListener('click', ()=>{ openClientModal(); });
+    $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
+    $('#btnClientSearch').addEventListener('click', runClientSearch);
+    $('#clientSearch').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); runClientSearch(); } });
+
+    // vehicles
     $('#btnAddVeh').addEventListener('click', ()=> addVeh(''));
     $('#btnCreate').addEventListener('click', (e)=>{ e.preventDefault(); createSO(); });
 
