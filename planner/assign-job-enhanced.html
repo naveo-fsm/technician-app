@@ -334,10 +334,28 @@
     let intList = []; // cached interventions
 
     async function loadTechs(){
-      const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&where=(status,eq,active)&orderBy=full_name&order=asc`;
-      const r = await fetch(url,{headers:H()});
-      const rows = r.ok ? await r.json() : [];
-      $('#technician_id').innerHTML = rows.map(r=>`<option value="${r.id}">${r.full_name||r.email_address||('Tech #'+r.id)}</option>`).join('');
+      // Try several safe query variants to avoid 422s due to missing columns/case
+      const makeUrl = (params) => `${NC_BASE}/tables/${TBL_TECH}/records${params}`;
+      const activeWhere = encodeURIComponent('(status,eq,Active)~or(status,eq,active)');
+      const tries = [
+        `?limit=1000&where=${activeWhere}&orderBy=full_name&order=asc`,
+        `?limit=1000&where=${activeWhere}&orderBy=email_address&order=asc`,
+        `?limit=1000&orderBy=full_name&order=asc`,
+        `?limit=1000`
+      ];
+      let rows = [];
+      for (const p of tries){
+        try{
+          const r = await fetch(makeUrl(p), { headers: H() });
+          if (!r.ok) { console.warn('loadTechs try failed:', p, r.status, await r.text()); continue; }
+          const data = await r.json();
+          if (Array.isArray(data)) { rows = data; break; }
+        }catch(err){ console.warn('loadTechs error:', err); }
+      }
+      const label = (t) => t.full_name || t.name || t.display_name || t.email_address || t.phone || t.phone_number || (`Tech #${t.id}`);
+      if (!rows.length) console.warn('No technicians returned from mzw1focsec0tekg.');
+      const html = rows.map(t => `<option value="${t.id}">${label(t)}</option>`).join('');
+      $('#technician_id').innerHTML = html || '<option value="">(no technicians)</option>';
     }
 
     async function loadInterventions(){
