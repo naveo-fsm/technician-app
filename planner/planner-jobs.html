@@ -52,14 +52,18 @@
     }
     .title{ font-weight:700; }
     .muted{ color:var(--text-muted); }
-    .sidebar{
-      position:fixed; top:54px; left:0; bottom:0; width:240px;
-      padding:16px; border-right:1px solid var(--border); background:var(--surface);
-    }
+
+    /* Global sidebar with pinned logout */
+    .sidebar{ position:fixed; top:54px; left:0; bottom:0; width:240px; border-right:1px solid var(--border); background:var(--surface); }
+    .sidebar-inner{ height:100%; display:flex; flex-direction:column; padding:16px; }
     .sidebar .brand{ font-weight:700; margin:6px 0 12px; }
+    .nav-links{ flex:1 1 auto; overflow:auto; padding-right:4px; }
     .sidebar a{ display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted); }
     .sidebar a:hover{ background:var(--surface-2); color:var(--text); }
     .sidebar a.active{ background:rgba(37,99,235,.08); color:var(--primary); font-weight:600; }
+    .sidebar-footer{ border-top:1px solid var(--border); padding-top:12px; }
+    .btn-block{ width:100%; }
+
     .main{ margin-left:240px; padding:24px; }
     @media (max-width: 900px){
       .sidebar{ width:72px; padding:12px; }
@@ -139,7 +143,6 @@
     .badge.info{ background:#e0f2fe; border-color:#bae6fd; color:#075985; }
     .badge.warning{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
     .badge.danger{ background:#fee2e2; border-color:#fecaca; color:#991b1b; }
-    /* Priority & Status colors used in this page */
     .badge.priority-low{ background:#ecfdf5; border-color:#bbf7d0; color:#166534; }
     .badge.priority-normal{ background:#eef2ff; border-color:#c7d2fe; color:#3730a3; }
     .badge.priority-high{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
@@ -194,19 +197,28 @@
     <div class="title">Naveo FSM</div>
     <span class="muted">Service Orders</span>
     <div class="grow"></div>
-    <!-- Settings removed since API + PAT are embedded -->
   </div>
 
+  <!-- Global sidebar (identical across pages) -->
   <aside class="sidebar">
-    <div class="brand">Naveo</div>
-    <a href="dashboard.html">Dashboard</a>
-    <a class="active" href="planner-jobs.html">Service Orders</a>
-    <a href="assign-job-enhanced.html">Assign Job</a>
-    <a href="planner-inventory.html">Inventory</a>
-    <a href="reports.html">Reports</a>
-    <a href="realtime-map.html">Live Map</a>
-    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
-    <a href="admin-tech-master.html">Admin · Technicians</a>
+    <div class="sidebar-inner">
+      <div class="brand">Naveo</div>
+      <nav class="nav-links" id="navLinks">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="planner-jobs.html">Service Orders</a>
+        <a href="assign-job-enhanced.html">Assign Job</a>
+        <a href="assign-inventory-selector.html">Assign Inventory</a>
+        <a href="planner-inventory.html">Inventory</a>
+        <a href="reports.html">Reports</a>
+        <a href="realtime-map.html">Live Map</a>
+        <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+        <a href="admin-tech-master.html">Admin · Technicians</a>
+        <a href="history.html">History</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btnLogout" class="btn btn-danger btn-sm btn-block">Logout</button>
+      </div>
+    </div>
   </aside>
 
   <main class="main">
@@ -321,10 +333,33 @@
   </div>
 
   <script>
-    // ---------------------- Embedded Config -----------------------------------
-    const NC_BASE = 'https://app.nocodb.com/api/v2'; // ← your NocoDB base
-    const NC_PAT  = 'REPLACE_WITH_PAT';              // ← your PAT
+    // ---------------------- Global Config + Sidebar ---------------------------
+    const NC_BASE = 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
 
+    // expose to other pages; logout will clear these
+    localStorage.setItem('NC_BASE', NC_BASE);
+    localStorage.setItem('NC_PAT', NC_PAT);
+
+    // highlight active nav + logout handler
+    (function setupSidebar(){
+      const path = (location.pathname.split('/').pop() || '').toLowerCase();
+      document.querySelectorAll('#navLinks a').forEach(a=>{
+        const href = (a.getAttribute('href')||'').toLowerCase();
+        if (href && path && href.endsWith(path)) a.classList.add('active');
+        if (!path && /index\.html|login\.html/i.test(href)) a.classList.add('active');
+      });
+      document.getElementById('btnLogout').addEventListener('click', ()=>{
+        localStorage.removeItem('NC_PAT');
+        localStorage.removeItem('NC_BASE');
+        location.href = 'login.html';
+        setTimeout(()=>{ location.href = 'index.html'; }, 400);
+      });
+    })();
+  </script>
+
+  <script>
+    // ---------------------- Embedded Tables -----------------------------------
     const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
     const TBL_TECH = 'mzw1focsec0tekg';   // technicians
     const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
@@ -374,6 +409,12 @@
 
     function renderTable(rows){
       const tbody = $('#tbody'); tbody.innerHTML='';
+      if(!rows.length){
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td colspan="9" class="mini" style="text-align:center;padding:18px">No service orders match your filters.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
       rows.forEach(r=>{
         const pr = (r.priority||'normal').toLowerCase();
         const st = (r.status||'assigned').toLowerCase();
@@ -443,6 +484,13 @@
       fetchSOs(); $('#chkAll').checked=false; $('#bulkStatus').value='';
     }
 
+    // close open dropdowns when clicking elsewhere
+    document.addEventListener('click', (e)=>{
+      document.querySelectorAll('.dropdown.open').forEach(d=>{
+        if(!d.contains(e.target)) d.classList.remove('open');
+      });
+    });
+
     // ---------------------- Export -------------------------------------------
     function toCSV(rows){
       const cols = ['id','so_id','technician_id','intervention_type_id','scheduled_at','priority','status','address','contact_person','contact_phone','created_at','updated_at'];
@@ -476,7 +524,7 @@
       $('#d_notes').value = so.notes || '';
       // technician
       $('#d_technician').value = so.technician_id || '';
-      // schedule
+      // schedule → local datetime input value
       const dt = so.scheduled_at ? new Date(so.scheduled_at) : new Date();
       const p=(n)=>String(n).padStart(2,'0');
       $('#d_scheduled').value = `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}T${p(dt.getHours())}:${p(dt.getMinutes())}`;
@@ -539,9 +587,6 @@
 
     // ---------------------- Init ---------------------------------------------
     (async function init(){
-      if(!NC_PAT || NC_PAT === 'REPLACE_WITH_PAT'){
-        alert('NocoDB PAT is not set. Open the HTML and replace REPLACE_WITH_PAT with your token.');
-      }
       // sensible default date range: today..+7
       const d0 = new Date(); const d1 = new Date(Date.now()+7*86400000);
       const p=(n)=>String(n).padStart(2,'0');
