@@ -57,14 +57,18 @@
     }
     .title{ font-weight:700; }
     .muted{ color:var(--text-muted); }
-    .sidebar{
-      position:fixed; top:54px; left:0; bottom:0; width:240px;
-      padding:16px; border-right:1px solid var(--border); background:var(--surface);
-    }
+
+    /* Global sidebar with pinned logout */
+    .sidebar{ position:fixed; top:54px; left:0; bottom:0; width:240px; border-right:1px solid var(--border); background:var(--surface); }
+    .sidebar-inner{ height:100%; display:flex; flex-direction:column; padding:16px; }
     .sidebar .brand{ font-weight:700; margin:6px 0 12px; }
+    .nav-links{ flex:1 1 auto; overflow:auto; padding-right:4px; }
     .sidebar a{ display:block; padding:10px 10px; border-radius:10px; color:var(--text-muted); }
     .sidebar a:hover{ background:var(--surface-2); color:var(--text); }
     .sidebar a.active{ background:rgba(37,99,235,.08); color:var(--primary); font-weight:600; }
+    .sidebar-footer{ border-top:1px solid var(--border); padding-top:12px; }
+    .btn-block{ width:100%; }
+
     .main{ margin-left:240px; padding:24px; }
 
     /* Cards */
@@ -209,21 +213,29 @@
     <div class="title">Naveo FSM</div>
     <span class="muted">Planner</span>
     <div class="grow"></div>
-    <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
+  <!-- Global sidebar (identical across pages) -->
   <aside class="sidebar">
-    <div class="brand">Naveo</div>
-    <a href="dashboard.html">Dashboard</a>
-    <a class="active" href="planner.html">Planner</a>
-    <a href="planner-jobs.html">Service Orders</a>
-    <a href="assign-job-enhanced.html">Assign Job</a>
-    <a href="planner-inventory.html">Inventory</a>
-    <a href="reports.html">Reports</a>
-    <a href="realtime-map.html">Live Map</a>
-    <a href="history.html">History</a>
-    <a href="admin-intervention-master.html">Admin · Intervention Types</a>
-    <a href="admin-tech-master.html">Admin · Technicians</a>
+    <div class="sidebar-inner">
+      <div class="brand">Naveo</div>
+      <nav class="nav-links" id="navLinks">
+        <a href="dashboard.html">Dashboard</a>
+        <a class="active" href="planner.html">Planner</a>
+        <a href="planner-jobs.html">Service Orders</a>
+        <a href="assign-job-enhanced.html">Assign Job</a>
+        <a href="assign-inventory-selector.html">Assign Inventory</a>
+        <a href="planner-inventory.html">Inventory</a>
+        <a href="reports.html">Reports</a>
+        <a href="realtime-map.html">Live Map</a>
+        <a href="history.html">History</a>
+        <a href="admin-intervention-master.html">Admin · Intervention Types</a>
+        <a href="admin-tech-master.html">Admin · Technicians</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btnLogout" class="btn btn-danger btn-sm btn-block">Logout</button>
+      </div>
+    </div>
   </aside>
 
   <main class="main">
@@ -308,9 +320,33 @@
   </div>
 
   <script>
-    // ---------------------- Config -------------------------------------------
-    const NC_BASE = localStorage.getItem('NC_BASE') || 'https://app.nocodb.com/api/v2';
-    const NC_PAT  = localStorage.getItem('NC_PAT') || '';
+    // ---------------------- Global Config + Sidebar ---------------------------
+    const NC_BASE = 'https://app.nocodb.com/api/v2';
+    const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
+
+    // Mirror to localStorage for other pages
+    localStorage.setItem('NC_BASE', NC_BASE);
+    localStorage.setItem('NC_PAT', NC_PAT);
+
+    // highlight active nav + logout handler
+    (function setupSidebar(){
+      const path = (location.pathname.split('/').pop() || '').toLowerCase();
+      document.querySelectorAll('#navLinks a').forEach(a=>{
+        const href = (a.getAttribute('href')||'').toLowerCase();
+        if (href && path && href.endsWith(path)) a.classList.add('active');
+        if (!path && /index\.html|login\.html/i.test(href)) a.classList.add('active');
+      });
+      document.getElementById('btnLogout').addEventListener('click', ()=>{
+        localStorage.removeItem('NC_PAT');
+        localStorage.removeItem('NC_BASE');
+        location.href = 'login.html';
+        setTimeout(()=>{ location.href = 'index.html'; }, 400);
+      });
+    })();
+  </script>
+
+  <script>
+    // ---------------------- Tables -------------------------------------------
     const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
     const TBL_TECH = 'mzw1focsec0tekg';   // technicians
     const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
@@ -327,8 +363,7 @@
     const pad=(n)=> String(n).padStart(2,'0');
     function toLocalDateInputValue(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`; }
     function toLocalDTInputValue(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`; }
-    function startOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; // Monday=0
-      x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; }
+    function startOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; }
     function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
     function endOfWeek(d){ const x=new Date(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
 
@@ -499,15 +534,7 @@
       }
     }
 
-    // ---------------------- Settings & bindings -------------------------------
-    $('#btnSettings').addEventListener('click', ()=>{
-      const base = prompt('NocoDB Base API URL', localStorage.getItem('NC_BASE') || NC_BASE);
-      if(base!==null) localStorage.setItem('NC_BASE', base.trim());
-      const pat = prompt('Personal Access Token (PAT)', localStorage.getItem('NC_PAT') || NC_PAT);
-      if(pat!==null) localStorage.setItem('NC_PAT', pat.trim());
-      location.reload();
-    });
-
+    // ---------------------- Bindings -----------------------------------------
     // Filters & navigation
     $('#q').addEventListener('input', e=>{ state.q=e.target.value.trim(); refresh(); });
     $('#status').addEventListener('change', e=>{ state.status=e.target.value; refresh(); });
@@ -527,7 +554,6 @@
 
     // ---------------------- Init ---------------------------------------------
     (async function init(){
-      if(!NC_PAT) alert('Missing NocoDB PAT. Click ⚙️ Settings to set NC_BASE and NC_PAT.');
       await loadTechs();
       setView('week');
       await refresh();
