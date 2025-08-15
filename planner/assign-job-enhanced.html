@@ -135,7 +135,7 @@
 
     @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
     @media (max-width: 760px){
-      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);}
+      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);} 
       .main{ margin-left:0; }
     }
   </style>
@@ -312,7 +312,8 @@
     const TBL_SOC  = 'mibtqjiulezywtx';   // service_order_checklist (lines)
     const TBL_CLIENTS = 'm5f6kp73u19gitz';// tbl_clients
 
-    const H = () => ({ 'Content-Type': 'application/json', 'xc-token': NC_PAT });
+    // Updated headers: include Accept for better error bodies
+    const H = () => ({ 'Accept': 'application/json', 'Content-Type': 'application/json', 'xc-token': NC_PAT });
     const $ = (s, p=document) => p.querySelector(s);
     const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
 
@@ -334,19 +335,22 @@
 
     async function loadTechs(){
       const url = `${NC_BASE}/tables/${TBL_TECH}/records?limit=1000&where=(status,eq,active)&orderBy=full_name&order=asc`;
-      const rows = await fetch(url,{headers:H()}).then(r=>r.json());
+      const r = await fetch(url,{headers:H()});
+      const rows = r.ok ? await r.json() : [];
       $('#technician_id').innerHTML = rows.map(r=>`<option value="${r.id}">${r.full_name||r.email_address||('Tech #'+r.id)}</option>`).join('');
     }
 
     async function loadInterventions(){
       const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&where=(status,eq,active)&orderBy=intervention_name&order=asc`;
-      intList = await fetch(url,{headers:H()}).then(r=>r.json());
+      const r = await fetch(url,{headers:H()});
+      intList = r.ok ? await r.json() : [];
       $$('#vehList select[data-int]').forEach(sel => applyInterventionOptions(sel));
     }
 
     async function fetchChecklist(interventionId){
       const url = `${NC_BASE}/tables/${TBL_CK}/records?limit=1000&orderBy=sort_order&order=asc&where=(intervention_type_id,eq,${interventionId})`;
-      return fetch(url,{headers:H()}).then(r=>r.json());
+      const r = await fetch(url,{headers:H()});
+      return r.ok ? r.json() : [];
     }
 
     // ---------------------- Vehicles UI --------------------------------------
@@ -390,14 +394,17 @@
     }
 
     // ---------------------- Client picker ------------------------------------
-    async function searchClients(q=''){
-      let url = `${NC_BASE}/tables/${TBL_CLIENTS}/records?limit=20&orderBy=name&order=asc`;
-      if(q){
-        const like = encodeURIComponent('%'+q+'%');
-        const where = `(name,like,${like})~or(contact_phone,like,${like})`;
-        url += `&where=${where}`;
-      }
-      return fetch(url, {headers:H()}).then(r=>r.json());
+    // Safer: name-only search and robust error handling to avoid 422s
+    async function searchClientsByName(q=''){
+      if(!q) return [];
+      const like = encodeURIComponent('%'+q+'%');
+      const url = `${NC_BASE}/tables/${TBL_CLIENTS}/records?limit=20&orderBy=name&order=asc&where=(name,like,${like})`;
+      try{
+        const r = await fetch(url, {headers:H()});
+        if(!r.ok){ console.warn('searchClientsByName failed:', r.status, await r.text()); return []; }
+        const data = await r.json();
+        return Array.isArray(data) ? data : [];
+      }catch(err){ console.warn('searchClientsByName error:', err); return []; }
     }
 
     function renderClientResults(rows){
@@ -430,23 +437,37 @@
     }
     function closeClientModal(){ $('#clientModal').classList.remove('show'); }
 
+    // Robust create with try/catch + defaults for status/date_created
     async function createClientInline(){
       const body = {
-        name: $('#c_name').value.trim(),
-        address: $('#c_address').value.trim() || undefined,
-        contact_person: $('#c_person').value.trim() || undefined,
-        contact_phone: $('#c_phone').value.trim() || undefined,
-        email: $('#c_email').value.trim() || undefined,
+        name: ($('#c_name').value||'').trim(),
+        address: ($('#c_address').value||'').trim() || undefined,
+        contact_person: ($('#c_person').value||'').trim() || undefined,
+        contact_phone: ($('#c_phone').value||'').trim() || undefined,
+        email: ($('#c_email').value||'').trim() || undefined,
+        status: 'Active',
+        date_created: new Date().toISOString()
       };
       if(!body.name){ alert('Client name is required'); return; }
-      const dup = await searchClients(body.name);
-      if(dup.some(x => (x.name||'').toLowerCase() === body.name.toLowerCase())){
-        const cont = confirm('A client with the same name exists. Create anyway?'); if(!cont) return;
+
+      // duplicate check by NAME only
+      const dup = await searchClientsByName(body.name);
+      if(dup.find(x => (x.name||'').toLowerCase() === body.name.toLowerCase())){
+        const cont = confirm('A client with the same name exists. Create anyway?');
+        if(!cont) return;
       }
-      const r = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records`, { method:'POST', headers:H(), body: JSON.stringify(body) });
-      if(!r.ok){ alert('Create failed'); return; }
-      const c = await r.json();
-      selectClient(c);
+
+      try{
+        const r = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records`, {
+          method:'POST', headers:H(), body: JSON.stringify(body)
+        });
+        const c = await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(c?.msg || c?.message || `HTTP ${r.status}`);
+        selectClient(c);
+      }catch(err){
+        console.error('Client create error:', err);
+        alert('Client create failed: ' + err.message);
+      }
     }
 
     // ---------------------- Create flow --------------------------------------
@@ -572,13 +593,17 @@
 
     $('#btnPickClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientModal(); });
     $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
-    $('#c_q').addEventListener('input', async (e)=>{ const rows = await searchClients(e.target.value.trim()); renderClientResults(rows); });
+
+    // use name-only search (updated)
+    $('#c_q').addEventListener('input', async (e)=>{ const rows = await searchClientsByName(e.target.value.trim()); renderClientResults(rows); });
+
     $('#c_results').addEventListener('click', async (e)=>{
       const btn = e.target.closest('[data-select-client]'); if(!btn) return;
       const id = btn.getAttribute('data-select-client');
       const row = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records/${id}`, {headers:H()}).then(r=>r.json());
       selectClient(row);
     });
+
     $('#c_create').addEventListener('click', (e)=>{ e.preventDefault(); createClientInline(); });
 
     // ---------------------- Init ---------------------------------------------
