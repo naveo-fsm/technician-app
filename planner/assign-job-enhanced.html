@@ -420,8 +420,14 @@
 
     async function fetchChecklist(interventionId){
       const url = `${NC_BASE}/tables/${TBL_CK}/records?limit=1000&orderBy=sort_order&order=asc&where=(intervention_type_id,eq,${interventionId})`;
-      const r = await fetch(url,{headers:H()});
-      return r.ok ? r.json() : [];
+      try{
+        const r = await fetch(url,{headers:H()});
+        const data = r.ok ? await r.json() : [];
+        return asList(data); // ✅ normalize
+      } catch(err){
+        console.warn('fetchChecklist error:', err);
+        return [];
+      }
     }
 
     // ---------------------- Vehicles UI --------------------------------------
@@ -465,7 +471,6 @@
     }
 
     // ---------------------- Client picker ------------------------------------
-    // Safer: name-only search and robust error handling to avoid 422s
     async function searchClientsByName(q=''){
       if(!q) return [];
       const like = encodeURIComponent('%'+q+'%');
@@ -477,21 +482,13 @@
         return asList(data);
       }catch(err){ console.warn('searchClientsByName error:', err); return []; }
     }
-    
 
     function renderClientResults(rows){
       const box = $('#c_results');
-      if(!rows.length){ box.innerHTML = `<div class="muted">No matches.</div>`; return; }
-      box.innerHTML = rows.map(r=>`
-        <div class="card" data-select-client="${r.id}" style="padding:12px;border-radius:10px; cursor:pointer;">
-          <div class="fw-600">${r.name||'(no name)'}</div>
-          <div class="mini">${r.address||''}</div>
-          <div class="mini">${r.contact_person||''} ${r.contact_phone? ' · '+r.contact_phone : ''}</div>
-          <div class="mt-2">
-            <button class="btn btn-sm">Select</button>
-          </div>
-        </div>`).join('');
-    }
+      if(!rows.length){
+        box.innerHTML = `<div class="muted">No matches.</div>`;
+        return;
+      }
       box.innerHTML = rows.map(r=>`
         <div class="card" style="padding:12px;border-radius:10px;">
           <div class="fw-600">${r.name||'(no name)'}</div>
@@ -506,7 +503,6 @@
     function selectClient(c){
       $('#client_id').value = c.id;
       $('#client_name').value = c.name || '';
-      // Always overwrite with selected client's details
       $('#address').value = c.address || '';
       $('#contact_person').value = c.contact_person || '';
       $('#contact_phone').value = c.contact_phone || '';
@@ -529,7 +525,6 @@
 
     function openClientCreateModal(){
       openClientModal('');
-      // Clear fields and focus name
       $('#c_name').value = '';
       $('#c_address').value = '';
       $('#c_person').value = '';
@@ -559,7 +554,6 @@
         const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records`, { method:'POST', headers:H(), body: JSON.stringify(payload) });
         const row = await r.json().catch(()=>({}));
         if(!r.ok) throw new Error(row?.msg || row?.message || `HTTP ${r.status}`);
-        // refresh list and select new tech
         await loadTechs();
         const label = (row.full_name || row.name || row.display_name || row.email_address || row.phone || `Tech #${row.id}`);
         $('#technician_name').value = label; $('#technician_id').value = row.id;
@@ -567,7 +561,6 @@
       }catch(err){ console.error('Create tech error:', err); alert('Create technician failed: ' + err.message); }
     }
 
-    // Robust create with try/catch + defaults for status/date_created
     async function createClientInline(){
       const body = {
         name: ($('#c_name').value||'').trim(),
@@ -580,7 +573,6 @@
       };
       if(!body.name){ alert('Client name is required'); return; }
 
-      // duplicate check by NAME only
       const dup = await searchClientsByName(body.name);
       if(dup.find(x => (x.name||'').toLowerCase() === body.name.toLowerCase())){
         const cont = confirm('A client with the same name exists. Create anyway?');
@@ -605,10 +597,7 @@
       const vehs = getVehValues();
       if(vehs.length===0){ alert('Please add at least one vehicle and select its intervention type.'); return; }
       if(vehs.some(v => !v.vehicle_no || !v.intervention_type_id)){
-        alert('Each vehicle row must have a Vehicle number and an Intervention type.'); return;
-      }
-
-      // resolve technician
+        alert('Each vehicle row must have a Vehicle number and an Intervention type.'); return; }
       const techName = ($('#technician_name')?.value || '').trim();
       let techId = $('#technician_id').value;
       if (!techId && techName){
@@ -734,7 +723,7 @@
 
     // ---------------------- Settings & modal ---------------------------------
     $('#btnSettings').addEventListener('click', ()=>{
-      alert('This demo is hard-coded to the test NocoDB.\nAPI: '+NC_BASE+'\nPAT: '+NC_PAT.slice(0,6)+'…');
+      alert('This demo is hard-coded to the test NocoDB.\\nAPI: '+NC_BASE+'\\nPAT: '+NC_PAT.slice(0,6)+'…');
     });
 
     $('#btnLogout').addEventListener('click', logout);
@@ -751,18 +740,34 @@
     $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
     $('#techModal').addEventListener('click',   (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeTechModal(); });
 
-    // use name-only search (updated)
-    $('#c_q').addEventListener('input', async (e)=>{ const rows = await searchClientsByName(e.target.value.trim()); renderClientResults(rows); });
-    // Enter selects the first result quickly
-    $('#c_q').addEventListener('keydown', async (e)=>{ if(e.key==='Enter'){ e.preventDefault(); const q=$('#c_q').value.trim(); const rows=await searchClientsByName(q); if(rows[0]) selectClient(rows[0]); }}); renderClientResults(rows); });
+    // Client search listeners (fixed)
+    $('#c_q').addEventListener('input', async (e)=>{
+      const rows = await searchClientsByName(e.target.value.trim());
+      renderClientResults(rows);
+    });
+    $('#c_q').addEventListener('keydown', async (e)=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const q=$('#c_q').value.trim();
+        const rows=await searchClientsByName(q);
+        if(rows[0]) selectClient(rows[0]);
+      }
+    });
 
-    // Technician input -> set hidden id when exact option chosen
+    // Technician input -> set hidden id when exact option chosen or on Enter
     $('#technician_name').addEventListener('change', ()=>{
       const val = ($('#technician_name')?.value || '').trim().toLowerCase();
       const hit = techIndex.find(t => t.label.toLowerCase() === val);
       $('#technician_id').value = hit ? hit.id : '';
     });
     $('#technician_name').addEventListener('input', ()=>{ if ($('#technician_id').value) $('#technician_id').value = ''; });
+    $('#technician_name').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){
+        const val = ($('#technician_name')?.value || '').trim().toLowerCase();
+        const hit = techIndex.find(t => t.label.toLowerCase() === val);
+        $('#technician_id').value = hit ? hit.id : '';
+      }
+    });
 
     $('#c_results').addEventListener('click', async (e)=>{
       const btn = e.target.closest('[data-select-client]'); if(!btn) return;
