@@ -3,255 +3,169 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Naveo FSM — Create / Assign Service Order</title>
+  <title>Naveo FSM — Create / Assign Service Order (Refactored, PK-safe)</title>
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Inline, modern light theme CSS -->
+  <!-- Inline, modern light theme CSS (kept, trimmed) -->
   <style>
-    /* ======= Design tokens (LIGHT) ======= */
-    :root{
-      --bg: #f6f7fb;
-      --surface: #ffffff;
-      --surface-2: #fafbff;
-      --surface-muted: #f4f6fb;
-      --text: #0f172a;
-      --text-muted: #6b7280;
-      --primary: #2563eb;
-      --accent: #7c3aed;
-      --success: #16a34a;
-      --warning: #d97706;
-      --danger: #dc2626;
-      --border: rgba(15,23,42,.12);
-      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
-      --shadow-sm: 0 1px 2px rgba(2,6,23,.06);
-      --shadow-md: 0 8px 24px rgba(2,6,23,.08);
-      --shadow-lg: 0 18px 48px rgba(2,6,23,.10);
-      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
-      --text-sm: .875rem; --text-xs: .78rem;
-    }
-
-    /* ======= Base ======= */
-    *,*::before,*::after{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font: 400 16px/1.5 Poppins, ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    }
-    a{ color: var(--primary); text-decoration:none; }
-    a:hover{ text-decoration:underline; }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .fw-600{ font-weight:600; }
-    .text-sm{ font-size: var(--text-sm); }
-    .muted{ color: var(--text-muted); }
-    .hide{ display:none !important; }
-    .mt-2{ margin-top:var(--space-2); } .mt-3{ margin-top:var(--space-3); } .mt-4{ margin-top:var(--space-4); }
-    .mb-4{ margin-bottom:var(--space-4); }
-    .flex{ display:flex; } .justify-between{ justify-content:space-between; } .items-center{ align-items:center; }
-    .gap-4{ gap: var(--space-4); }
-    .grow{ flex:1 1 auto; }
-    .grid{ display:grid; }
-    .grid-3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
-    .gap-4{ gap: var(--space-4); }
-    hr{ border:0; height:1px; background:var(--border); margin:16px 0; }
-
-    /* ======= App layout ======= */
-    .topbar{
-      position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px;
-      padding: 10px 16px; background: rgba(255,255,255,.9); border-bottom:1px solid var(--border);
-      backdrop-filter: blur(8px);
-    }
-    .topbar .title{ font-weight:700; letter-spacing:.3px; }
-
-    .sidebar{
-      position:fixed; inset:56px auto 0 0; width:240px; padding:16px;
-      background:var(--surface); border-right:1px solid var(--border); overflow:auto;
-      display:flex; flex-direction:column;
-    }
-    .sidebar .brand{ font-weight:700; margin-bottom:10px; }
-    .sidebar a{ display:block; padding:10px 12px; border-radius:10px; color:inherit; text-decoration:none; }
-    .sidebar a:hover{ background:rgba(37,99,235,.06); }
-    .sidebar a.active{ background:rgba(37,99,235,.12); border:1px solid rgba(37,99,235,.35); }
-    .sidebar .footer{ margin-top:auto; padding-top:8px; }
-    .sidebar .logout{ width:100%; display:flex; justify-content:center; }
-
-    .main{ margin-left:240px; padding: 18px; }
-
-    /* ======= Cards / containers ======= */
-    .card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-lg); box-shadow:var(--shadow-sm); }
-    .card-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
-    .card-body{ padding: var(--space-5); }
-
-    /* ======= Toolbar ======= */
-    .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-
-    /* ======= Buttons ======= */
-    .btn{
-      --bg:transparent; --bd:var(--border); --fg:var(--text);
-      display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
-      border:1px solid var(--bd); background:var(--bg); color:var(--fg);
-      border-radius:10px; cursor:pointer; user-select:none; transition: .15s ease;
-    }
-    .btn:hover{ filter: brightness(0.98); background: rgba(2,6,23,.03); }
-    .btn:active{ transform: translateY(1px); }
-    .btn-sm{ padding:6px 10px; font-size: var(--text-sm); border-radius:8px; }
-    .btn-primary{ --bg: linear-gradient(135deg, var(--primary), var(--accent)); --bd: rgba(2,6,23,.08); --fg:#fff; box-shadow: var(--shadow-sm); }
-    .btn-outline{ --bg: transparent; --bd: rgba(2,6,23,.16); }
-    .btn-danger{ --bg: transparent; --bd: rgba(220,38,38,.4); color:#991b1b; }
-
-    /* ======= Inputs ======= */
-    .input,.select,.textarea{
-      width:100%; padding:10px 12px; background: #fff; color:var(--text);
-      border:1px solid var(--border); border-radius:10px; outline:none; transition:.12s ease;
-    }
-    .textarea{ min-height:96px; resize:vertical; }
-    .input:focus,.select:focus,.textarea:focus{ border-color: rgba(37,99,235,.6); box-shadow: 0 0 0 3px rgba(37,99,235,.18); }
-    .label{ display:block; margin-bottom:6px; font-weight:500; color:var(--text-muted); }
-    .help{ margin-top:6px; color:var(--text-muted); font-size: var(--text-sm); }
-
-    .form{ display:block; }
-    .form-row{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
-    .col-12{ grid-column: span 12; } .col-9{ grid-column: span 9; }
-    .col-8{ grid-column: span 8; } .col-6{ grid-column: span 6; } .col-4{ grid-column: span 4; } .col-3{ grid-column: span 3; } .col-2{ grid-column: span 2; }
-    .control-inline{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
-
-    /* ======= Badges / chips ======= */
-    .badge{ display:inline-block; padding:4px 8px; border-radius:999px; background:#fff; border:1px solid var(--border); font-size:var(--text-sm); }
-    .badge.success{ background:rgba(22,163,74,.10); border-color:rgba(22,163,74,.35); color:#166534; }
-    .badge.warning{ background:rgba(217,119,6,.10); border-color:rgba(217,119,6,.35); color:#92400e; }
-    .badge[class*="status-"]{ background:rgba(37,99,235,.10); border-color:rgba(37,99,235,.35); color:#1e40af; }
-    .chip{ display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); }
-    .mini{ font-size: var(--text-sm); color: var(--text-muted); }
-
-    /* ======= Modal ======= */
-    .modal-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.4); display:none; align-items:center; justify-content:center; z-index:60; }
-    .modal-backdrop.show{ display:flex; }
-    .modal{ width:min(720px, 96vw); background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow-lg); }
-    .modal header{ padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); }
-    .modal .content{ padding: var(--space-5); max-height:65vh; overflow:auto; }
-    .modal footer{ padding: var(--space-4) var(--space-5); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
-
-    @media (max-width: 980px){ .sidebar{ width:210px; } .main{ margin-left:210px; } }
-    @media (max-width: 760px){
-      .sidebar{ position:static; width:auto; display:flex; gap:8px; border-right:0; border-bottom:1px solid var(--border);} 
-      .main{ margin-left:0; }
-    }
+    :root{ --bg:#f6f7fb;--surface:#fff;--text:#0f172a;--text-muted:#6b7280;--primary:#2563eb;--accent:#7c3aed;--border:rgba(15,23,42,.12);--radius-lg:16px;--space-4:16px;--space-5:20px;--text-sm:.875rem; }
+    *,*::before,*::after{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.5 Poppins,ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    a{color:var(--primary);text-decoration:none}
+    .muted{color:var(--text-muted)} .mini{font-size:var(--text-sm);color:var(--text-muted)} .fw-600{font-weight:600}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:10px 16px;background:rgba(255,255,255,.9);border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}
+    .sidebar{position:fixed;inset:56px auto 0 0;width:240px;padding:16px;background:#fff;border-right:1px solid var(--border);overflow:auto}
+    .main{margin-left:240px;padding:18px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg)}
+    .card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border)}
+    .card-body{padding:var(--space-5)}
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid rgba(2,6,23,.16);background:#fff;border-radius:10px;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:0}
+    .input,.select,.textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+    .label{display:block;margin-bottom:6px;font-weight:500;color:var(--text-muted)}
+    .form-row{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .col-12{grid-column:span 12}.col-9{grid-column:span 9}.col-8{grid-column:span 8}.col-6{grid-column:span 6}.col-4{grid-column:span 4}.col-3{grid-column:span 3}
+    .veh-row{display:grid;grid-template-columns:1fr 1fr 48px;gap:10px}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);display:none;align-items:center;justify-content:center;z-index:60}
+    .modal-backdrop.show{display:flex}
+    .modal{width:min(720px,96vw);background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden}
+    .modal header,.modal footer{padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border)}
+    .modal footer{border:0;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+    .modal .content{padding:var(--space-5);max-height:65vh;overflow:auto}
+    @media (max-width: 760px){.sidebar{position:static;width:auto;display:flex;gap:8px;border-right:0;border-bottom:1px solid var(--border)}.main{margin-left:0}}
   </style>
 </head>
 <body>
   <div class="topbar">
-    <div class="title">Naveo FSM</div>
+    <div class="title fw-600">Naveo FSM</div>
     <span class="muted">Create / Assign Service Order</span>
-    <div class="grow"></div>
+    <div style="flex:1"></div>
     <button class="btn" id="btnSettings" title="NocoDB settings">⚙️ Settings</button>
   </div>
 
-  <!-- Uniform sidebar with pinned Logout -->
   <aside class="sidebar">
-    <div class="brand">Naveo</div>
+    <div class="fw-600" style="margin-bottom:10px">Naveo</div>
     <a href="dashboard.html">Dashboard</a>
     <a href="planner-jobs.html">Service Orders</a>
-    <a class="active" href="assign-job-enhanced.html">Assign Job</a>
+    <a class="muted" href="assign-job-enhanced.html"><b>Assign Job</b></a>
     <a href="planner-inventory.html">Inventory</a>
     <a href="reports.html">Reports</a>
     <a href="realtime-map.html">Live Map</a>
     <a href="admin-intervention-master.html">Admin · Intervention Types</a>
     <a href="admin-tech-master.html">Admin · Technicians</a>
-    <div class="footer">
-      <button class="btn logout" id="btnLogout">Log out</button>
+    <div style="margin-top:12px">
+      <button class="btn" id="btnLogout">Log out</button>
     </div>
   </aside>
 
   <main class="main">
     <div class="card">
       <div class="card-header">
-        <h2>Service Order details</h2>
+        <h2 style="margin:0">Service Order details</h2>
         <div class="toolbar">
           <button class="btn" id="btnNewId">Generate SO ID</button>
-          <span class="chip">Current SO ID: <strong id="soPreview">—</strong></span>
+          <span class="mini">Current SO ID: <strong id="soPreview">—</strong></span>
         </div>
       </div>
       <div class="card-body">
-        <form class="form" id="soForm">
+        <form id="soForm">
           <div class="form-row">
             <div class="col-4">
-              <label class="label">SO ID</label>
+              <label class="label" for="so_id">SO ID</label>
               <input id="so_id" class="input" placeholder="auto e.g. SO-20250814-123456" />
-              <div class="help">Leave empty to auto-generate.</div>
+              <div class="mini">Leave empty to auto-generate.</div>
             </div>
+
             <div class="col-4">
-              <label class="label">Technician</label>
-              <div class="flex" style="gap:10px;">
+              <label class="label" for="technician_name">Technician</label>
+              <div class="toolbar">
                 <input id="technician_name" class="input" placeholder="Type to search technician…" list="techList" autocomplete="off" />
                 <datalist id="techList"></datalist>
                 <button class="btn" id="btnQuickCreateTech" type="button" title="Create technician">＋</button>
               </div>
               <input type="hidden" id="technician_id" />
-              <div class="help">Pick from the suggestions to lock in the technician.</div>
+              <div class="mini">Pick from the suggestions to lock in the technician.</div>
             </div>
+
             <div class="col-4">
-              <label class="label">Scheduled at</label>
+              <label class="label" for="scheduled_at">Scheduled at</label>
               <input id="scheduled_at" type="datetime-local" class="input" required />
             </div>
 
-            <!-- CLIENT (picker + hidden id) -->
             <div class="col-6">
-              <label class="label">Client</label>
-              <div class="flex" style="gap:10px;">
+              <label class="label" for="client_name">Client</label>
+              <div class="toolbar">
                 <input id="client_name" class="input" placeholder="Type to search or pick…" />
                 <button class="btn" id="btnPickClient" type="button">Find…</button>
                 <button class="btn" id="btnQuickCreateClient" type="button" title="Create new client">＋</button>
               </div>
               <input type="hidden" id="client_id" />
-              <div class="help">Selecting a client will auto-fill address & contacts.</div>
+              <div class="mini">Selecting a client will auto-fill address & contacts.</div>
             </div>
 
             <div class="col-3">
-              <label class="label">Priority</label>
+              <label class="label" for="priority">Priority</label>
               <select id="priority" class="select">
                 <option>normal</option><option>high</option><option>urgent</option><option>low</option>
               </select>
             </div>
             <div class="col-3">
-              <label class="label">Status</label>
+              <label class="label" for="status">Status</label>
               <select id="status" class="select">
                 <option>assigned</option><option>in_progress</option><option>completed</option><option>cancelled</option>
               </select>
             </div>
 
-            <div class="col-12"><label class="label">Address</label>
-              <textarea id="address" class="textarea" required placeholder="Will auto-fill from client if set"></textarea></div>
-            <div class="col-3"><label class="label">Contact person</label><input id="contact_person" class="input" placeholder="Auto-filled from client if set"/></div>
-            <div class="col-3"><label class="label">Contact phone</label><input id="contact_phone" class="input" placeholder="Auto-filled from client if set"/></div>
+            <div class="col-12">
+              <label class="label" for="address">Address</label>
+              <textarea id="address" class="textarea" required placeholder="Will auto-fill from client if set"></textarea>
+            </div>
+            <div class="col-3">
+              <label class="label" for="contact_person">Contact person</label>
+              <input id="contact_person" class="input" placeholder="Auto-filled from client if set"/>
+            </div>
+            <div class="col-3">
+              <label class="label" for="contact_phone">Contact phone</label>
+              <input id="contact_phone" class="input" placeholder="Auto-filled from client if set"/>
+            </div>
 
-            <div class="col-12"><label class="label">Notes</label><textarea id="notes" class="textarea" placeholder="Optional notes for the technician"></textarea></div>
+            <div class="col-12">
+              <label class="label" for="notes">Notes</label>
+              <textarea id="notes" class="textarea" placeholder="Optional notes for the technician"></textarea>
+            </div>
 
-            <div class="col-4"><label class="control-inline"><input type="checkbox" id="return_visit_required" /><span>Return visit required</span></label></div>
-            <div class="col-4"><label class="label">Follow-up of SO (optional id)</label><input id="follow_up_of_so_id" class="input" /></div>
+            <div class="col-4">
+              <label class="label"><input type="checkbox" id="return_visit_required"/> Return visit required</label>
+            </div>
+            <div class="col-4">
+              <label class="label" for="follow_up_of_so_id">Follow-up of SO (optional id)</label>
+              <input id="follow_up_of_so_id" class="input" />
+            </div>
           </div>
         </form>
       </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card" style="margin-top:16px">
       <div class="card-header">
-        <h3>Vehicles & Interventions</h3>
+        <h3 style="margin:0">Vehicles & Interventions</h3>
         <div class="toolbar">
           <button class="btn" id="btnAddVeh">＋ Add vehicle</button>
         </div>
       </div>
       <div class="card-body">
         <div id="vehList"></div>
-        <div class="help mt-2">
-          Add one row per vehicle (e.g., registration/plate). Select the <b>intervention type</b> for each vehicle.
-          Checklist lines will be created per vehicle based on the chosen intervention.
+        <div class="mini" style="margin-top:8px">
+          Add one row per vehicle (e.g., plate). Select the <b>intervention type</b> for each vehicle.
         </div>
       </div>
     </div>
 
-    <div class="flex justify-between items-center mt-4">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
       <div class="muted">After creating, you can assign hardware and SIMs on the next screen.</div>
       <div>
         <button class="btn" id="btnPreviewChecklist">Preview checklist</button>
@@ -259,13 +173,13 @@
       </div>
     </div>
 
-    <div id="result" class="mt-4"></div>
+    <div id="result" style="margin-top:16px"></div>
   </main>
 
   <!-- Checklist preview modal -->
   <div class="modal-backdrop" id="ckModal">
     <div class="modal" role="dialog" aria-modal="true">
-      <header><h3>Checklist Preview</h3></header>
+      <header><h3 style="margin:0">Checklist Preview</h3></header>
       <div class="content" id="ckPreview">Loading…</div>
       <footer><button class="btn" data-close>Close</button></footer>
     </div>
@@ -274,28 +188,27 @@
   <!-- Client picker / create modal -->
   <div class="modal-backdrop" id="clientModal">
     <div class="modal" role="dialog" aria-modal="true">
-      <header><h3>Find or Create Client</h3></header>
+      <header><h3 style="margin:0">Find or Create Client</h3></header>
       <div class="content">
         <div class="form">
           <div class="form-row">
             <div class="col-12">
-              <label class="label">Search</label>
+              <label class="label" for="c_q">Search</label>
               <input id="c_q" class="input" placeholder="Name or phone…" />
-              <div class="help">Results (max 20)</div>
+              <div class="mini">Results (max 20)</div>
             </div>
-            <div class="col-12" id="c_results" style="display:grid;gap:10px;"></div>
+            <div class="col-12" id="c_results" style="display:grid;gap:10px"></div>
           </div>
         </div>
-
-        <hr>
+        <hr/>
         <div class="form">
           <div class="form-row">
-            <div class="col-12"><h4 class="fw-600" style="margin:0;">New client</h4></div>
-            <div class="col-6"><label class="label">Name</label><input id="c_name" class="input" required></div>
-            <div class="col-6"><label class="label">Phone</label><input id="c_phone" class="input"></div>
-            <div class="col-12"><label class="label">Address</label><textarea id="c_address" class="textarea"></textarea></div>
-            <div class="col-6"><label class="label">Contact person</label><input id="c_person" class="input"></div>
-            <div class="col-6"><label class="label">Email (optional)</label><input id="c_email" class="input"></div>
+            <div class="col-12"><h4 class="fw-600" style="margin:0">New client</h4></div>
+            <div class="col-6"><label class="label" for="c_name">Name</label><input id="c_name" class="input" required></div>
+            <div class="col-6"><label class="label" for="c_phone">Phone</label><input id="c_phone" class="input"></div>
+            <div class="col-12"><label class="label" for="c_address">Address</label><textarea id="c_address" class="textarea"></textarea></div>
+            <div class="col-6"><label class="label" for="c_person">Contact person</label><input id="c_person" class="input"></div>
+            <div class="col-6"><label class="label" for="c_email">Email (optional)</label><input id="c_email" class="input"></div>
           </div>
         </div>
       </div>
@@ -309,14 +222,14 @@
   <!-- Technician create modal -->
   <div class="modal-backdrop" id="techModal">
     <div class="modal" role="dialog" aria-modal="true">
-      <header><h3>Create Technician</h3></header>
+      <header><h3 style="margin:0">Create Technician</h3></header>
       <div class="content">
         <div class="form">
           <div class="form-row">
-            <div class="col-6"><label class="label">Full name</label><input id="t_full_name" class="input" required></div>
-            <div class="col-6"><label class="label">Email</label><input id="t_email" class="input"></div>
-            <div class="col-6"><label class="label">Phone</label><input id="t_phone" class="input"></div>
-            <div class="col-6"><label class="label">Status</label><select id="t_status" class="select"><option>Active</option><option>Inactive</option></select></div>
+            <div class="col-6"><label class="label" for="t_full_name">Full name</label><input id="t_full_name" class="input" required></div>
+            <div class="col-6"><label class="label" for="t_email">Email</label><input id="t_email" class="input"></div>
+            <div class="col-6"><label class="label" for="t_phone">Phone</label><input id="t_phone" class="input"></div>
+            <div class="col-6"><label class="label" for="t_status">Status</label><select id="t_status" class="select"><option>Active</option><option>Inactive</option></select></div>
           </div>
         </div>
       </div>
@@ -328,467 +241,298 @@
   </div>
 
   <script>
-    // ---------------------- Config (HARD-CODED for demo) ---------------------
+  (function(){
+    'use strict';
+    // ---------------------- Config ---------------------
     const NC_BASE = 'https://app.nocodb.com/api/v2';
     const NC_PAT  = '7x7ZxLedCtJSWtiD4dNOu9sB7JlEFB8JiVe0TpRh';
 
-    const TBL_SO   = 'm2dmcyfy30klv76';   // service_orders
-    const TBL_SOV  = 'mvn2do01qdif4yt';   // service_order_vehicles
-    const TBL_TECH = 'mzw1focsec0tekg';   // technicians
-    const TBL_INT  = 'mb4yox88hd24r0h';   // intervention_types
-    const TBL_CK   = 'ma917pno6w5e1ed';   // checklists (masters)
-    const TBL_SOC  = 'mibtqjiulezywtx';   // service_order_checklist (lines)
-    const TBL_CLIENTS = 'm5f6kp73u19gitz';// tbl_clients
+    const TBL = {
+      SO:  'm2dmcyfy30klv76',   // service_orders
+      SOV: 'mvn2do01qdif4yt',   // service_order_vehicles
+      TECH:'mzw1focsec0tekg',   // technicians
+      INT: 'mb4yox88hd24r0h',   // intervention_types
+      CK:  'ma917pno6w5e1ed',   // checklists (masters)
+      SOC: 'mibtqjiulezywtx',   // service_order_checklist (lines)
+      CLIENTS: 'm5f6kp73u19gitz'
+    };
 
-    // Updated headers: include Accept for better error bodies
-    const H = () => ({ 'Accept': 'application/json', 'Content-Type': 'application/json', 'xc-token': NC_PAT });
-    const $ = (s, p=document) => p.querySelector(s);
-    const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
+    // ---------------------- Utils ----------------------
+    const H = () => ({ 'Accept':'application/json','Content-Type':'application/json','xc-token':NC_PAT });
+    const $ = (s,p=document)=>p.querySelector(s);
+    const $$ = (s,p=document)=>Array.from(p.querySelectorAll(s));
+    const asList = (d)=> Array.isArray(d) ? d : (d && Array.isArray(d.list) ? d.list : []);
+    const debounce = (fn, wait=250)=>{ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); }; };
 
-    // Normalize NocoDB list responses (either an array or { list: [...] })
-    const asList = (d) => (Array.isArray(d) ? d : (d && Array.isArray(d.list) ? d.list : []));
+    // Robust primary key helpers (handle 'null'/'undefined' strings)
+    const getPk = (row) => (row?.Id ?? row?.id ?? row?.ID ?? row?.row_id ?? row?._id ?? row?.uuid ?? null);
+    const normalizePk = (pk) => {
+      if (pk === null || pk === undefined) return null;
+      const s = String(pk).trim();
+      if (!s || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined') return null;
+      return s; // keep as string to avoid accidental 0/NaN casts
+    };
+    const pkOrEmpty = (pk) => normalizePk(pk) ?? '';
+    const formPk = (v) => { const n = normalizePk(v); return n == null ? undefined : n; };
 
-    // ---------------------- Helpers ------------------------------------------
-    function newSoId(){
-      const d = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-      return `SO-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-    }
+    const api = {
+      async get(path){ const r=await fetch(`${NC_BASE}${path}`,{headers:H()}); if(!r.ok) throw new Error(await r.text()); return r.json(); },
+      async post(path, body){ const r=await fetch(`${NC_BASE}${path}`,{method:'POST',headers:H(),body:JSON.stringify(body)}); const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j?.msg||j?.message||`HTTP ${r.status}`); return j; }
+    };
 
-    // Uniform logout
-    function logout(){
-      try{ localStorage.removeItem('NC_PAT'); localStorage.removeItem('NC_BASE'); }catch(e){}
-      location.href = 'login.html';
-    }
+    function newSoId(){ const d=new Date(),p=n=>String(n).padStart(2,'0'); return `SO-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
 
-    // ---------------------- Lookups ------------------------------------------
-    let intList = []; // cached interventions
-    let techIndex = []; // [{ id, label }] for technician typeahead
+    // ---------------------- Data caches ----------------
+    let intList = []; // interventions
+    let techIndex = []; // [{id,label}]
+    let clientSearchCache = []; // last search results
 
+    // ---------------------- Lookups --------------------
     async function loadTechs(){
-      const base = `${NC_BASE}/tables/${TBL_TECH}/records`;
+      const base = `/tables/${TBL.TECH}/records`;
       let rows = [];
-      try{
-        const r = await fetch(`${base}?limit=1000`, { headers: H() });
-        if (r.ok) {
-          const data = await r.json();
-          rows = asList(data);
-        } else {
-          console.warn('loadTechs plain list failed:', r.status, await r.text());
-        }
-      }catch(err){ console.warn('loadTechs plain list error:', err); }
-
-      if (!rows.length) {
-        const tries = [
-          `?limit=1000&orderBy=full_name&order=asc`,
-          `?limit=1000&orderBy=email_address&order=asc`,
-          `?limit=1000&where=${encodeURIComponent('(status,eq,Active)~or(status,eq,active)')}`
-        ];
-        for (const p of tries) {
-          try {
-            const r = await fetch(base + p, { headers: H() });
-            if (!r.ok) { console.warn('loadTechs try failed:', p, r.status, await r.text()); continue; }
-            const data = await r.json();
-            const arr = asList(data);
-            if (arr.length) { rows = arr; break; }
-          } catch (err) { console.warn('loadTechs try error:', err); }
-        }
+      try { rows = asList(await api.get(`${base}?limit=1000`)); } catch {}
+      if(!rows.length){
+        const tries=[`?limit=1000&orderBy=full_name&order=asc`,`?limit=1000&orderBy=email_address&order=asc`,`?limit=1000&where=${encodeURIComponent('(status,eq,Active)~or(status,eq,active)')}`];
+        for(const q of tries){ try{ const data=asList(await api.get(base+q)); if(data.length){ rows=data; break; } }catch{} }
       }
-
-      const labelOf = (t) => t.full_name || t.name || t.display_name || t.email_address || t.phone || (`Tech #${t.id}`);
-      techIndex = rows.map(t => ({ id: t.id, label: labelOf(t) }));
-
-      const dl = $('#techList');
-      dl.innerHTML = techIndex.map(t => `<option value="${t.label}"></option>`).join('');
-
-      // If only one tech, prefill
-      if (techIndex.length === 1){
-        $('#technician_name').value = techIndex[0].label;
-        $('#technician_id').value = techIndex[0].id;
-      }
+      const labelOf = (t)=> t.full_name || t.name || t.display_name || t.email_address || t.phone || (`Tech #${getPk(t)}`);
+      techIndex = rows.map(t=>({ id: normalizePk(getPk(t)), label: labelOf(t) })).filter(t=>t.id!=null);
+      $('#techList').innerHTML = techIndex.map(t=>`<option value="${t.label}"></option>`).join('');
+      if(techIndex.length===1){ $('#technician_name').value=techIndex[0].label; $('#technician_id').value=techIndex[0].id; }
     }
 
     async function loadInterventions(){
-      const url = `${NC_BASE}/tables/${TBL_INT}/records?limit=1000&orderBy=intervention_name&order=asc`;
-      try{
-        const r = await fetch(url,{headers:H()});
-        const data = r.ok ? await r.json() : [];
-        intList = asList(data);
-      }catch(err){ console.warn('loadInterventions error:', err); intList = []; }
-      $$('#vehList select[data-int]').forEach(sel => applyInterventionOptions(sel));
+      try{ intList = asList(await api.get(`/tables/${TBL.INT}/records?limit=1000&orderBy=intervention_name&order=asc`)); }
+      catch{ intList = []; }
+      $$('#vehList select[data-int]').forEach(sel=>applyInterventionOptions(sel));
     }
 
     async function fetchChecklist(interventionId){
-      const url = `${NC_BASE}/tables/${TBL_CK}/records?limit=1000&orderBy=sort_order&order=asc&where=(intervention_type_id,eq,${interventionId})`;
-      try{
-        const r = await fetch(url,{headers:H()});
-        const data = r.ok ? await r.json() : [];
-        return asList(data); // ✅ normalize
-      } catch(err){
-        console.warn('fetchChecklist error:', err);
-        return [];
-      }
+      const iid = normalizePk(interventionId);
+      if(!iid) return [];
+      try{ const data=await api.get(`/tables/${TBL.CK}/records?limit=1000&orderBy=sort_order&order=asc&where=(intervention_type_id,eq,${encodeURIComponent(iid)})`); return asList(data); }
+      catch{ return []; }
     }
 
-    // ---------------------- Vehicles UI --------------------------------------
+    // ---------------------- Vehicles UI -------------
     function applyInterventionOptions(selectEl, selected=''){
       const opts = ['<option value="">Select intervention…</option>']
-        .concat(intList.map(it => `<option value="${it.id}" ${String(it.id)===String(selected)?'selected':''}>${it.intervention_name}</option>`));
+        .concat(intList.map(it=>{ const pk=normalizePk(getPk(it)); return `<option value="${pk??''}" ${String(pk)===String(selected)?'selected':''}>${it.intervention_name||it.name||('#'+pk)}</option>`; }));
       selectEl.innerHTML = opts.join('');
     }
 
     function vehRowTpl(value='', intId=''){
-      const row = document.createElement('div');
-      row.className = 'veh-row';
-      row.style.display = 'grid';
-      row.style.gridTemplateColumns = '1fr 1fr 48px';
-      row.style.gap = '10px';
-      row.innerHTML = `
+      const row=document.createElement('div');
+      row.className='veh-row';
+      row.innerHTML=`
         <input class="input" placeholder="Vehicle number / plate" value="${value}">
         <select class="select" data-int></select>
-        <button class="btn btn-danger" title="Remove">✖</button>`;
-      const sel = row.querySelector('select[data-int]');
-      applyInterventionOptions(sel, intId);
-      row.querySelector('button').addEventListener('click', ()=>{ row.remove(); });
+        <button class="btn" data-remove-veh title="Remove">✖</button>`;
+      applyInterventionOptions(row.querySelector('select[data-int]'), intId);
       return row;
     }
-
-    function addVeh(value='', intId=''){
-      const row = vehRowTpl(value, intId);
-      $('#vehList').appendChild(row);
-    }
-
+    function addVeh(value='', intId=''){ $('#vehList').appendChild(vehRowTpl(value,intId)); }
     function getVehValues(){
-      const values = [];
+      const values=[];
       $$('#vehList .veh-row').forEach(r=>{
-        const vehicle_no = r.querySelector('input').value.trim();
-        const intervention_type_id = r.querySelector('select[data-int]').value;
-        if(vehicle_no || intervention_type_id){
-          values.push({ vehicle_no, intervention_type_id });
-        }
+        const vehicle_no=r.querySelector('input').value.trim();
+        const raw=r.querySelector('select[data-int]').value;
+        const intervention_type_id = normalizePk(raw) ?? '';
+        if(vehicle_no || intervention_type_id){ values.push({vehicle_no,intervention_type_id}); }
       });
       return values;
     }
 
-    // ---------------------- Client picker ------------------------------------
+    // ---------------------- Clients ------------------
     async function searchClientsByName(q=''){
       if(!q) return [];
-      const like = encodeURIComponent('%'+q+'%');
-      const url = `${NC_BASE}/tables/${TBL_CLIENTS}/records?limit=20&orderBy=name&order=asc&where=(name,like,${like})`;
-      try{
-        const r = await fetch(url, {headers:H()});
-        if(!r.ok){ console.warn('searchClientsByName failed:', r.status, await r.text()); return []; }
-        const data = await r.json();
-        return asList(data);
-      }catch(err){ console.warn('searchClientsByName error:', err); return []; }
+      const like=encodeURIComponent('%'+q+'%');
+      try{ const data=await api.get(`/tables/${TBL.CLIENTS}/records?limit=20&orderBy=name&order=asc&where=(name,like,${like})`); return asList(data); }
+      catch{ return []; }
     }
 
     function renderClientResults(rows){
-      const box = $('#c_results');
-      if(!rows.length){
-        box.innerHTML = `<div class="muted">No matches.</div>`;
-        return;
-      }
-      box.innerHTML = rows.map(r=>`
+      clientSearchCache = rows || [];
+      const box=$('#c_results');
+      if(!rows || !rows.length){ box.innerHTML='<div class="muted">No matches.</div>'; return; }
+      box.innerHTML = rows.map((r,i)=>`
         <div class="card" style="padding:12px;border-radius:10px;">
           <div class="fw-600">${r.name||'(no name)'}</div>
           <div class="mini">${r.address||''}</div>
           <div class="mini">${r.contact_person||''} ${r.contact_phone? ' · '+r.contact_phone : ''}</div>
-          <div class="mt-2">
-            <button class="btn btn-sm" data-select-client="${r.id}">Select</button>
-          </div>
+          <div style="margin-top:8px"><button class="btn" data-select-client-index="${i}">Select</button></div>
         </div>`).join('');
     }
 
     function selectClient(c){
-      $('#client_id').value = c.id;
+      const pk = normalizePk(getPk(c));
+      $('#client_id').value = pkOrEmpty(pk);
       $('#client_name').value = c.name || '';
       $('#address').value = c.address || '';
       $('#contact_person').value = c.contact_person || '';
       $('#contact_phone').value = c.contact_phone || '';
+      // only hydrate if we actually have a valid PK AND any field is missing
+      if (pk && (!c.address || !c.contact_person || !c.contact_phone)) {
+        api.get(`/tables/${TBL.CLIENTS}/records/${encodeURIComponent(pk)}`).then(row=>{
+          $('#address').value = row.address || $('#address').value;
+          $('#contact_person').value = row.contact_person || $('#contact_person').value;
+          $('#contact_phone').value = row.contact_phone || $('#contact_phone').value;
+        }).catch(()=>{});
+      }
       closeClientModal();
     }
 
-    async function openClientModal(seed=''){
-      $('#clientModal').classList.add('show');
-      const v = (seed || '').trim();
-      $('#c_q').value = v;
-      if (v) {
-        const rows = await searchClientsByName(v);
-        renderClientResults(rows);
-      } else {
-        renderClientResults([]);
-      }
-      $('#c_q').focus();
-    }
-    function closeClientModal(){ $('#clientModal').classList.remove('show'); }
-
-    function openClientCreateModal(){
-      openClientModal('');
-      $('#c_name').value = '';
-      $('#c_address').value = '';
-      $('#c_person').value = '';
-      $('#c_phone').value = '';
-      $('#c_email').value = '';
-      setTimeout(()=> $('#c_name').focus(), 0);
-    }
-
-    function openTechCreateModal(){
-      $('#techModal').classList.add('show');
-      $('#t_full_name').value = '';
-      $('#t_email').value = '';
-      $('#t_phone').value = '';
-      $('#t_status').value = 'Active';
-      setTimeout(()=> $('#t_full_name').focus(), 0);
-    }
-    function closeTechModal(){ $('#techModal').classList.remove('show'); }
-
+    // ---------------------- Create flows ----------
     async function createTechInline(){
-      const full_name = ($('#t_full_name')?.value || '').trim();
-      const email_address = ($('#t_email')?.value || '').trim() || undefined;
-      const phone = ($('#t_phone')?.value || '').trim() || undefined;
-      const status = ($('#t_status')?.value || 'Active');
-      if(!full_name){ alert('Full name is required'); return; }
-      const payload = { full_name, email_address, phone, status };
-      try{
-        const r = await fetch(`${NC_BASE}/tables/${TBL_TECH}/records`, { method:'POST', headers:H(), body: JSON.stringify(payload) });
-        const row = await r.json().catch(()=>({}));
-        if(!r.ok) throw new Error(row?.msg || row?.message || `HTTP ${r.status}`);
-        await loadTechs();
-        const label = (row.full_name || row.name || row.display_name || row.email_address || row.phone || `Tech #${row.id}`);
-        $('#technician_name').value = label; $('#technician_id').value = row.id;
-        closeTechModal();
-      }catch(err){ console.error('Create tech error:', err); alert('Create technician failed: ' + err.message); }
+      const full_name=($('#t_full_name')?.value||'').trim(); if(!full_name){ alert('Full name is required'); return; }
+      const payload={ full_name, email_address:($('#t_email')?.value||'').trim()||undefined, phone:($('#t_phone')?.value||'').trim()||undefined, status:($('#t_status')?.value||'Active') };
+      try{ const row=await api.post(`/tables/${TBL.TECH}/records`,payload); await loadTechs(); const label=row.full_name||row.name||row.display_name||row.email_address||row.phone||`Tech #${getPk(row)}`; $('#technician_name').value=label; $('#technician_id').value=pkOrEmpty(getPk(row)); closeTechModal(); }
+      catch(err){ alert('Create technician failed: '+err.message); }
     }
 
     async function createClientInline(){
-      const body = {
-        name: ($('#c_name').value||'').trim(),
-        address: ($('#c_address').value||'').trim() || undefined,
-        contact_person: ($('#c_person').value||'').trim() || undefined,
-        contact_phone: ($('#c_phone').value||'').trim() || undefined,
-        email: ($('#c_email').value||'').trim() || undefined,
-        status: 'Active',
-        date_created: new Date().toISOString()
-      };
+      const body={ name:($('#c_name').value||'').trim(), address:($('#c_address').value||'').trim()||undefined, contact_person:($('#c_person').value||'').trim()||undefined, contact_phone:($('#c_phone').value||'').trim()||undefined, email:($('#c_email').value||'').trim()||undefined, status:'Active', date_created:new Date().toISOString() };
       if(!body.name){ alert('Client name is required'); return; }
-
-      const dup = await searchClientsByName(body.name);
-      if(dup.find(x => (x.name||'').toLowerCase() === body.name.toLowerCase())){
-        const cont = confirm('A client with the same name exists. Create anyway?');
-        if(!cont) return;
-      }
-
-      try{
-        const r = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records`, {
-          method:'POST', headers:H(), body: JSON.stringify(body)
-        });
-        const c = await r.json().catch(()=>({}));
-        if(!r.ok) throw new Error(c?.msg || c?.message || `HTTP ${r.status}`);
-        selectClient(c);
-      }catch(err){
-        console.error('Client create error:', err);
-        alert('Client create failed: ' + err.message);
-      }
+      const dup=await searchClientsByName(body.name); if(dup.find(x=>(x.name||'').toLowerCase()===body.name.toLowerCase())){ if(!confirm('A client with the same name exists. Create anyway?')) return; }
+      try{ const c=await api.post(`/tables/${TBL.CLIENTS}/records`, body); selectClient(c); }
+      catch(err){ alert('Client create failed: '+err.message); }
     }
 
-    // ---------------------- Create flow --------------------------------------
     async function createSO(){
-      const vehs = getVehValues();
-      if(vehs.length===0){ alert('Please add at least one vehicle and select its intervention type.'); return; }
-      if(vehs.some(v => !v.vehicle_no || !v.intervention_type_id)){
-        alert('Each vehicle row must have a Vehicle number and an Intervention type.'); return; }
-      const techName = ($('#technician_name')?.value || '').trim();
-      let techId = $('#technician_id').value;
-      if (!techId && techName){
-        const exact = techIndex.find(t => t.label.toLowerCase() === techName.toLowerCase());
-        if (exact) techId = exact.id;
-      }
-      if (!techId){ alert('Please pick a technician from the suggestions.'); return; }
+      const vehs=getVehValues(); if(!vehs.length){ alert('Please add at least one vehicle and select its intervention type.'); return; }
+      if(vehs.some(v=>!v.vehicle_no||!v.intervention_type_id)){ alert('Each vehicle row must have a Vehicle number and an Intervention type.'); return; }
+      const techName=($('#technician_name')?.value||'').trim(); let techId=$('#technician_id').value; if(!techId&&techName){ const exact=techIndex.find(t=>t.label.toLowerCase()===techName.toLowerCase()); if(exact) techId=exact.id; }
+      techId = formPk(techId);
+      if(!techId){ alert('Please pick a technician from the suggestions.'); return; }
 
-      const so_id = $('#so_id').value.trim() || newSoId();
-      const bodyFull = {
-        so_id,
-        technician_id: techId,
-        scheduled_at: $('#scheduled_at').value,
-        client_id: $('#client_id').value || undefined,
-        client_name: $('#client_name').value || undefined,
-        address: $('#address').value.trim(),
-        contact_person: $('#contact_person').value.trim() || undefined,
-        contact_phone: $('#contact_phone').value.trim() || undefined,
-        priority: $('#priority').value,
-        status: $('#status').value,
-        notes: $('#notes').value.trim() || undefined,
-        return_visit_required: $('#return_visit_required').checked || undefined,
-        follow_up_of_so_id: $('#follow_up_of_so_id').value || undefined,
-      };
+      const so_id=$('#so_id').value.trim()||newSoId();
+      const full={ so_id, technician_id:techId, scheduled_at:$('#scheduled_at').value, client_id:formPk($('#client_id').value), client_name:$('#client_name').value||undefined, address:$('#address').value.trim(), contact_person:($('#contact_person').value||'').trim()||undefined, contact_phone:($('#contact_phone').value||'').trim()||undefined, priority:$('#priority').value, status:$('#status').value, notes:($('#notes').value||'').trim()||undefined, return_visit_required:$('#return_visit_required').checked||undefined, follow_up_of_so_id:($('#follow_up_of_so_id').value||'').trim()||undefined };
+      const minimal={ so_id:full.so_id, technician_id:full.technician_id, scheduled_at:full.scheduled_at, address:full.address, priority:full.priority, status:full.status };
 
-      const minimal = {
-        so_id: bodyFull.so_id,
-        technician_id: bodyFull.technician_id,
-        scheduled_at: bodyFull.scheduled_at,
-        address: bodyFull.address,
-        priority: bodyFull.priority,
-        status: bodyFull.status,
-      };
-
-      let so = null;
-      for (const payload of [bodyFull, minimal]){
-        const r = await fetch(`${NC_BASE}/tables/${TBL_SO}/records`,{ method:'POST', headers:H(), body: JSON.stringify(payload) });
-        if(r.ok){ so = await r.json(); break; }
-      }
+      let so=null; for(const payload of [full,minimal]){ try{ so=await api.post(`/tables/${TBL.SO}/records`, payload); break; }catch{} }
       if(!so){ alert('Failed to create Service Order. Check required columns exist.'); return; }
+      const soPk = normalizePk(getPk(so));
 
-      // Vehicles (+ per-vehicle intervention)
-      const createdVehs = [];
-      for(const v of vehs){
-        const payloadFull = { service_order_id: so.id, vehicle_no: v.vehicle_no, intervention_type_id: v.intervention_type_id };
-        const payloadMinimal = { service_order_id: so.id, vehicle_no: v.vehicle_no };
-        let row = null;
-        for(const p of [payloadFull, payloadMinimal]){
-          const r = await fetch(`${NC_BASE}/tables/${TBL_SOV}/records`,{ method:'POST', headers:H(), body: JSON.stringify(p) });
-          if(r.ok){ row = await r.json(); break; }
-        }
-        if(row){ createdVehs.push({ ...row, _intervention_type_id: v.intervention_type_id }); }
-      }
+      const createdVehs=[]; for(const v of vehs){ const interId=formPk(v.intervention_type_id); let row=null; for(const p of [ {service_order_id:soPk,vehicle_no:v.vehicle_no,intervention_type_id:interId}, {service_order_id:soPk,vehicle_no:v.vehicle_no} ]){ try{ row=await api.post(`/tables/${TBL.SOV}/records`, p); break; }catch{} } if(row){ createdVehs.push({ ...row, _intervention_type_id:v.intervention_type_id }); } }
 
-      // Checklist instances per vehicle
-      for(const v of createdVehs){
-        const ck = await fetchChecklist(v._intervention_type_id);
-        for(const item of ck){
-          await fetch(`${NC_BASE}/tables/${TBL_SOC}/records`,{
-            method:'POST', headers:H(),
-            body: JSON.stringify({ service_order_id: so.id, service_order_vehicle_id: v.id, checklist_id: item.id, status: 'pending' })
-          });
-        }
-      }
+      for(const v of createdVehs){ const vPk=normalizePk(getPk(v)); const ck=await fetchChecklist(v._intervention_type_id); for(const item of ck){ const ckPk=normalizePk(getPk(item)); if(!ckPk) continue; try{ await api.post(`/tables/${TBL.SOC}/records`, { service_order_id:soPk, service_order_vehicle_id:vPk, checklist_id:ckPk, status:'pending' }); }catch{} } }
 
-      const linkAssign = `assign-inventory-selector.html?so=${encodeURIComponent(so.id)}`;
+      const linkAssign=`assign-inventory-selector.html?so=${encodeURIComponent(soPk)}`;
       $('#result').innerHTML = `
-        <div class="card">
-          <div class="card-header"><h3>Created <span class="badge status-assigned">${so.status||'assigned'}</span></h3></div>
-          <div class="card-body">
-            <div class="grid grid-3 gap-4">
-              <div><div class="muted mini">SO_ID</div><div class="fw-600">${so.so_id || so.id}</div></div>
-              <div><div class="muted mini">Technician</div><div>${techName || '—'}</div></div>
-              <div><div class="muted mini">Scheduled</div><div>${$('#scheduled_at').value}</div></div>
-            </div>
-            <hr>
-            <div class="flex gap-4">
-              <a class="btn btn-primary" href="${linkAssign}">Assign Inventory</a>
-              <a class="btn" href="planner-jobs.html">Go to Service Orders</a>
-            </div>
+        <div class="card"><div class="card-header"><h3 style="margin:0">Created <span class="mini">${so.status||'assigned'}</span></h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div><div class="mini">SO_ID</div><div class="fw-600">${so.so_id||soPk}</div></div>
+            <div><div class="mini">Technician</div><div>${techName||'—'}</div></div>
+            <div><div class="mini">Scheduled</div><div>${$('#scheduled_at').value}</div></div>
           </div>
-        </div>`;
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+          <hr>
+          <div class="toolbar"><a class="btn btn-primary" href="${linkAssign}">Assign Inventory</a><a class="btn" href="planner-jobs.html">Go to Service Orders</a></div>
+        </div></div>`;
+      window.scrollTo({ top: document.body.scrollHeight, behavior:'smooth' });
     }
 
-    // ---------------------- Checklist preview --------------------------------
+    // ---------------------- Checklist preview ----
     async function openPreview(){
-      const vehs = getVehValues().filter(v=> v.vehicle_no && v.intervention_type_id);
-      if(vehs.length===0){ $('#ckPreview').innerHTML = '<div class="muted">Add at least one vehicle with an intervention.</div>'; $('#ckModal').classList.add('show'); return; }
-
-      let html = '';
-      for(const v of vehs){
-        const it = intList.find(x=> String(x.id)===String(v.intervention_type_id));
-        const itName = it?.intervention_name || v.intervention_type_id;
-        const ck = await fetchChecklist(v.intervention_type_id);
-        const list = ck.map(x=>`<li>${x.checklist_item} ${x.is_required? '<span class="badge success">required</span>':''}</li>`).join('');
-        html += `
-          <div class="mb-4">
-            <div class="fw-600">Vehicle: ${v.vehicle_no}</div>
-            <div class="mini">Intervention: ${itName} — ${ck.length} items</div>
-            <ul style="display:grid; gap:8px; margin-top:8px;">${list || '<li class="muted">No checklist items.</li>'}</ul>
-          </div>`;
-      }
-      $('#ckPreview').innerHTML = html;
-      $('#ckModal').classList.add('show');
+      const vehs=getVehValues().filter(v=>v.vehicle_no&&v.intervention_type_id);
+      if(!vehs.length){ $('#ckPreview').innerHTML='<div class="muted">Add at least one vehicle with an intervention.</div>'; $('#ckModal').classList.add('show'); return; }
+      let html='';
+      for(const v of vehs){ const it=intList.find(x=>String(normalizePk(getPk(x)))===String(v.intervention_type_id)); const itName=it?.intervention_name||it?.name||v.intervention_type_id; const ck=await fetchChecklist(v.intervention_type_id); const list=ck.map(x=>`<li>${x.checklist_item} ${x.is_required? '<span class="mini">(required)</span>':''}</li>`).join(''); html+=`<div style="margin-bottom:12px"><div class="fw-600">Vehicle: ${v.vehicle_no}</div><div class="mini">Intervention: ${itName} — ${ck.length} items</div><ul style="margin-top:8px">${list||'<li class="muted">No checklist items.</li>'}</ul></div>`; }
+      $('#ckPreview').innerHTML=html; $('#ckModal').classList.add('show');
     }
 
-    // ---------------------- Settings & modal ---------------------------------
-    // When typing into the Client field, open the modal and seed the search
-    let clientTypeTimer = null;
-    $('#client_name').addEventListener('input', (e)=>{
-      const val = e.target.value.trim();
-      clearTimeout(clientTypeTimer);
-      clientTypeTimer = setTimeout(()=> openClientModal(val), 250);
-    });
-    $('#client_name').addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter') { e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); }
-    });
-    $('#client_name').addEventListener('focus', ()=>{
-      const val = ($('#client_name')?.value||'').trim();
-      if(val) openClientModal(val);
-    });
+    // ---------------------- Modal helpers ----------
+    function closeClientModal(){ $('#clientModal').classList.remove('show'); }
+    function openClientModal(seed=''){ $('#clientModal').classList.add('show'); const v=(seed||'').trim(); $('#c_q').value=v; v?searchClientsByName(v).then(renderClientResults):renderClientResults([]); $('#c_q').focus(); }
+    function closeTechModal(){ $('#techModal').classList.remove('show'); }
 
-    // ---------------------- Settings & modal ---------------------------------
-    $('#btnSettings').addEventListener('click', ()=>{
-      alert('This demo is hard-coded to the test NocoDB.\\nAPI: '+NC_BASE+'\\nPAT: '+NC_PAT.slice(0,6)+'…');
-    });
-
-    $('#btnLogout').addEventListener('click', logout);
-    $('#btnNewId').addEventListener('click', ()=>{ const id=newSoId(); $('#so_id').value=id; $('#soPreview').textContent=id; });
-
-    $('#btnPreviewChecklist').addEventListener('click', (e)=>{ e.preventDefault(); openPreview(); });
-    $('#ckModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) $('#ckModal').classList.remove('show'); });
-
-    $('#btnAddVeh').addEventListener('click', ()=> addVeh('', ''));
-    $('#btnCreate').addEventListener('click', (e)=>{ e.preventDefault(); createSO(); });
-
-    $('#btnPickClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); });
-    $('#btnQuickCreateClient').addEventListener('click', (e)=>{ e.preventDefault(); openClientCreateModal(); });
-    $('#clientModal').addEventListener('click', (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
-    $('#techModal').addEventListener('click',   (e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeTechModal(); });
-
-    // Client search listeners (fixed)
-    $('#c_q').addEventListener('input', async (e)=>{
-      const rows = await searchClientsByName(e.target.value.trim());
-      renderClientResults(rows);
-    });
-    $('#c_q').addEventListener('keydown', async (e)=>{
-      if(e.key==='Enter'){
-        e.preventDefault();
-        const q=$('#c_q').value.trim();
-        const rows=await searchClientsByName(q);
-        if(rows[0]) selectClient(rows[0]);
-      }
-    });
-
-    // Technician input -> set hidden id when exact option chosen or on Enter
-    $('#technician_name').addEventListener('change', ()=>{
+    // ---------------------- Technician input sync ---
+    function syncTechIdFromName(){
       const val = ($('#technician_name')?.value || '').trim().toLowerCase();
-      const hit = techIndex.find(t => t.label.toLowerCase() === val);
-      $('#technician_id').value = hit ? hit.id : '';
-    });
-    $('#technician_name').addEventListener('input', ()=>{ if ($('#technician_id').value) $('#technician_id').value = ''; });
-    $('#technician_name').addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter'){
-        const val = ($('#technician_name')?.value || '').trim().toLowerCase();
-        const hit = techIndex.find(t => t.label.toLowerCase() === val);
-        $('#technician_id').value = hit ? hit.id : '';
+      if(!val){ $('#technician_id').value=''; return; }
+      // exact match first
+      let hit = techIndex.find(t=>t.label.toLowerCase()===val);
+      // if none, unique prefix match
+      if(!hit){
+        const candidates = techIndex.filter(t=>t.label.toLowerCase().startsWith(val));
+        if(candidates.length===1) hit = candidates[0];
       }
-    });
+      $('#technician_id').value = pkOrEmpty(hit?.id);
+    }
 
-    $('#c_results').addEventListener('click', async (e)=>{
-      const btn = e.target.closest('[data-select-client]'); if(!btn) return;
-      const id = btn.getAttribute('data-select-client');
-      const row = await fetch(`${NC_BASE}/tables/${TBL_CLIENTS}/records/${id}`, {headers:H()}).then(r=>r.json());
-      selectClient(row);
-    });
+    // ---------------------- Event bindings ----------
+    $('#btnSettings').addEventListener('click',()=>{ alert('Demo NocoDB Dev API.
+API: '+NC_BASE+'
+PAT: '+NC_PAT.slice(0,6)+'…'); });
+    $('#btnLogout').addEventListener('click', ()=>{ try{ localStorage.removeItem('NC_PAT'); localStorage.removeItem('NC_BASE'); }catch{} location.href='login.html'; });
+    $('#btnNewId').addEventListener('click',()=>{ const id=newSoId(); $('#so_id').value=id; $('#soPreview').textContent=id; });
 
-    $('#c_create').addEventListener('click', (e)=>{ e.preventDefault(); createClientInline(); });
-    $('#btnQuickCreateTech').addEventListener('click', (e)=>{ e.preventDefault(); openTechCreateModal(); });
-    $('#t_create').addEventListener('click', (e)=>{ e.preventDefault(); createTechInline(); });
+    // Vehicles (delegation)
+    $('#btnAddVeh').addEventListener('click',()=> addVeh('',''));
+    $('#vehList').addEventListener('click',(e)=>{ if(e.target.matches('[data-remove-veh]')){ e.target.closest('.veh-row')?.remove(); }});
 
-    // ---------------------- Init ---------------------------------------------
+    // Create actions
+    $('#btnPreviewChecklist').addEventListener('click',(e)=>{ e.preventDefault(); openPreview(); });
+    $('#btnCreate').addEventListener('click',(e)=>{ e.preventDefault(); createSO(); });
+
+    // Client modal + search
+    $('#btnPickClient').addEventListener('click',(e)=>{ e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); });
+    $('#btnQuickCreateClient').addEventListener('click',(e)=>{ e.preventDefault(); openClientModal(''); $('#c_name').value=''; $('#c_address').value=''; $('#c_person').value=''; $('#c_phone').value=''; $('#c_email').value=''; setTimeout(()=>$('#c_name').focus(),0); });
+    $('#clientModal').addEventListener('click',(e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeClientModal(); });
+
+    // Checklist modal close
+    $('#ckModal').addEventListener('click',(e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) $('#ckModal').classList.remove('show'); });
+
+    const onClientSearchInput = debounce(async (e)=>{ const q=(e.target?.value||'').trim(); const rows=await searchClientsByName(q); renderClientResults(rows); }, 250);
+    $('#c_q').addEventListener('input', onClientSearchInput);
+    $('#c_q').addEventListener('keydown', async (e)=>{ if(e.key==='Enter'){ e.preventDefault(); const q=$('#c_q').value.trim(); const rows=await searchClientsByName(q); if(rows[0]) selectClient(rows[0]); }});
+    $('#c_results').addEventListener('click', (e)=>{ const btn=e.target.closest('[data-select-client-index]'); if(!btn) return; const idx=Number(btn.getAttribute('data-select-client-index')); const row=clientSearchCache[idx]; if(row) selectClient(row); });
+    $('#c_create').addEventListener('click',(e)=>{ e.preventDefault(); createClientInline(); });
+
+    // Technician create modal
+    $('#btnQuickCreateTech').addEventListener('click',(e)=>{ e.preventDefault(); $('#techModal').classList.add('show'); $('#t_full_name').value=''; $('#t_email').value=''; $('#t_phone').value=''; $('#t_status').value='Active'; setTimeout(()=>$('#t_full_name').focus(),0); });
+    $('#techModal').addEventListener('click',(e)=>{ if(e.target.matches('.modal-backdrop,[data-close]')) closeTechModal(); });
+    $('#t_create').addEventListener('click',(e)=>{ e.preventDefault(); createTechInline(); });
+
+    // Technician selection helpers (single source of truth)
+    $('#technician_name').addEventListener('input', syncTechIdFromName);
+    $('#technician_name').addEventListener('change', syncTechIdFromName);
+    $('#technician_name').addEventListener('blur', syncTechIdFromName);
+
+    // Optional: open client modal as user types in the main field (debounced)
+    const triggerClientModal = debounce((val)=>{ if(val) openClientModal(val); }, 250);
+    $('#client_name').addEventListener('input',(e)=>{ triggerClientModal(e.target.value.trim()); });
+    $('#client_name').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); openClientModal(($('#client_name')?.value||'').trim()); }});
+    $('#client_name').addEventListener('focus',()=>{ const val=($('#client_name')?.value||'').trim(); if(val) openClientModal(val); });
+
+    // ---------------------- Self-tests (console) -----
+    (function runSelfTests(){
+      console.groupCollapsed('Self-tests');
+      const shapes=[{Id:1},{id:2},{ID:3},{row_id:4},{_id:5},{uuid:6},{}];
+      console.assert(getPk(shapes[0])===1,'getPk Id');
+      console.assert(getPk(shapes[1])===2,'getPk id');
+      console.assert(getPk(shapes[2])===3,'getPk ID');
+      console.assert(getPk(shapes[3])===4,'getPk row_id');
+      console.assert(getPk(shapes[4])===5,'getPk _id');
+      console.assert(getPk(shapes[5])===6,'getPk uuid');
+      console.assert(getPk(shapes[6])===null,'getPk none');
+      console.assert(normalizePk('null')===null, 'normalizePk handles "null" string');
+      console.assert(normalizePk('undefined')===null, 'normalizePk handles "undefined" string');
+      console.assert(pkOrEmpty(null)==='', 'pkOrEmpty null -> empty');
+      console.groupEnd();
+    })();
+
+    // ---------------------- Init -----------------
     (async function init(){
-      $('#soPreview').textContent = '—';
-      addVeh('', ''); // start with 1 row
+      $('#soPreview').textContent='—';
+      addVeh('','');
       await loadTechs();
       await loadInterventions();
-      const d=new Date(Date.now()+2*60*60*1000); const p=(n)=>String(n).padStart(2,'0');
-      $('#scheduled_at').value = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+      const d=new Date(Date.now()+2*60*60*1000), p=n=>String(n).padStart(2,'0');
+      $('#scheduled_at').value=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
     })();
+  })();
   </script>
 </body>
 </html>
